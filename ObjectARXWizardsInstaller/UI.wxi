@@ -443,38 +443,58 @@
 				<Publish Property="YEAR_2027" Value="{}">1</Publish>
 			</Control>
 			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
-				<Publish Property="YEAR_2010" Value="1"><![CDATA[YEAR_2010<>"1"]]></Publish>
-				<Publish Property="YEAR_2010" Value="{}"><![CDATA[YEAR_2010="1"]]></Publish>
-				<Publish Property="YEAR_2012" Value="1"><![CDATA[YEAR_2012<>"1"]]></Publish>
-				<Publish Property="YEAR_2012" Value="{}"><![CDATA[YEAR_2012="1"]]></Publish>
-				<Publish Property="YEAR_2013" Value="1"><![CDATA[YEAR_2013<>"1"]]></Publish>
-				<Publish Property="YEAR_2013" Value="{}"><![CDATA[YEAR_2013="1"]]></Publish>
-				<Publish Property="YEAR_2014" Value="1"><![CDATA[YEAR_2014<>"1"]]></Publish>
-				<Publish Property="YEAR_2014" Value="{}"><![CDATA[YEAR_2014="1"]]></Publish>
-				<Publish Property="YEAR_2015" Value="1"><![CDATA[YEAR_2015<>"1"]]></Publish>
-				<Publish Property="YEAR_2015" Value="{}"><![CDATA[YEAR_2015="1"]]></Publish>
-				<Publish Property="YEAR_2016" Value="1"><![CDATA[YEAR_2016<>"1"]]></Publish>
-				<Publish Property="YEAR_2016" Value="{}"><![CDATA[YEAR_2016="1"]]></Publish>
-				<Publish Property="YEAR_2018" Value="1"><![CDATA[YEAR_2018<>"1"]]></Publish>
-				<Publish Property="YEAR_2018" Value="{}"><![CDATA[YEAR_2018="1"]]></Publish>
-				<Publish Property="YEAR_2019" Value="1"><![CDATA[YEAR_2019<>"1"]]></Publish>
-				<Publish Property="YEAR_2019" Value="{}"><![CDATA[YEAR_2019="1"]]></Publish>
-				<Publish Property="YEAR_2020" Value="1"><![CDATA[YEAR_2020<>"1"]]></Publish>
-				<Publish Property="YEAR_2020" Value="{}"><![CDATA[YEAR_2020="1"]]></Publish>
-				<Publish Property="YEAR_2021" Value="1"><![CDATA[YEAR_2021<>"1"]]></Publish>
-				<Publish Property="YEAR_2021" Value="{}"><![CDATA[YEAR_2021="1"]]></Publish>
-				<Publish Property="YEAR_2022" Value="1"><![CDATA[YEAR_2022<>"1"]]></Publish>
-				<Publish Property="YEAR_2022" Value="{}"><![CDATA[YEAR_2022="1"]]></Publish>
-				<Publish Property="YEAR_2023" Value="1"><![CDATA[YEAR_2023<>"1"]]></Publish>
-				<Publish Property="YEAR_2023" Value="{}"><![CDATA[YEAR_2023="1"]]></Publish>
-				<Publish Property="YEAR_2024" Value="1"><![CDATA[YEAR_2024<>"1"]]></Publish>
-				<Publish Property="YEAR_2024" Value="{}"><![CDATA[YEAR_2024="1"]]></Publish>
-				<Publish Property="YEAR_2025" Value="1"><![CDATA[YEAR_2025<>"1"]]></Publish>
-				<Publish Property="YEAR_2025" Value="{}"><![CDATA[YEAR_2025="1"]]></Publish>
-				<Publish Property="YEAR_2026" Value="1"><![CDATA[YEAR_2026<>"1"]]></Publish>
-				<Publish Property="YEAR_2026" Value="{}"><![CDATA[YEAR_2026="1"]]></Publish>
-				<Publish Property="YEAR_2027" Value="1"><![CDATA[YEAR_2027<>"1"]]></Publish>
-				<Publish Property="YEAR_2027" Value="{}"><![CDATA[YEAR_2027="1"]]></Publish>
+				<!-- Inverting reads each year's current value, and a publish pair that tests the very
+				     property it is about to change cannot work: setting it to 1 makes the "clear it"
+				     condition true as well, so both events fire and cancel out. Snapshot the selection
+				     into ARXINV_* first, then flip against the snapshot. -->
+				<Publish Property="ARXINV_2010" Value="[YEAR_2010]">1</Publish>
+				<Publish Property="ARXINV_2012" Value="[YEAR_2012]">1</Publish>
+				<Publish Property="ARXINV_2013" Value="[YEAR_2013]">1</Publish>
+				<Publish Property="ARXINV_2014" Value="[YEAR_2014]">1</Publish>
+				<Publish Property="ARXINV_2015" Value="[YEAR_2015]">1</Publish>
+				<Publish Property="ARXINV_2016" Value="[YEAR_2016]">1</Publish>
+				<Publish Property="ARXINV_2018" Value="[YEAR_2018]">1</Publish>
+				<Publish Property="ARXINV_2019" Value="[YEAR_2019]">1</Publish>
+				<Publish Property="ARXINV_2020" Value="[YEAR_2020]">1</Publish>
+				<Publish Property="ARXINV_2021" Value="[YEAR_2021]">1</Publish>
+				<Publish Property="ARXINV_2022" Value="[YEAR_2022]">1</Publish>
+				<Publish Property="ARXINV_2023" Value="[YEAR_2023]">1</Publish>
+				<Publish Property="ARXINV_2024" Value="[YEAR_2024]">1</Publish>
+				<Publish Property="ARXINV_2025" Value="[YEAR_2025]">1</Publish>
+				<Publish Property="ARXINV_2026" Value="[YEAR_2026]">1</Publish>
+				<Publish Property="ARXINV_2027" Value="[YEAR_2027]">1</Publish>
+				<Publish Property="YEAR_2010" Value="1"><![CDATA[ARXINV_2010<>"1"]]></Publish>
+				<Publish Property="YEAR_2010" Value="{}"><![CDATA[ARXINV_2010="1"]]></Publish>
+				<Publish Property="YEAR_2012" Value="1"><![CDATA[ARXINV_2012<>"1"]]></Publish>
+				<Publish Property="YEAR_2012" Value="{}"><![CDATA[ARXINV_2012="1"]]></Publish>
+				<Publish Property="YEAR_2013" Value="1"><![CDATA[ARXINV_2013<>"1"]]></Publish>
+				<Publish Property="YEAR_2013" Value="{}"><![CDATA[ARXINV_2013="1"]]></Publish>
+				<Publish Property="YEAR_2014" Value="1"><![CDATA[ARXINV_2014<>"1"]]></Publish>
+				<Publish Property="YEAR_2014" Value="{}"><![CDATA[ARXINV_2014="1"]]></Publish>
+				<Publish Property="YEAR_2015" Value="1"><![CDATA[ARXINV_2015<>"1"]]></Publish>
+				<Publish Property="YEAR_2015" Value="{}"><![CDATA[ARXINV_2015="1"]]></Publish>
+				<Publish Property="YEAR_2016" Value="1"><![CDATA[ARXINV_2016<>"1"]]></Publish>
+				<Publish Property="YEAR_2016" Value="{}"><![CDATA[ARXINV_2016="1"]]></Publish>
+				<Publish Property="YEAR_2018" Value="1"><![CDATA[ARXINV_2018<>"1"]]></Publish>
+				<Publish Property="YEAR_2018" Value="{}"><![CDATA[ARXINV_2018="1"]]></Publish>
+				<Publish Property="YEAR_2019" Value="1"><![CDATA[ARXINV_2019<>"1"]]></Publish>
+				<Publish Property="YEAR_2019" Value="{}"><![CDATA[ARXINV_2019="1"]]></Publish>
+				<Publish Property="YEAR_2020" Value="1"><![CDATA[ARXINV_2020<>"1"]]></Publish>
+				<Publish Property="YEAR_2020" Value="{}"><![CDATA[ARXINV_2020="1"]]></Publish>
+				<Publish Property="YEAR_2021" Value="1"><![CDATA[ARXINV_2021<>"1"]]></Publish>
+				<Publish Property="YEAR_2021" Value="{}"><![CDATA[ARXINV_2021="1"]]></Publish>
+				<Publish Property="YEAR_2022" Value="1"><![CDATA[ARXINV_2022<>"1"]]></Publish>
+				<Publish Property="YEAR_2022" Value="{}"><![CDATA[ARXINV_2022="1"]]></Publish>
+				<Publish Property="YEAR_2023" Value="1"><![CDATA[ARXINV_2023<>"1"]]></Publish>
+				<Publish Property="YEAR_2023" Value="{}"><![CDATA[ARXINV_2023="1"]]></Publish>
+				<Publish Property="YEAR_2024" Value="1"><![CDATA[ARXINV_2024<>"1"]]></Publish>
+				<Publish Property="YEAR_2024" Value="{}"><![CDATA[ARXINV_2024="1"]]></Publish>
+				<Publish Property="YEAR_2025" Value="1"><![CDATA[ARXINV_2025<>"1"]]></Publish>
+				<Publish Property="YEAR_2025" Value="{}"><![CDATA[ARXINV_2025="1"]]></Publish>
+				<Publish Property="YEAR_2026" Value="1"><![CDATA[ARXINV_2026<>"1"]]></Publish>
+				<Publish Property="YEAR_2026" Value="{}"><![CDATA[ARXINV_2026="1"]]></Publish>
+				<Publish Property="YEAR_2027" Value="1"><![CDATA[ARXINV_2027<>"1"]]></Publish>
+				<Publish Property="YEAR_2027" Value="{}"><![CDATA[ARXINV_2027="1"]]></Publish>
 			</Control>
 			<!-- One year per binary-compatible generation, so a project still loads into the other
 			     AutoCAD releases sharing that SDK. 2017 is absent because the year table has no such

@@ -98,9 +98,29 @@
     <Property Id="YEAR_2026" Secure="yes" />
     <Property Id="YEAR_2027" Secure="yes" />
 
-    <!-- Read-only text for YearSummaryForm: the All / None / Invert custom actions write the list of
-         ticked years here, because the check boxes on SdkForm cannot be repainted in place. -->
-    <Property Id="ARX_YEARS_SUMMARY" Value="(change the selection with All / None / Invert)" Secure="yes" />
+    <!-- Snapshot of YEAR_* taken by the Invert button before it flips anything. A pair of publishes
+         that reads the property it is about to change cannot work: setting it to 1 makes the
+         "clear it" condition true as well, so both events fire and cancel each other out. -->
+    <Property Id="ARXINV_2010" Secure="yes" />
+    <Property Id="ARXINV_2012" Secure="yes" />
+    <Property Id="ARXINV_2013" Secure="yes" />
+    <Property Id="ARXINV_2014" Secure="yes" />
+    <Property Id="ARXINV_2015" Secure="yes" />
+    <Property Id="ARXINV_2016" Secure="yes" />
+    <Property Id="ARXINV_2018" Secure="yes" />
+    <Property Id="ARXINV_2019" Secure="yes" />
+    <Property Id="ARXINV_2020" Secure="yes" />
+    <Property Id="ARXINV_2021" Secure="yes" />
+    <Property Id="ARXINV_2022" Secure="yes" />
+    <Property Id="ARXINV_2023" Secure="yes" />
+    <Property Id="ARXINV_2024" Secure="yes" />
+    <Property Id="ARXINV_2025" Secure="yes" />
+    <Property Id="ARXINV_2026" Secure="yes" />
+    <Property Id="ARXINV_2027" Secure="yes" />
+
+    <!-- Read-only text for YearSummaryForm. CA_BuildYearsSummary fills it from YEAR_* when SdkForm's
+         Next is pressed, because that page is the only place the selection can be read back. -->
+    <Property Id="ARX_YEARS_SUMMARY" Value="(select the target versions on the previous page)" Secure="yes" />
 
     <!-- DET_YEAR_<year> is set (to the found path) by AppSearch when that year's props exist,
          which means a previous install generated it. AppSearch precedes the dialogs. -->

@@ -117,3 +117,21 @@ Backup*/
 UpgradeLog*.XML
 /ObjectARXWizardsInstaller/.vs
 /ArxWizMFCSupport/.vs
+
+# --- Multi-year wizard work: tooling, scratch and build outputs ---
+# Portable WiX 3.14 toolchain used by the MSI/bundle builds (large, download on demand)
+.tools/
+
+# Scratch projects produced by the VSIX template smoke tests
+_E2EGen/
+
+# candle output that was checked in upstream; keep it out from now on
+ObjectARXWizardsInstaller/ObjectARXWizards.wixobj
+
+# Installer artifacts rebuilt from source. ObjectARXMultiYearWizards.vsix is committed on purpose
+# so it can be handed to users directly - remember to refresh it after wizard changes.
+/ObjectARXMultiYearWizards.msi
+/ObjectARXMultiYearWizardsSetup.exe
+
+# Agent workspace state
+.trae/

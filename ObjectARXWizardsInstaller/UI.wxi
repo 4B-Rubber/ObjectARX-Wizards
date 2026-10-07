@@ -363,6 +363,11 @@
 
 	<!-- SDK roots + which AutoCAD years to generate. The props themselves are produced by the
 		     ArxProps custom actions after InstallFiles, so nothing here is MSI payload. -->
+		<!-- The custom action sets the properties the check boxes are bound to. MSI reads them only when
+		     the dialog is created, so the new selection does not repaint here - but publishing NewDialog
+		     to SdkForm itself aborts the install with error 2856 ("creating a second copy of the
+		     dialog"), and a twin dialog cannot exist either because the CheckBox table is keyed by
+		     Property: one property can back only one check box in the whole package. -->
 		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="394" Title="[ProductName]">
 			<Control Id="NextButton" Type="PushButton" X="300" Y="372" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return"><![CDATA[SdkForm_NextArgs=""]]></Publish>
@@ -394,17 +399,17 @@
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
 			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="176" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Target AutoCAD versions (default 2018-2027):" TabSkip="no" />
-			<!-- The custom action sets the properties the check boxes are bound to; MSI will not create
-			     a second copy of a dialog that is already open, so these must NOT publish NewDialog
-			     back to SdkForm (that aborts the install with error 2856). -->
 			<Control Id="AllYearsButton" Type="PushButton" X="196" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_SetAllArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
 			<Control Id="NoYearsButton" Type="PushButton" X="250" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_ClearArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
 			<Control Id="InvertYearsButton" Type="PushButton" X="304" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_InvertArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
 			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" />
 			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" />
@@ -428,6 +433,44 @@
 				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
+		</Dialog>
+
+		<!-- All / None / Invert cannot repaint SdkForm's year list: MSI reads a check box's property
+		     only when its dialog is created, the CheckBox table allows one check box per property, and
+		     re-entering the open dialog is error 2856. So the bulk buttons land here instead, on a
+		     read-only summary of what was just selected. Back returns to SdkForm to fine-tune single
+		     years; the buttons here run another bulk action and bounce back to SdkForm, which is
+		     rebuilt on arrival and therefore shows the new ticks. -->
+		<Dialog Id="YearSummaryForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+				<Publish Event="EndDialog" Value="Return"><![CDATA[SdkForm_NextArgs=""]]></Publish>
+				<Publish Event="NewDialog" Value="[SdkForm_NextArgs]"><![CDATA[SdkForm_NextArgs<>""]]></Publish>
+			</Control>
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+				<Publish Event="SpawnDialog" Value="Cancel" />
+			</Control>
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Target AutoCAD Versions - Selection" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="SummaryText" Type="Text" X="18" Y="66" Width="340" Height="90" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ARX_YEARS_SUMMARY]" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BulkLabel" Type="Text" X="18" Y="166" Width="176" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Change the selection again:" TabSkip="no" />
+			<Control Id="AllYearsButton" Type="PushButton" X="196" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
+				<Publish Event="DoAction" Value="CA_SetAllArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="NoYearsButton" Type="PushButton" X="250" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
+				<Publish Event="DoAction" Value="CA_ClearArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="InvertYearsButton" Type="PushButton" X="304" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
+				<Publish Event="DoAction" Value="CA_InvertArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="HintText" Type="Text" X="18" Y="192" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}Press Back to tick individual years on the previous page, or Next to install this selection." TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 	</UI>

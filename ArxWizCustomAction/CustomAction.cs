@@ -301,7 +301,9 @@ namespace ArxWizCustomAction
         /// <summary>
         /// Backs the SdkForm All / None / Invert buttons. The first two could be done with declarative
         /// Publish elements, but inverting a property's value cannot be expressed as an MSI condition,
-        /// so all three live here. The dialog re-enters itself so the check boxes pick the new values up.
+        /// so all three live here. They also fill ARX_YEARS_SUMMARY, which is the only way the result
+        /// can be shown: MSI reads a check box's property when its dialog is created, and the CheckBox
+        /// table allows one check box per property, so the year list cannot be repainted in place.
         /// </summary>
         [CustomAction]
         public static ActionResult SetAllArxYears(Session session) { return SetYears(session, y => "1"); }
@@ -320,8 +322,17 @@ namespace ArxWizCustomAction
             try
             {
                 var years = new List<YearEntry>(PropsTable.Load().Years);
-                foreach (var entry in years) session["YEAR_" + entry.Year] = value(entry.Year);
-                Log(session, "SetYears: applied to " + years.Count + " years");
+                var ticked = new List<string>();
+                foreach (var entry in years)
+                {
+                    string state = value(entry.Year);
+                    session["YEAR_" + entry.Year] = state;
+                    if (state == "1") ticked.Add(entry.Year);
+                }
+                session["ARX_YEARS_SUMMARY"] = ticked.Count == 0
+                    ? "None. No property sheet is generated, and any generated earlier is removed."
+                    : string.Join(", ", ticked.ToArray());
+                Log(session, "SetYears: applied to " + years.Count + " years, " + ticked.Count + " ticked");
                 return ActionResult.Success;
             }
             catch (Exception ex)

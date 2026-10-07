@@ -86,6 +86,10 @@
     <Property Id="YEAR_2026" Secure="yes" />
     <Property Id="YEAR_2027" Secure="yes" />
 
+    <!-- Read-only text for YearSummaryForm: the All / None / Invert custom actions write the list of
+         ticked years here, because the check boxes on SdkForm cannot be repainted in place. -->
+    <Property Id="ARX_YEARS_SUMMARY" Value="(change the selection with All / None / Invert)" Secure="yes" />
+
     <!-- DET_YEAR_<year> is set (to the found path) by AppSearch when that year's props exist,
          which means a previous install generated it. AppSearch precedes the dialogs. -->
     <Property Id="DET_YEAR_2010">

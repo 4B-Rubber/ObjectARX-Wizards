@@ -1,0 +1,22 @@
+<VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005"
+            xmlns:sdk="http://schemas.microsoft.com/developer/vstemplate-sdkextension/2010">
+  <TemplateData>
+    <Name>ObjectARX/DBX/CRX Application (Multi-Year)</Name>
+    <Description>Creates an ObjectARX, ObjectDBX, or AutoCAD Console application targeting AutoCAD 2010-2027.</Description>
+    <Icon>ArxApp.ico</Icon>
+    <ProjectType>VC</ProjectType>
+    <SortOrder>1000</SortOrder>
+    <CreateNewFolder>true</CreateNewFolder>
+    <DefaultName>ArxApp</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Enabled</LocationField>
+    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
+  </TemplateData>
+  <TemplateContent>
+    <Project File="ArxProject.vcxproj" TargetFileName="$projectname$.vcxproj" ReplaceParameters="true" />
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ArxVsixWizard, Version=26.2.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>ArxVsixWizard.ArxProjectWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+$ArxConfigXml$  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ArxAppType>$ArxPrjType$</ArxAppType>
+    <RDS>$ArxRds$</RDS>
+    <ProjectGuid>{$ArxProjectGuid$}</ProjectGuid>
+    <!--For Visual Studio 2019 and newer, you can specify the most recent Windows 10 SDK by using a value of 10.0-->
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <!-- Extract the target year (e.g. 2026) and the debug suffix from configurations like "2026d" -->
+  <PropertyGroup>
+    <ArxYear Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', '($ArxYearRegex$)').Value)</ArxYear>
+    <ConfigSuffix Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', 'd$').Value)</ConfigSuffix>
+    <IsDebug Condition="'$(ConfigSuffix)' == 'd'">true</IsDebug>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    $ArxClrXml$
+    <UseOfMfc>$ArxMfc$</UseOfMfc>
+    <!-- <UseOfAtl>$ArxAtl$</UseOfAtl> -->
+$ArxToolsetXml$  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <UseDebugLibraries Condition="'$(IsDebug)' == 'true'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(IsDebug)' != 'true'">false</UseDebugLibraries>
+    <WholeProgramOptimization Condition="'$(IsDebug)' != 'true'">true</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="'$(IsDebug)' == 'true'">false</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Condition="'$(ArxYear)' != '' And Exists('$ArxPropsDir$Autodesk.arx-$(ArxYear).props')" Project="$ArxPropsDir$Autodesk.arx-$(ArxYear).props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(ArxYear)' != ''">
+    <TargetName Condition="'$(RDS)' != ''">$(RDS)$(ProjectName)$(ArxYear)</TargetName>
+    <TargetName Condition="'$(RDS)' == ''">$(ProjectName)$(ArxYear)</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseOfMfc)'=='Dynamic'">_AFXEXT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <!-- ObjectARX 2021 and later ship the OMT geometry library separately and the property
+           sheets do not link it, so the SDK's own support libraries fail to resolve without
+           it. Keyed on the file itself: the older SDKs do not have it and must not link it,
+           and a single project covers every year from 2010 to 2027. -->
+      <AdditionalDependencies Condition="Exists('$(ArxSdkLibs)\acgeoment.lib')">acgeoment.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Midl>
+      <!-- The .rc references $(RDS)$(ProjectName).tlb from $(IntDir); keep the year suffix off the tlb name -->
+      <TypeLibraryName>$(IntDir)$(RDS)$(ProjectName).tlb</TypeLibraryName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+$ArxItemsXml$  </ItemGroup>
+<!-- 配置里选了某年份、但该年份的 props 没装（安装器没勾选）时，给出中文提示而不是一堵头文件报错。 -->
+  <Target Name="CheckArxSdkProps" BeforeTargets="ClCompile">
+    <Error Condition="'$(ArxYear)' != '' And !Exists('$ArxPropsDir$Autodesk.arx-$(ArxYear).props')"
+           Text="未找到 ObjectARX $(ArxYear) 的属性表（$ArxPropsDir$Autodesk.arx-$(ArxYear).props）。请重新运行安装程序勾选该年份，或改用已安装的年份配置。" />
+  </Target>
+$ArxNetRefXml$  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

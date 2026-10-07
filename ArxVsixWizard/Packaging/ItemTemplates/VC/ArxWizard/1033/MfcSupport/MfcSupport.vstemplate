@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>ObjectARX MFC Class</Name>
+    <Description>Creates a class derived from an ObjectARX AdUi/AcUi MFC class and optionally injects a dialog resource into the project.</Description>
+    <Icon>MfcSupport.ico</Icon>
+    <ProjectType>VC</ProjectType>
+    <TemplateID>ArxWizard.Item.MfcSupport</TemplateID>
+    <TemplateGroupID>VC-Native</TemplateGroupID>
+    <DefaultName>MyMfcClass</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Disabled</LocationField>
+    <ShowByDefault>true</ShowByDefault>
+    <SortOrder>260</SortOrder>
+  </TemplateData>
+  <TemplateContent>
+    <!-- Wrap0/Wrap1 carry the base-class chosen header/implementation template.
+         Wrap2/Wrap3 are the optional child dialog pair (only emitted when the base
+         class needs a child dialog and Create dialog is checked). Order must match
+         MfcSupportItemModel.Files. -->
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap0File$">Wrap0.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap1File$">Wrap1.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap2File$">Wrap2.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap3File$">Wrap3.txt</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ArxVsixWizard, Version=26.2.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>ArxVsixWizard.Items.MfcSupportItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

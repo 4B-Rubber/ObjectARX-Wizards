@@ -1,0 +1,94 @@
+<Window x:Class="ArxVsixWizard.UI.WizardDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ObjectARX/DBX Application Wizard"
+        Width="560" Height="680"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize" MinWidth="520" MinHeight="600"
+        ShowInTaskbar="False" FontSize="12">
+  <DockPanel Margin="12">
+    <Border DockPanel.Dock="Bottom" Padding="0,12,0,0">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        <Button Name="OkButton" Content="Finish" Width="90" Height="28" Margin="0,0,8,0" Click="OnOk" IsDefault="True"/>
+        <Button Content="Cancel" Width="90" Height="28" IsCancel="True"/>
+      </StackPanel>
+    </Border>
+    <TextBlock DockPanel.Dock="Bottom" Name="ErrorText" Foreground="Red" Margin="0,8,0,0" TextWrapping="Wrap"/>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <GroupBox Header="Registered Developer Symbol (RDS)">
+          <StackPanel Margin="8">
+            <TextBox Name="RdsBox" MaxLength="4" Width="120" HorizontalAlignment="Left"/>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Application Type" Margin="0,8,0,0">
+          <StackPanel Margin="8">
+            <RadioButton Name="TypeArx" Content="ObjectARX Application (.arx)" Checked="OnTypeChanged"/>
+            <RadioButton Name="TypeDbx" Content="ObjectDBX Application (.dbx)" Margin="0,4,0,0" Checked="OnTypeChanged"/>
+            <RadioButton Name="TypeCrx" Content="AutoCAD Console Application (.crx)" Margin="0,4,0,0" Checked="OnTypeChanged"/>
+          </StackPanel>
+        </GroupBox>
+
+        <!-- OMF wizard only -->
+        <GroupBox Name="VerticalsBox" Header="Additional SDK Support" Margin="0,8,0,0" Visibility="Collapsed">
+          <StackPanel Margin="8">
+            <CheckBox Name="OmfBox" Content="OMF application support (forces MFC Extension DLL)" Checked="OnOmfChanged" Unchecked="OnOmfChanged"/>
+            <CheckBox Name="MapBox" Content="MAP API support (forces ObjectARX application)" Margin="6,4,0,0" Checked="OnMapChanged" Unchecked="OnMapChanged"/>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Target AutoCAD Versions" Margin="0,8,0,0">
+          <StackPanel Margin="8">
+            <WrapPanel Name="YearsPanel"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+              <Button Name="AllYearsButton" Content="Select all" Width="80" Height="24" Margin="0,0,8,0" Click="OnSelectAllYears"/>
+              <Button Name="NoYearsButton" Content="Clear" Width="80" Height="24" Click="OnClearYears"/>
+              <TextBlock Name="DefaultYearsLabel" Margin="12,4,0,0" VerticalAlignment="Center" Foreground="Gray"/>
+            </StackPanel>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="MFC Support" Margin="0,8,0,0">
+          <StackPanel Margin="8" Name="MfcPanel">
+            <RadioButton Name="MfcNone" Content="No MFC support" Checked="OnMfcChanged"/>
+            <RadioButton Name="MfcStatic" Content="Regular DLL with MFC statically linked" Margin="0,4,0,0" Checked="OnMfcChanged"/>
+            <RadioButton Name="MfcShared" Content="Regular DLL using MFC shared DLL" Margin="0,4,0,0" Checked="OnMfcChanged"/>
+            <RadioButton Name="MfcExt" Content="Extension DLL using MFC shared DLL" Margin="0,4,0,0" Checked="OnMfcChanged"/>
+            <CheckBox Name="AcadExtBox" Content="with AutoCAD MFC Extension support" Margin="20,6,0,0"/>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="COM Options" Margin="0,8,0,0">
+          <StackPanel Margin="8">
+            <RadioButton Name="ComNone" Content="Not a COM server" Checked="OnComChanged"/>
+            <RadioButton Name="ComStd" Content="Implement a COM server" Margin="0,4,0,0" Checked="OnComChanged"/>
+            <RadioButton Name="ComAtl" Content="Implement a COM server using ATL" Margin="0,4,0,0" Checked="OnComChanged"/>
+            <CheckBox Name="AcadAtlExtBox" Content="use ObjectARX ATL Extensions for Custom Objects" Margin="20,6,0,0"/>
+            <TextBlock Text="Type library to #import:" Margin="0,8,0,2" Foreground="Gray"/>
+            <RadioButton Name="ImportNone" Content="No type library import"/>
+            <RadioButton Name="ImportDbx" Content="ObjectDBX type library" Margin="0,4,0,0"/>
+            <RadioButton Name="ImportAcad" Content="AutoCAD type library" Margin="0,4,0,0"/>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header=".NET Options" Margin="0,8,0,0">
+          <StackPanel Margin="8">
+            <CheckBox Name="DotNetBox" Content=".NET mixed managed module"/>
+            <CheckBox Name="DotNetAcaBox" Content="AutoCAD Architecture (ACA) support" Margin="0,4,0,0"/>
+            <CheckBox Name="DotNetMepBox" Content="AutoCAD MEP support" Margin="0,4,0,0"/>
+            <TextBlock Margin="0,6,0,0" Foreground="Gray" TextWrapping="Wrap"
+                       Text="2025+ targets compile as .NET (Core) mixed modules (net8/net10); older targets use .NET Framework."/>
+          </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Debug" Margin="0,8,0,0">
+          <StackPanel Margin="8">
+            <CheckBox Name="ImplDebugBox" Content="Implement _DEBUG preprocessor symbol"/>
+          </StackPanel>
+        </GroupBox>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

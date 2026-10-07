@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>AutoCAD COM Wrapper Object</Name>
+    <Description>Wraps an ObjectARX/DBX class in an ATL COM coclass so that automation clients (VBA, .NET, COM) can use it.</Description>
+    <Icon>AtlComWrapper.ico</Icon>
+    <ProjectType>VC</ProjectType>
+    <TemplateID>ArxWizard.Item.AtlComWrapper</TemplateID>
+    <TemplateGroupID>VC-Native</TemplateGroupID>
+    <DefaultName>MyComObject</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Disabled</LocationField>
+    <ShowByDefault>true</ShowByDefault>
+    <SortOrder>240</SortOrder>
+  </TemplateData>
+  <TemplateContent>
+    <!-- The wrapper files only carry $ArxWrapNContent$; RunStarted injects both the
+         content and the target file name (renaming is not possible otherwise). -->
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap0File$">Wrap0.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap1File$">Wrap1.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap2File$">Wrap2.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap3File$">Wrap3.txt</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ArxVsixWizard, Version=26.2.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>ArxVsixWizard.Items.AtlComWrapperItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

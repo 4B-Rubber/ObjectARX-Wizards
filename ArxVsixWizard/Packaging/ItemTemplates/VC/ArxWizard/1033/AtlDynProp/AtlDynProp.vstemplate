@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>AutoCAD Object Dynamic Property</Name>
+    <Description>Creates an ATL COM object implementing IDynamicProperty2 so the AutoCAD Properties palette shows your custom dynamic property.</Description>
+    <Icon>AtlDynProp.ico</Icon>
+    <ProjectType>VC</ProjectType>
+    <TemplateID>ArxWizard.Item.AtlDynProp</TemplateID>
+    <TemplateGroupID>VC-Native</TemplateGroupID>
+    <DefaultName>MyDynProp</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Disabled</LocationField>
+    <ShowByDefault>true</ShowByDefault>
+    <SortOrder>250</SortOrder>
+  </TemplateData>
+  <TemplateContent>
+    <!-- The wrapper files only carry $ArxWrapNContent$; RunStarted injects both the
+         content and the target file name (renaming is not possible otherwise). -->
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap0File$">Wrap0.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap1File$">Wrap1.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap2File$">Wrap2.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap3File$">Wrap3.txt</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ArxVsixWizard, Version=26.2.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>ArxVsixWizard.Items.AtlDynPropItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

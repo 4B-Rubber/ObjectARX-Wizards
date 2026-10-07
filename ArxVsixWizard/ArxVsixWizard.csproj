@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>ArxVsixWizard</RootNamespace>
+    <AssemblyName>ArxVsixWizard</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>26.2.0</Version>
+    <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
+    <VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
+    <CreateVsixContainer>true</CreateVsixContainer>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <UseCodebase>true</UseCodebase>
+    <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
+    <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
+    <EnableContentIncludeInVsix>true</EnableContentIncludeInVsix>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" />
+    <PackageReference Include="Microsoft.VisualStudio.TemplateWizardInterface" Version="17.10.40170" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; buildMultiTargeting; buildTransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embedded wizard templates (rendered by the C# renderer) -->
+    <EmbeddedResource Include="Templates\ArxApp\*" LogicalName="ArxApp.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Templates\OmfApp\*" LogicalName="OmfApp.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Packaging\ProjectTemplates\VC\1033\ArxApp\ArxProject.vcxproj" LogicalName="ArxApp.Skeleton.vcxproj" />
+    <EmbeddedResource Include="Packaging\ProjectTemplates\VC\1033\OmfApp\OmfProject.vcxproj" LogicalName="OmfApp.Skeleton.vcxproj" />
+    <!-- Class/item wizard templates (rendered by the C# renderer). -->
+    <EmbeddedResource Include="Items\NetWrapper\Templates\*" LogicalName="ArxWizNetWrapper.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\Jig\Templates\*" LogicalName="ArxWizJig.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\CustomObject\Templates\*" LogicalName="ArxWizCustomObject.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\Reactors\Templates\*" LogicalName="ArxWizReactors.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\MfcSupport\Templates\*" LogicalName="ArxWizMfcSupport.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\AtlComWrapper\Templates\*" LogicalName="ArxWizAtlComWrapper.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Items\AtlDynProp\Templates\*" LogicalName="ArxWizAtlDynProp.%(Filename)%(Extension)" />
+    <!-- XML class tables shared by the wizards above (reactors.xml, DbxObjects.xml, MfcSupport.xml). -->
+    <EmbeddedResource Include="Items\Data\*" LogicalName="ArxWizData.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The SDK default glob would pull in the TemplateSmokeTest project files
+         (including its generated AssemblyInfo.cs under TemplateSmokeTest\obj). -->
+    <Compile Remove="TemplateSmokeTest\**" />
+    <EmbeddedResource Remove="TemplateSmokeTest\**" />
+    <None Remove="TemplateSmokeTest\**" />
+    <Content Remove="TemplateSmokeTest\**" />
+    <Page Remove="TemplateSmokeTest\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="source.extension.vsixmanifest" />
+    <!-- Templates must live under a folder named ProjectTemplates in the VSIX; VS only
+         registers project templates discovered there. Layout: ProjectTemplates\VC\1033\<name>. -->
+    <Content Include="Packaging\ProjectTemplates\**\*" Link="ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Same rule for item templates: VS only registers them when they live under
+         a folder named ItemTemplates in the VSIX. Layout: ItemTemplates\VC\<category>\1033\<name>. -->
+    <Content Include="Packaging\ItemTemplates\**\*" Link="ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

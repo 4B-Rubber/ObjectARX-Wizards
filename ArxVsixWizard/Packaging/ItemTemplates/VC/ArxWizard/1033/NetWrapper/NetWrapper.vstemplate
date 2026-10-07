@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name>ObjectARX .NET Wrapper Class</Name>
+    <Description>Wraps an ObjectARX C++ class so managed (ObjectARX .NET) code can use it.</Description>
+    <Icon>NetWrapper.ico</Icon>
+    <ProjectType>VC</ProjectType>
+    <TemplateID>ArxWizard.Item.NetWrapper</TemplateID>
+    <TemplateGroupID>VC-Native</TemplateGroupID>
+    <DefaultName>MyWrapper</DefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
+    <LocationField>Disabled</LocationField>
+    <ShowByDefault>true</ShowByDefault>
+    <SortOrder>200</SortOrder>
+  </TemplateData>
+  <TemplateContent>
+    <!-- The wrapper files only carry $ArxWrapNContent$; RunStarted injects both the
+         content and the target file name (renaming is not possible otherwise). -->
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap0File$">Wrap0.txt</ProjectItem>
+    <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap1File$">Wrap1.txt</ProjectItem>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>ArxVsixWizard, Version=26.2.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <FullClassName>ArxVsixWizard.Items.NetWrapperItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

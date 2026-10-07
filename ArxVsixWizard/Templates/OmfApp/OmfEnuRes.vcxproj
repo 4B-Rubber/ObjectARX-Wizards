@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+[!output ARX_CONFIG_XML]  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{[!output PROJECT_RES_GUID]}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <!-- Extract the target year (e.g. 2026) and the debug suffix from configurations like "2026d" -->
+  <PropertyGroup>
+    <ArxYear Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', '([!output ARX_YEAR_REGEX])').Value)</ArxYear>
+    <ConfigSuffix Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', 'd$').Value)</ConfigSuffix>
+    <IsDebug Condition="'$(ConfigSuffix)' == 'd'">true</IsDebug>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+[!output ARX_TOOLSET_XML]  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <UseDebugLibraries Condition="'$(IsDebug)' == 'true'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(IsDebug)' != 'true'">false</UseDebugLibraries>
+    <WholeProgramOptimization Condition="'$(IsDebug)' != 'true'">true</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="'$(IsDebug)' == 'true'">false</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup>
+    <OutDir>../$(Platform)/$(Configuration)\</OutDir>
+    <IntDir>$(Platform)/$(Configuration)\</IntDir>
+    <TargetName>[!output RDS_SYMB][!output PROJECT_NAME]Enu</TargetName>
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental Condition="'$(IsDebug)' == 'true'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(IsDebug)' != 'true'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <Optimization Condition="'$(IsDebug)' == 'true'">Disabled</Optimization>
+      <Optimization Condition="'$(IsDebug)' != 'true'">MaxSpeed</Optimization>
+      <InlineFunctionExpansion Condition="'$(IsDebug)' != 'true'">OnlyExplicitInline</InlineFunctionExpansion>
+      <OmitFramePointers Condition="'$(IsDebug)' != 'true'">true</OmitFramePointers>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='Win32'">WIN32;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsDebug)' == 'true'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(IsDebug)' != 'true'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling Condition="'$(IsDebug)' != 'true'">true</StringPooling>
+      <FunctionLevelLinking Condition="'$(IsDebug)' != 'true'">true</FunctionLevelLinking>
+      <RuntimeLibrary Condition="'$(IsDebug)' == 'true'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(IsDebug)' != 'true'">MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat Condition="'$(IsDebug)' == 'true'">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(IsDebug)' != 'true'">ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences Condition="'$(IsDebug)' != 'true'">true</OptimizeReferences>
+      <EnableCOMDATFolding Condition="'$(IsDebug)' != 'true'">true</EnableCOMDATFolding>
+      <NoEntryPoint>true</NoEntryPoint>
+      <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ResourceCompile Include="[!output PROJECT_NAME]Enu.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

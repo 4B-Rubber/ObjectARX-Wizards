@@ -12,6 +12,10 @@
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <WarningLevel>4</WarningLevel>
+    <!-- Without this the C# targets default Prefer32Bit to true, so "AnyCPU" ran as 32-bit and
+         SpecialFolder.ProgramFiles resolved to Program Files (x86) - the opposite of what the
+         edition fallback below assumes. -->
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

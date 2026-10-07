@@ -12,6 +12,10 @@
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <WarningLevel>4</WarningLevel>
+    <!-- The C# targets default Prefer32Bit to true, which turns "AnyCPU" into a 32-bit process:
+         SpecialFolder.System would resolve to SysWOW64 and the x64 MSI would be handed to the
+         32-bit msiexec. Keep it native. -->
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

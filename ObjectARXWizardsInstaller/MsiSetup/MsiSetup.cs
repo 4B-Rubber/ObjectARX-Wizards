@@ -43,7 +43,7 @@ static class MsiSetup
         if (string.Equals(msi, "/uninstall", StringComparison.OrdinalIgnoreCase))
         {
             string productCode = args.Length > 1 ? args[1] : null;
-            return RunMsiexec(string.IsNullOrEmpty(productCode) ? null : "/x " + productCode + " /qb");
+            return RunMsiexec(string.IsNullOrEmpty(productCode) ? null : "/x " + productCode + " /qb" + LogArguments());
         }
 
         string blocker = FindBlockingProcess();
@@ -59,8 +59,16 @@ static class MsiSetup
             return ErrorUserExit;
         }
 
-        return RunMsiexec("/i \"" + msi + "\"");
+        return RunMsiexec("/i \"" + msi + "\"" + LogArguments());
     }
+
+    /// <summary>
+    /// msiexec writes a verbose log next to the bundle's own log. Without it a failed install is
+    /// just an exit code - why msiexec refused (version conflict, policy block, a failed condition)
+    /// only ever shows up here.
+    /// </summary>
+    static string LogArguments()
+        => " /l*v \"" + Path.Combine(Path.GetTempPath(), "ObjectARXWizards-msi.log") + "\"";
 
     static int RunMsiexec(string arguments)
     {

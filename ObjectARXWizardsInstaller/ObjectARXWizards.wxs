@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "26.2.0"?>
+	<?define ProductVersion = "26.2.1"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> for ObjectARX 2024-->
 	<?define UpgradeCode = "{02697296-654E-4100-9E4E-144B943DD625}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> for ObjectARX 2024-->
@@ -10,10 +10,11 @@
 	<!--<?define ProductCode= "{AB65E222-EAB0-494E-AC65-07BF30A915F3}"?>-->	
   <!--ProductCode for ObjectARX 2026-->
   <!--<?define ProductCode= "{2F8A7D4E-B3C6-4E91-A8F2-7D5E9C1A6B48}"?>-->
-  <!--ProductCode for 26.2.0: the props are now generated at install time instead of shipped.
-      Bumped because the UpgradeVersion range above is half-open on ProductVersion - reusing the
-      26.1.0 ProductCode would leave both products side by side.-->
-  <?define ProductCode= "{DD0065A3-CA33-4B0D-8A8B-CF5A485E889B}"?>  
+  <!--ProductCode for 26.2.1. ProductVersion and ProductCode have to move together: reusing this
+      code with a different version is rejected by msiexec with error 1638 ("another version of
+      this product is already installed"), and reusing it with the same version can only ever be
+      a repair of what is already there.-->
+  <?define ProductCode= "{16451720-69DC-4854-8D87-96453B4CE505}"?>  
   
 
   <Product

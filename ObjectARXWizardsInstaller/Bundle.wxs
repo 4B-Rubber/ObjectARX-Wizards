@@ -3,10 +3,10 @@
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
 
   <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
-       installed for the current user by install-vsix.cmd (which locates VSIXInstaller.exe).
-       The bundle is per-machine because the MSI is; the VSIX must not be, hence the .cmd hop. -->
+       installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
+       The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process. -->
   <Bundle Name="ObjectARX Multi-Year Wizards (2010-2027)"
-          Version="26.2.0"
+          Version="26.2.1"
           Manufacturer="Autodesk"
           UpgradeCode="{956924F4-FEFE-4815-B486-A219B4406CCB}">
 
@@ -31,7 +31,7 @@
                   Vital="yes"
                   Permanent="no"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi"'
-                  UninstallCommand='/uninstall {DD0065A3-CA33-4B0D-8A8B-CF5A485E889B}'>
+                  UninstallCommand='/uninstall {16451720-69DC-4854-8D87-96453B4CE505}'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 

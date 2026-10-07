@@ -97,22 +97,23 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 - 新增 **`InnoSetupInstaller/`**：`ObjectARXMultiYearWizards.iss`、payload、图标
 - 产物名 **`ObjectARXMultiYearWizardsSetup-Inno.exe`**，与 MSI/Burn 的 `...Setup.exe` 区分
-- 构建：`ISCC.exe InnoSetupInstaller\ObjectARXMultiYearWizards.iss`
+- 构建（ISCC 不在 PATH，写全路径）：`& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiYearWizards.iss`
 - 对比：`git diff --stat v0.1.1-msi v0.1.1-inno`，并实测体积 / 耗时 / 静默参数 / 卸载残留（两处 `Autodesk\` 目录 + 注册表三项）/ 企业分发
 
 ## 8. 未决与风险
 
 | # | 问题 | 现状 |
 |---|---|---|
-| R1 | 本机**未安装 Inno Setup**（ISCC 不在 PATH） | 开工前先装 Inno Setup 6 |
+| R1 | Inno Setup 本机已装两版：**7.0.2**（`C:\Program Files\Inno Setup 7\ISCC.exe`）与 **6.7.3**（`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`） | 都不在 PATH，脚本里写全路径；建议先定一版为准（6.7.3 资料多，7.0.2 更新） |
 | R2 | 生成器抽 EXE 还是各写一份 | 倾向抽 EXE（第 4 节） |
 | R3 | `VSIXInstaller` 返回码语义、失败是否回滚 | 参考 MSI：先检测 VS 是否在运行并中止 |
 | R4 | 代码签名 | 两版都没有，暂不在范围内 |
 
 ## 9. 落地顺序
 
-1. 装 Inno Setup 6（R1）
+1. 定下用哪一版 ISCC（R1）并写进构建命令
 2. 抽 `arx-genprops.exe`，用 `tools\arx-props\gen-arx-props.ps1` 的零 diff 基线做回归
 3. 写 `.iss` 骨架：装文件 -> 生成 props -> 写注册表 -> 装 VSIX
 4. 补年份页（16 个年份 + 四个预设按钮）、目录选择、路径修补、卸载清理
 5. 打 tag `v0.1.1-inno`，跑第 7 节对比
+

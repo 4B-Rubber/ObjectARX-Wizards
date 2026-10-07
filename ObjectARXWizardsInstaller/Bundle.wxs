@@ -16,8 +16,13 @@
     </BootstrapperApplicationRef>
 
     <Chain>
+      <!-- DisplayInternalUI: without it Burn runs the chain silently, so the MSI's own dialog
+           chain (welcome, year selection, props folder) never appears and the install silently
+           falls back to the default years. The standard bootstrapper has no page of its own for
+           those choices, so it has to hand over to the MSI UI. -->
       <MsiPackage Id="ArxWizardsMsi"
                   SourceFile="bin\Release\ObjectARXWizard.msi"
+                  DisplayInternalUI="yes"
                   Vital="yes" />
 
       <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.

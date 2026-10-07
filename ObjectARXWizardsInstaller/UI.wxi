@@ -517,22 +517,22 @@
 				<Publish Property="YEAR_2026" Value="1">1</Publish>
 				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" />
-			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" />
-			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="214" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" />
-			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="232" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" />
-			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="250" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" />
-			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="268" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" />
-			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="286" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" />
-			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="304" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" />
-			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="178" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" />
-			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="196" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" />
-			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="214" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" />
-			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="232" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" />
-			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="250" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" />
-			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="268" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" />
-			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="286" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" />
-			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="304" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" />
+			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="214" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="232" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="250" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="268" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="286" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="304" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="178" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="196" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="214" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="232" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="250" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="268" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="286" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="304" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
 			<Control Id="PropsDirLabel" Type="Text" X="18" Y="326" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Property sheet folder (shared with the VS wizard):" TabSkip="no" />
 			<Control Id="PropsDirEdit" Type="PathEdit" X="18" Y="338" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
 			<Control Id="BrowsePropsDir" Type="PushButton" X="275" Y="338" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Bro&amp;wse..." TabSkip="no">

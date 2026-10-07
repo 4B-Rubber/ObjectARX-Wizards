@@ -8,7 +8,7 @@
   <Bundle Name="ObjectARX Multi-Year Wizards (2010-2027)"
           Version="0.1.1"
           Manufacturer="Autodesk"
-          UpgradeCode="{956924F4-FEFE-4815-B486-A219B4406CCB}">
+          UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
     <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense">
       <bal:WixStandardBootstrapperApplication LicenseUrl="http://www.autodesk.com/developautocad"

@@ -73,6 +73,8 @@
 	<CustomAction Id="CA_SetAllArxYears" BinaryKey="ID_CABinary" DllEntry="SetAllArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_ClearArxYears" BinaryKey="ID_CABinary" DllEntry="ClearArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_InvertArxYears" BinaryKey="ID_CABinary" DllEntry="InvertArxYears" Execute="immediate" Return="check" />
+	<!-- MaintenanceForm "change the target years and reinstall". Also DoAction-only. -->
+	<CustomAction Id="CA_TickDetectedArxYears" BinaryKey="ID_CABinary" DllEntry="TickDetectedArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_CREATEARXPROPS" BinaryKey="ID_CABinary" DllEntry="CreateArxProps" Execute="deferred" Impersonate="no" Return="ignore" />
 	<CustomAction Id="CA_CLEANUPUNSELECTEDARXPROPS" BinaryKey="ID_CABinary" DllEntry="CleanupUnselectedArxProps" Execute="deferred" Impersonate="no" Return="ignore" />
 	<CustomAction Id="CA_REMOVEARXPROPS" BinaryKey="ID_CABinary" DllEntry="RemoveArxProps" Execute="deferred" Impersonate="no" Return="ignore" />

@@ -218,6 +218,10 @@ namespace ArxWizCustomAction
     {
         const string PropsDirDefault = @"C:\Program Files\Autodesk\ObjectARX Props";
 
+        /// <summary>Years a first install ticks, and the fallback when nothing can be detected.</summary>
+        static readonly string[] DefaultYears =
+            { "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027" };
+
         const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
         const string ResNetFx   = "ArxWizCustomAction.ArxProps.props-net-fx-template.props";
@@ -246,7 +250,7 @@ namespace ArxWizCustomAction
                     Log(session, "DefaultArxYears: explicit selection, leaving it alone");
                     return ActionResult.Success;
                 }
-                foreach (var year in new[] { "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027" })
+                foreach (var year in DefaultYears)
                     session["YEAR_" + year] = "1";
                 Log(session, "DefaultArxYears: first install, ticked 2018-2027");
                 return ActionResult.Success;
@@ -254,6 +258,42 @@ namespace ArxWizCustomAction
             catch (Exception ex)
             {
                 Log(session, "DefaultArxYears failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>
+        /// Backs MaintenanceForm's "change the target years" option. That path reaches SdkForm
+        /// without passing ObjectARXForm, so the year auto-tick never ran and every box would start
+        /// empty - and confirming an empty selection deletes the props of every year. Seed the boxes
+        /// with the years whose props were detected, or the first-install default when there are none.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult TickDetectedArxYears(Session session)
+        {
+            try
+            {
+                var table = PropsTable.Load();
+                bool any = false;
+                foreach (var entry in table.Years)
+                {
+                    if (string.IsNullOrEmpty(session["DET_YEAR_" + entry.Year])) continue;
+                    session["YEAR_" + entry.Year] = "1";
+                    any = true;
+                }
+                if (any)
+                {
+                    Log(session, "TickDetectedArxYears: ticked the years already on disk");
+                    return ActionResult.Success;
+                }
+                foreach (var year in DefaultYears)
+                    session["YEAR_" + year] = "1";
+                Log(session, "TickDetectedArxYears: nothing detected, ticked the 2018-2027 default");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "TickDetectedArxYears failed: " + ex);
                 return ActionResult.Success;
             }
         }

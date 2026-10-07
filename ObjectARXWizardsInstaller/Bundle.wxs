@@ -16,14 +16,24 @@
     </BootstrapperApplicationRef>
 
     <Chain>
-      <!-- DisplayInternalUI: without it Burn runs the chain silently, so the MSI's own dialog
-           chain (welcome, year selection, props folder) never appears and the install silently
-           falls back to the default years. The standard bootstrapper has no page of its own for
-           those choices, so it has to hand over to the MSI UI. -->
-      <MsiPackage Id="ArxWizardsMsi"
-                  SourceFile="bin\Release\ObjectARXWizard.msi"
-                  DisplayInternalUI="yes"
-                  Vital="yes" />
+      <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
+           ProductCode is already on the machine, so once the product was installed a repeat run
+           executed nothing at all - the MSI's own dialogs never appeared and the target years
+           could not be changed. The launcher always calls msiexec, which then shows the year
+           wizard on a first install and the maintenance page (repair / change years / remove)
+           afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
+           step below cannot leave the install half done.
+           The uninstall command's ProductCode is the one defined in ObjectARXWizards.wxs; it has
+           to be repeated here because the bundle project cannot see that file's defines. -->
+      <ExePackage Id="ArxWizardsMsi"
+                  SourceFile="Bundle\ArxWizardsMsiSetup.exe"
+                  DetectCondition="false"
+                  Vital="yes"
+                  Permanent="no"
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi"'
+                  UninstallCommand='/uninstall {DD0065A3-CA33-4B0D-8A8B-CF5A485E889B}'>
+        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+      </ExePackage>
 
       <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.
            The launcher must build an executable, which is why Burn cannot just call cmd.exe here. -->

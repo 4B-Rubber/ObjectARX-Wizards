@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "26.2.1"?>
+	<?define ProductVersion = "26.2.2"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> for ObjectARX 2024-->
 	<?define UpgradeCode = "{02697296-654E-4100-9E4E-144B943DD625}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> for ObjectARX 2024-->
@@ -10,11 +10,12 @@
 	<!--<?define ProductCode= "{AB65E222-EAB0-494E-AC65-07BF30A915F3}"?>-->	
   <!--ProductCode for ObjectARX 2026-->
   <!--<?define ProductCode= "{2F8A7D4E-B3C6-4E91-A8F2-7D5E9C1A6B48}"?>-->
-  <!--ProductCode for 26.2.1. ProductVersion and ProductCode have to move together: reusing this
-      code with a different version is rejected by msiexec with error 1638 ("another version of
-      this product is already installed"), and reusing it with the same version can only ever be
-      a repair of what is already there.-->
-  <?define ProductCode= "{16451720-69DC-4854-8D87-96453B4CE505}"?>  
+  <!--ProductCode for 26.2.2. ProductVersion and ProductCode have to move together, and both have
+      to move for every build that is meant to go on top of an existing install: reusing this code
+      with a different version is rejected by msiexec with error 1638 ("another version of this
+      product is already installed"), and reusing it with the same version can only ever be a
+      repair of the package that is already there.-->
+  <?define ProductCode= "{156D4FDB-8FD8-4E4E-ABE0-5BF1D0CCF6B5}"?>  
   
 
   <Product

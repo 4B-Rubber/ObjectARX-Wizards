@@ -45,6 +45,22 @@
 	<SYMBOL NAME='DOTNET_MODULE' TYPE="checkbox" VALUE="false"></SYMBOL>
 	<SYMBOL NAME='DOTNET_ACA' TYPE="checkbox" VALUE="false"></SYMBOL>
 	<SYMBOL NAME='DOTNET_MEP' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<!-- Target years (multi-version configurations YYYY/YYYYd) -->
+	<SYMBOL NAME='TGT_2010' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2012' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2014' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2015' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2016' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2018' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2019' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2020' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2021' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2022' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2023' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2024' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2025' TYPE="checkbox" VALUE="false"></SYMBOL>
+	<SYMBOL NAME='TGT_2026' TYPE="checkbox" VALUE="true"></SYMBOL>
+	<SYMBOL NAME='TGT_2027' TYPE="checkbox" VALUE="true"></SYMBOL>
 </HEAD>
 
 <BODY BGCOLOR="buttonface" TOPMARGIN="0" LEFTMARGIN="0" RIGHTMARGIN="0" BOTTOMMARGIN="0"
@@ -174,6 +190,22 @@
 												onClick="DisplayAboutBox(false);Next(document, 'AppType.htm');"
 												TABINDEX="1">
 												Application Type</SPAN>
+										</TD>
+										<TD WIDTH="4">
+											<IMG SRC="../../Images/spacer.gif" HEIGHT="1" WIDTH="4">
+										</TD>
+									</TR>
+								</TABLE>
+							</DIV>
+							<DIV CLASS="LINK">
+								<TABLE WIDTH="166" HEIGHT="28" BORDER="0" CELLPADDING="0" CELLSPACING="0"
+									CLASS="LINKTEXT">
+									<TR VALIGN="center">
+										<TD WIDTH="162">
+											<SPAN CLASS="ACTIVELINK" ID="Version"
+												onClick="DisplayAboutBox(false);Next(document, 'Version.htm');"
+												TABINDEX="1">
+												Target Versions</SPAN>
 										</TD>
 										<TD WIDTH="4">
 											<IMG SRC="../../Images/spacer.gif" HEIGHT="1" WIDTH="4">
@@ -355,6 +387,9 @@
 													<LI CLASS="LIST">
 														<SPAN ID="APPTYPE"><LABEL FOR="APPTYPE"></LABEL></SPAN>
 													<LI CLASS="LIST">
+														<SPAN ID="TARGETVERSIONS"><LABEL
+																FOR="TARGETVERSIONS"></LABEL></SPAN>
+													<LI CLASS="LIST">
 														<SPAN ID="MFCSUPPORT"><LABEL FOR="MFCSUPPORT"></LABEL></SPAN>
 													<LI CLASS="LIST">
 														<SPAN ID="COMSERVER"><LABEL FOR="COMSERVER"></LABEL></SPAN>
@@ -487,9 +522,10 @@
 		var tab_array = new Array();
 		tab_array[0] = Default;
 		tab_array[1] = AppType;
-		tab_array[2] = MFC;
-		tab_array[3] = COM;
-		tab_array[4] = dotNET;
+		tab_array[2] = Version;
+		tab_array[3] = MFC;
+		tab_array[4] = COM;
+		tab_array[5] = dotNET;
 
 		function InitDocument(document) {
 			// From now on we allways default to unicode
@@ -529,6 +565,13 @@
 				APPTYPE.innerText = "Pure ObjectDBX Application";
 			else if (window.external.FindSymbol("APP_CRX_TYPE"))
 				APPTYPE.innerText = "AutoCAD Console Application";
+			//- Target versions
+			var strYears = "";
+			for (var i = g_ArxVersions.length - 1; i >= 0; i--) {
+				if (window.external.FindSymbol("TGT_" + g_ArxVersions[i].year))
+					strYears += (strYears.length ? ", " : "") + g_ArxVersions[i].year;
+			}
+			TARGETVERSIONS.innerText = "Target versions: " + (strYears.length ? strYears : "(none selected)");
 			//- MFC Support
 			if (window.external.FindSymbol("NO_MFC")) {
 				MFCSUPPORT.innerText = "No MFC Support";

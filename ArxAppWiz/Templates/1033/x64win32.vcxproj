@@ -2,66 +2,75 @@
 <Project DefaultTargets="Build" ToolsVersion="Current"
   xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
+[!output ARX_CONFIG_XML]  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ArxAppType>[!output PRJ_TYPE_APP]</ArxAppType>
     <RDS>[!output RDS_SYMB]</RDS>
+    <ProjectGuid>{[!output PROJECT_GUID]}</ProjectGuid>
+    <!--For Visual Studio 2019 and newer, you can specify the most recent Windows 10 SDK by using a value of 10.0-->
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <!-- Extract the target year (e.g. 2026) and the debug suffix from configurations like "2026d" -->
+  <PropertyGroup>
+    <ArxYear Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', '([!output ARX_YEAR_REGEX])').Value)</ArxYear>
+    <ConfigSuffix Condition="'$(Configuration)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(Configuration)', 'd$').Value)</ConfigSuffix>
+    <IsDebug Condition="'$(ConfigSuffix)' == 'd'">true</IsDebug>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <CLRSupport>[!output ARX_CLR_SUPPORT]</CLRSupport>
+    [!output ARX_CLR_XML]
     <UseOfMfc>[!output ARX_MFC_SUPPORT]</UseOfMfc>
     <!-- <UseOfAtl>[!output ARX_ATL_SUPPORT]</UseOfAtl> -->
-    <PlatformToolset>v143</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <WholeProgramOptimization>false</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+[!output ARX_TOOLSET_XML]  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <UseDebugLibraries Condition="'$(IsDebug)' == 'true'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(IsDebug)' != 'true'">false</UseDebugLibraries>
+    <WholeProgramOptimization Condition="'$(IsDebug)' != 'true'">true</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="'$(IsDebug)' == 'true'">false</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup Label="Globals">
-    <TargetName Condition="'$(RDS)'!=''">$(RDS)$(ProjectName)</TargetName>
-    <ProjectGuid>{F87873B0-2B5D-4D52-8FD5-BE1CDC50B2E3}</ProjectGuid>
-    <!--For Visual Studio 2019, you can specify the most recent version of the Windows 10 SDK by using a value of 10.0-->
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Autodesk.arx-2026.props" />
+    <Import Condition="'$(ArxYear)' != ''" Project="[!output ARX_PROPS_DIR]Autodesk.arx-$(ArxYear).props" />
   </ImportGroup>
-  <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="'$(ArxSDKPlatform)'=='v143'">v143</PlatformToolset>
+  <PropertyGroup Condition="'$(ArxYear)' != ''">
+    <TargetName Condition="'$(RDS)' != ''">$(RDS)$(ProjectName)$(ArxYear)</TargetName>
+    <TargetName Condition="'$(RDS)' == ''">$(ProjectName)$(ArxYear)</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseOfMfc)'=='Dynamic'">_AFXEXT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <!-- Added to avoid Narrow conversion warnings introduced in VS2015 /Wv:xx[.yy[.zzzzz],  is CL version -->
       <AdditionalOptions>/Wv:17.00.61030 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
     </Link>
+    <Midl>
+      <!-- The .rc references $(RDS)$(ProjectName).tlb from $(IntDir); keep the year suffix off the tlb name -->
+      <TypeLibraryName>$(IntDir)$(RDS)$(ProjectName).tlb</TypeLibraryName>
+    </Midl>
   </ItemDefinitionGroup>
+  [!if DOTNET_MODULE]
+  <!-- .NET Framework mixed modules (up to 2024): the Autodesk net props do not
+       reference System.Core, required by mgdinterop.h (System.Dynamic). -->
+  <ItemGroup Condition="[!output ARX_NETFW_CONDITION]">
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  [!endif]
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

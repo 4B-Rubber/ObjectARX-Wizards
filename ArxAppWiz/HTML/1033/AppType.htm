@@ -141,6 +141,20 @@
 								<TABLE class="LINKTEXT" height="28" cellSpacing="0" cellPadding="0" width="166">
 									<TR vAlign="center">
 										<TD width="162">
+											<SPAN class="ACTIVELINK" ID="Version" title=""
+												onclick="Next(document, 'Version.htm');" tabIndex="1">Target
+												Versions</SPAN>
+										</TD>
+										<TD width="4">
+											<IMG height="1" src="../../Images/spacer.gif" width="4">
+										</TD>
+									</TR>
+								</TABLE>
+							</DIV>
+							<DIV class="LINK">
+								<TABLE class="LINKTEXT" height="28" cellSpacing="0" cellPadding="0" width="166">
+									<TR vAlign="center">
+										<TD width="162">
 											<SPAN class="ACTIVELINK" id="MFC" title=""
 												onclick="Next(document, 'MFC.htm');" tabIndex="1">MFC
 												Support</SPAN>
@@ -370,9 +384,10 @@
 		var tab_array = new Array();
 		tab_array[0] = Default;
 		tab_array[1] = AppType;
-		tab_array[2] = MFC;
-		tab_array[3] = COM;
-		tab_array[4] = dotNET;
+		tab_array[2] = Version;
+		tab_array[3] = MFC;
+		tab_array[4] = COM;
+		tab_array[5] = dotNET;
 
 		function InitDocument(document) {
 			setDirection();

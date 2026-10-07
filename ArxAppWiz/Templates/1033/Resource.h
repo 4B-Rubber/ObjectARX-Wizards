@@ -4,7 +4,7 @@
 //
 #define IDS_PROJNAME 100
 [!if ATL_COM_SERVER]
-#define IDR_ [!output UPPER_CASE_SAFE_PROJECT_NAME] 101
+#define IDR_[!output UPPER_CASE_SAFE_PROJECT_NAME] 101
     [!endif]
 
 // Next default values for new objects

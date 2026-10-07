@@ -37,18 +37,21 @@ function OnFinish(selProj, selObj) {
       if (bArxAppType) wizard.AddSymbol("PRJ_TYPE_APP", "arxnet");
       else if (bDbxAppType) wizard.AddSymbol("PRJ_TYPE_APP", "dbxnet");
       else wizard.AddSymbol("PRJ_TYPE_APP", "crxnet");
-      wizard.AddSymbol("ARX_CLR_SUPPORT", "NetCore");
     } else {
       if (bArxAppType) wizard.AddSymbol("PRJ_TYPE_APP", "arx");
       else if (bDbxAppType) wizard.AddSymbol("PRJ_TYPE_APP", "dbx");
       else wizard.AddSymbol("PRJ_TYPE_APP", "crx");
-      wizard.AddSymbol("ARX_CLR_SUPPORT", "false");
     }
-    //TOCHANGE Must change for every release.
-    CopyPropsFile("Autodesk.arx-2026.props", strProjectName);
-    CopyPropsFile("Autodesk.arx-2026-net.props", strProjectName);
-    //TOCHANGE
-    CopyPropsFile("crx.props", strProjectName);
+
+    //- Multi-year configurations: fills ARX_CONFIG_XML, ARX_YEAR_REGEX,
+    //- ARX_TOOLSET_XML, ARX_CLR_XML (see ArxWizCommon/arxCommon.js).
+    //- The ObjectARX property sheets are consumed from the global folder
+    //- C:\Program Files\Autodesk\ObjectARX Props, nothing is copied into
+    //- the project directory anymore.
+    ArxSetupVersionSymbols(wizard, bDotNetModule ? true : false);
+
+    //- Unique project GUID (the old template hardcoded a single GUID)
+    wizard.AddSymbol("PROJECT_GUID", wizard.FormatGuid(wizard.CreateGuid(), 0));
 
     //selProj =CreateProject (strProjectName, strProjectPath) ; //- Use the default Win32 only project template from Visual Studio
     var strProjTemplate = RenderPrjToTemporaryFile();
@@ -140,12 +143,4 @@ function RenderPrjToTemporaryFile() {
   oStream.Write(strTempFileContents);
   oStream.Close();
   return strTempFile;
-}
-
-//-----------------------------------------------------------------------------
-function CopyPropsFile(strName, strProjectName) {
-  var strTemplatePath = wizard.FindSymbol("TEMPLATES_PATH");
-  var strTarget = GetTargetName(strName, strProjectName);
-  var strTemplate = strTemplatePath + "\\" + strName;
-  wizard.RenderTemplate(strTemplate, strTarget, true, false);
 }

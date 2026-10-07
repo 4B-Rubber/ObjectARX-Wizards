@@ -72,12 +72,11 @@
 	<!-- First install only: ticks DefaultYears (2020/2024/2026/2027), so an upgrade keeps exactly the
 	     previous selection. -->
 	<CustomAction Id="CA_DefaultArxYears" BinaryKey="ID_CABinary" DllEntry="DefaultArxYears" Execute="immediate" Return="check" />
-	<!-- SdkForm All / None / Invert / Binary compat. Invoked with DoAction, so they need no sequence
-	     entry. -->
-	<CustomAction Id="CA_SetAllArxYears" BinaryKey="ID_CABinary" DllEntry="SetAllArxYears" Execute="immediate" Return="check" />
-	<CustomAction Id="CA_ClearArxYears" BinaryKey="ID_CABinary" DllEntry="ClearArxYears" Execute="immediate" Return="check" />
-	<CustomAction Id="CA_InvertArxYears" BinaryKey="ID_CABinary" DllEntry="InvertArxYears" Execute="immediate" Return="check" />
-	<CustomAction Id="CA_SetBinaryCompatibleArxYears" BinaryKey="ID_CABinary" DllEntry="SetBinaryCompatibleArxYears" Execute="immediate" Return="check" />
+	<!-- SdkForm's All / None / Invert / Compatible and its year check boxes are pure declarative
+	     publishes: a custom action that rewrote YEAR_* could not repaint the check boxes, which is
+	     what made those buttons look dead. BuildYearsSummary runs from SdkForm's Next, before
+	     YearSummaryForm re-reads the selection. -->
+	<CustomAction Id="CA_BuildYearsSummary" BinaryKey="ID_CABinary" DllEntry="BuildYearsSummary" Execute="immediate" Return="check" />
 	<!-- MaintenanceForm "change the target years and reinstall". Also DoAction-only. -->
 	<CustomAction Id="CA_TickDetectedArxYears" BinaryKey="ID_CABinary" DllEntry="TickDetectedArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_CREATEARXPROPS" BinaryKey="ID_CABinary" DllEntry="CreateArxProps" Execute="deferred" Impersonate="no" Return="ignore" />

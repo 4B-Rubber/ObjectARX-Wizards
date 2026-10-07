@@ -9,8 +9,8 @@
     <Property Id="ObjectARXForm_PrevArgs" Value="WelcomeForm" />
     <Property Id="ObjectARXForm_NextArgs" Value="SdkForm" />
     <Property Id="SdkForm_PrevArgs" Value="ObjectARXForm" />
-    <Property Id="SdkForm_NextArgs" Value="ConfirmInstallForm" />
-    <Property Id="ConfirmInstallForm_PrevArgs" Value="SdkForm" />
+    <Property Id="SdkForm_NextArgs" Value="YearSummaryForm" />
+    <Property Id="ConfirmInstallForm_PrevArgs" Value="YearSummaryForm" />
     <Property Id="MaintenanceForm_Action" Value="Repair" />
     <Property Id="AdminMaintenanceForm_Action" Value="Repair" />
 

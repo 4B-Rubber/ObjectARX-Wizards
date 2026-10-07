@@ -221,15 +221,6 @@ namespace ArxWizCustomAction
         /// <summary>Years a first install ticks, and the fallback when nothing can be detected.</summary>
         static readonly string[] DefaultYears = { "2020", "2024", "2026", "2027" };
 
-        /// <summary>
-        /// The "Binary compat" button: the newest year of each binary-compatible generation. A project
-        /// built against one of these also loads into the other AutoCAD releases that share its SDK
-        /// major version, which is why the older year of a generation is left out - 2017 for 2018, for
-        /// instance, or 2013/2015/2019/2021-2023/2025 for the generations below.
-        /// </summary>
-        static readonly string[] BinaryCompatibleYears =
-            { "2014", "2016", "2018", "2020", "2024", "2026", "2027" };
-
         const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
         const string ResNetFx   = "ArxWizCustomAction.ArxProps.props-net-fx-template.props";
@@ -307,52 +298,31 @@ namespace ArxWizCustomAction
         }
 
         /// <summary>
-        /// Backs the SdkForm All / None / Invert buttons. The first two could be done with declarative
-        /// Publish elements, but inverting a property's value cannot be expressed as an MSI condition,
-        /// so all three live here. They also fill ARX_YEARS_SUMMARY, which is the only way the result
-        /// can be shown: MSI reads a check box's property when its dialog is created, and the CheckBox
-        /// table allows one check box per property, so the year list cannot be repainted in place.
+        /// Fills ARX_YEARS_SUMMARY from the current ticks. SdkForm's Next runs this before showing
+        /// YearSummaryForm, which is the only page that can re-read the properties: MSI binds a check
+        /// box to its property when the dialog is created and never re-reads it in place, so the
+        /// selection has to be reported as text somewhere else.
+        ///
+        /// An empty YEAR_* means "not ticked" - MSI clears a check box's property when the box is
+        /// cleared, and only "1" counts as ticked, here and in the props generator.
         /// </summary>
         [CustomAction]
-        public static ActionResult SetAllArxYears(Session session) { return SetYears(session, y => "1"); }
-
-        [CustomAction]
-        public static ActionResult ClearArxYears(Session session) { return SetYears(session, y => "0"); }
-
-        [CustomAction]
-        public static ActionResult InvertArxYears(Session session)
-        {
-            return SetYears(session, y => session["YEAR_" + y] == "1" ? "0" : "1");
-        }
-
-        /// <summary>Backs the SdkForm "Binary compat" button: tick one year per SDK generation.</summary>
-        [CustomAction]
-        public static ActionResult SetBinaryCompatibleArxYears(Session session)
-        {
-            return SetYears(session, y => Array.IndexOf(BinaryCompatibleYears, y) >= 0 ? "1" : "0");
-        }
-
-        static ActionResult SetYears(Session session, Func<string, string> value)
+        public static ActionResult BuildYearsSummary(Session session)
         {
             try
             {
-                var years = new List<YearEntry>(PropsTable.Load().Years);
                 var ticked = new List<string>();
-                foreach (var entry in years)
-                {
-                    string state = value(entry.Year);
-                    session["YEAR_" + entry.Year] = state;
-                    if (state == "1") ticked.Add(entry.Year);
-                }
+                foreach (var entry in PropsTable.Load().Years)
+                    if (session["YEAR_" + entry.Year] == "1") ticked.Add(entry.Year);
                 session["ARX_YEARS_SUMMARY"] = ticked.Count == 0
                     ? "None. No property sheet is generated, and any generated earlier is removed."
                     : string.Join(", ", ticked.ToArray());
-                Log(session, "SetYears: applied to " + years.Count + " years, " + ticked.Count + " ticked");
+                Log(session, "BuildYearsSummary: " + ticked.Count + " ticked");
                 return ActionResult.Success;
             }
             catch (Exception ex)
             {
-                Log(session, "SetYears failed: " + ex);
+                Log(session, "BuildYearsSummary failed: " + ex);
                 return ActionResult.Success;
             }
         }

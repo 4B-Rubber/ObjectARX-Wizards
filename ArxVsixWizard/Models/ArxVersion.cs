@@ -76,9 +76,10 @@ namespace ArxVsixWizard.Models
         };
 
         // 预勾选年份：仅在本机确实装了该年份的 props 时才生效（见 WizardDialog）。
+        // 一个二进制兼容代系勾最新那一年就够——同 SDK 主版本的其它年份共用同一套 props。
         public static readonly HashSet<string> DefaultYears = new HashSet<string>
         {
-            "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"
+            "2020", "2024", "2026", "2027"
         };
 
         /// <summary>某年份 props 的完整路径。</summary>

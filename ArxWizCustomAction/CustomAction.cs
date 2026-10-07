@@ -218,6 +218,9 @@ namespace ArxWizCustomAction
     {
         const string PropsDirDefault = @"C:\Program Files\Autodesk\ObjectARX Props";
 
+        /// <summary>Years a first install ticks, and the fallback when nothing can be detected.</summary>
+        static readonly string[] DefaultYears = { "2020", "2024", "2026", "2027" };
+
         const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
         const string ResNetFx   = "ArxWizCustomAction.ArxProps.props-net-fx-template.props";
@@ -226,7 +229,7 @@ namespace ArxWizCustomAction
         static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
 
         /// <summary>
-        /// First install only: tick 2018-2027. On an upgrade (PREV_PROPSDIR is set) the previous
+        /// First install only: tick DefaultYears. On an upgrade (PREV_PROPSDIR is set) the previous
         /// selection is restored by the year detection in the UI instead, so nothing gets unioned in.
         /// A selection passed on the command line also wins.
         /// </summary>
@@ -246,9 +249,9 @@ namespace ArxWizCustomAction
                     Log(session, "DefaultArxYears: explicit selection, leaving it alone");
                     return ActionResult.Success;
                 }
-                foreach (var year in new[] { "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027" })
+                foreach (var year in DefaultYears)
                     session["YEAR_" + year] = "1";
-                Log(session, "DefaultArxYears: first install, ticked 2018-2027");
+                Log(session, "DefaultArxYears: first install, ticked the default years");
                 return ActionResult.Success;
             }
             catch (Exception ex)
@@ -259,34 +262,67 @@ namespace ArxWizCustomAction
         }
 
         /// <summary>
-        /// Backs the SdkForm All / None / Invert buttons. The first two could be done with declarative
-        /// Publish elements, but inverting a property's value cannot be expressed as an MSI condition,
-        /// so all three live here. The dialog re-enters itself so the check boxes pick the new values up.
+        /// Backs MaintenanceForm's "change the target years" option. That path reaches SdkForm
+        /// without passing ObjectARXForm, so the year auto-tick never ran and every box would start
+        /// empty - and confirming an empty selection deletes the props of every year. Seed the boxes
+        /// with the years whose props were detected, or the first-install default when there are none.
         /// </summary>
         [CustomAction]
-        public static ActionResult SetAllArxYears(Session session) { return SetYears(session, y => "1"); }
-
-        [CustomAction]
-        public static ActionResult ClearArxYears(Session session) { return SetYears(session, y => "0"); }
-
-        [CustomAction]
-        public static ActionResult InvertArxYears(Session session)
-        {
-            return SetYears(session, y => session["YEAR_" + y] == "1" ? "0" : "1");
-        }
-
-        static ActionResult SetYears(Session session, Func<string, string> value)
+        public static ActionResult TickDetectedArxYears(Session session)
         {
             try
             {
-                var years = new List<YearEntry>(PropsTable.Load().Years);
-                foreach (var entry in years) session["YEAR_" + entry.Year] = value(entry.Year);
-                Log(session, "SetYears: applied to " + years.Count + " years");
+                var table = PropsTable.Load();
+                bool any = false;
+                foreach (var entry in table.Years)
+                {
+                    if (string.IsNullOrEmpty(session["DET_YEAR_" + entry.Year])) continue;
+                    session["YEAR_" + entry.Year] = "1";
+                    any = true;
+                }
+                if (any)
+                {
+                    Log(session, "TickDetectedArxYears: ticked the years already on disk");
+                    return ActionResult.Success;
+                }
+                foreach (var year in DefaultYears)
+                    session["YEAR_" + year] = "1";
+                Log(session, "TickDetectedArxYears: nothing detected, ticked the default years");
                 return ActionResult.Success;
             }
             catch (Exception ex)
             {
-                Log(session, "SetYears failed: " + ex);
+                Log(session, "TickDetectedArxYears failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>
+        /// Fills ARX_YEARS_SUMMARY from the current ticks. SdkForm's Next runs this before showing
+        /// YearSummaryForm, which is the only page that can re-read the properties: MSI binds a check
+        /// box to its property when the dialog is created and never re-reads it in place, so the
+        /// selection has to be reported as text somewhere else.
+        ///
+        /// An empty YEAR_* means "not ticked" - MSI clears a check box's property when the box is
+        /// cleared, and only "1" counts as ticked, here and in the props generator.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult BuildYearsSummary(Session session)
+        {
+            try
+            {
+                var ticked = new List<string>();
+                foreach (var entry in PropsTable.Load().Years)
+                    if (session["YEAR_" + entry.Year] == "1") ticked.Add(entry.Year);
+                session["ARX_YEARS_SUMMARY"] = ticked.Count == 0
+                    ? "None. No property sheet is generated, and any generated earlier is removed."
+                    : string.Join(", ", ticked.ToArray());
+                Log(session, "BuildYearsSummary: " + ticked.Count + " ticked");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "BuildYearsSummary failed: " + ex);
                 return ActionResult.Success;
             }
         }

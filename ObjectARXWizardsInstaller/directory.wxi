@@ -568,6 +568,10 @@
 				     the VSIX wizard and the legacy HTML wizard read this value to stay in sync. -->
 				<Component Id="C_ARXPROPS_REG" Guid="{46B9D471-5B72-4428-A7A1-2C5D927E3A29}" Win64="yes">
 					<RegistryValue Id="RV_ARXPROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="string" Value="[ARXPROPSDIR]" KeyPath="yes" />
+					<!-- Remembered so the next install pre-fills the dialog instead of resetting to the
+					     shipped default (read back by ARXROOT_PROBE / ACADROOT_PROBE). -->
+					<RegistryValue Id="RV_ARXROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="ArxRoot" Type="string" Value="[ARXROOT]" />
+					<RegistryValue Id="RV_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="string" Value="[ACADROOT]" />
 				</Component>
 			</Directory>
 		</Directory>

@@ -3,10 +3,10 @@
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
 
   <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
-       installed for the current user by install-vsix.cmd (which locates VSIXInstaller.exe).
-       The bundle is per-machine because the MSI is; the VSIX must not be, hence the .cmd hop. -->
+       installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
+       The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process. -->
   <Bundle Name="ObjectARX Multi-Year Wizards (2010-2027)"
-          Version="26.2.0"
+          Version="0.1.1"
           Manufacturer="Autodesk"
           UpgradeCode="{956924F4-FEFE-4815-B486-A219B4406CCB}">
 
@@ -16,9 +16,24 @@
     </BootstrapperApplicationRef>
 
     <Chain>
-      <MsiPackage Id="ArxWizardsMsi"
-                  SourceFile="bin\Release\ObjectARXWizard.msi"
-                  Vital="yes" />
+      <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
+           ProductCode is already on the machine, so once the product was installed a repeat run
+           executed nothing at all - the MSI's own dialogs never appeared and the target years
+           could not be changed. The launcher always calls msiexec, which then shows the year
+           wizard on a first install and the maintenance page (repair / change years / remove)
+           afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
+           step below cannot leave the install half done.
+           The uninstall command's ProductCode is the one defined in ObjectARXWizards.wxs; it has
+           to be repeated here because the bundle project cannot see that file's defines. -->
+      <ExePackage Id="ArxWizardsMsi"
+                  SourceFile="Bundle\ArxWizardsMsiSetup.exe"
+                  DetectCondition="false"
+                  Vital="yes"
+                  Permanent="no"
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi"'
+                  UninstallCommand='/uninstall {922142B3-22ED-4543-A8AB-E2AF5820105F}'>
+        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+      </ExePackage>
 
       <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.
            The launcher must build an executable, which is why Burn cannot just call cmd.exe here. -->

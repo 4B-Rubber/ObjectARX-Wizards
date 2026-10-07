@@ -52,17 +52,26 @@
 
 		<RadioButtonGroup Property="MaintenanceForm_Action">
 			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Repair [ProductName]" Value="Repair" Width="348" X="0" Y="0" />
-			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}Re&amp;move [ProductName]" Value="Remove" Width="348" X="0" Y="18" />
+			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Change the target AutoCAD versions and reinstall" Value="Change" Width="348" X="0" Y="18" />
+			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}Re&amp;move [ProductName]" Value="Remove" Width="348" X="0" Y="36" />
 		</RadioButtonGroup>
 		<Dialog Id="MaintenanceForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Finish" TabSkip="no" Default="yes">
-				<Publish Property="REINSTALL" Value="ALL"><![CDATA[MaintenanceForm_Action="Repair"]]></Publish>
-				<Publish Event="Reinstall" Value="ALL"><![CDATA[MaintenanceForm_Action="Repair"]]></Publish>
+				<!-- Repair reinstalls with the years already on disk; Change routes through SdkForm
+				     first so a different set can be ticked. Both are a full REINSTALL. -->
+				<Publish Property="REINSTALL" Value="ALL"><![CDATA[MaintenanceForm_Action<>"Remove"]]></Publish>
+				<Publish Event="Reinstall" Value="ALL"><![CDATA[MaintenanceForm_Action<>"Remove"]]></Publish>
 				<Publish Property="REMOVE" Value="ALL"><![CDATA[MaintenanceForm_Action="Remove"]]></Publish>
 				<Publish Event="Remove" Value="ALL"><![CDATA[MaintenanceForm_Action="Remove"]]></Publish>
-				<Publish Event="EndDialog" Value="Return">1</Publish>
+				<!-- SdkForm's check boxes start empty on this path (the year auto-tick lives on
+				     ObjectARXForm's Next button, which maintenance mode never shows), so seed them
+				     and make Back return here. -->
+				<Publish Property="SdkForm_PrevArgs" Value="MaintenanceForm"><![CDATA[MaintenanceForm_Action="Change"]]></Publish>
+				<Publish Event="DoAction" Value="CA_TickDetectedArxYears"><![CDATA[MaintenanceForm_Action="Change"]]></Publish>
+				<Publish Event="NewDialog" Value="SdkForm"><![CDATA[MaintenanceForm_Action="Change"]]></Publish>
+				<Publish Event="EndDialog" Value="Return"><![CDATA[MaintenanceForm_Action<>"Change"]]></Publish>
 			</Control>
-			<Control Id="RepairRadioGroup" Type="RadioButtonGroup" X="18" Y="108" Width="348" Height="48" Property="MaintenanceForm_Action" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiRadioButtonGroup" TabSkip="no" />
+			<Control Id="RepairRadioGroup" Type="RadioButtonGroup" X="18" Y="108" Width="348" Height="54" Property="MaintenanceForm_Action" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiRadioButtonGroup" TabSkip="no" />
 			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
@@ -71,9 +80,9 @@
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Welcome to the [ProductName] Setup Wizard" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}Select whether you want to repair or remove [ProductName]." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}Select whether you want to repair [ProductName], change the target AutoCAD versions and reinstall, or remove it." TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
-			
+		
 		<Dialog Id="FinishedForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Close" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
@@ -354,8 +363,16 @@
 
 	<!-- SDK roots + which AutoCAD years to generate. The props themselves are produced by the
 		     ArxProps custom actions after InstallFiles, so nothing here is MSI payload. -->
+		<!-- The bulk buttons set YEAR_* with declarative publishes, so they act on this dialog without
+		     leaving it. Re-entering it would abort the install with error 2856 ("creating a second copy
+		     of the dialog"), and a twin dialog is impossible because the CheckBox table is keyed by
+		     Property: one property can back only one check box in the whole package. Next therefore
+		     goes on to YearSummaryForm, which is where the selection can be read back as text. -->
 		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="394" Title="[ProductName]">
 			<Control Id="NextButton" Type="PushButton" X="300" Y="372" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+				<!-- The selection is only reported as text on YearSummaryForm, which reads
+				     ARX_YEARS_SUMMARY when it is created, so build it here. -->
+				<Publish Event="DoAction" Value="CA_BuildYearsSummary">1</Publish>
 				<Publish Event="EndDialog" Value="Return"><![CDATA[SdkForm_NextArgs=""]]></Publish>
 				<Publish Event="NewDialog" Value="[SdkForm_NextArgs]"><![CDATA[SdkForm_NextArgs<>""]]></Publish>
 			</Control>
@@ -384,43 +401,166 @@
 				<Publish Property="SelectFolderDialog_Property" Value="ACADROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
-			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="176" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Target AutoCAD versions (default 2018-2027):" TabSkip="no" />
-			<!-- DoAction runs the custom action, NewDialog re-enters this dialog so the check boxes
-			     pick up the properties the action just set. -->
-			<Control Id="AllYearsButton" Type="PushButton" X="196" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
-				<Publish Event="DoAction" Value="CA_SetAllArxYears">1</Publish>
-				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD versions:" TabSkip="no" />
+			<!-- Bulk selection is pure declarative publishing: no custom action and no page change, so the
+			     check boxes stay where they are. A YEAR_* that is not ticked has to be EMPTY - MSI clears
+			     a check box's property when it is cleared, and a non-empty value such as "0" renders as
+			     ticked. Invert needs a pair per year because MSI cannot toggle a property on its own. -->
+			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
+				<Publish Property="YEAR_2010" Value="1">1</Publish>
+				<Publish Property="YEAR_2012" Value="1">1</Publish>
+				<Publish Property="YEAR_2013" Value="1">1</Publish>
+				<Publish Property="YEAR_2014" Value="1">1</Publish>
+				<Publish Property="YEAR_2015" Value="1">1</Publish>
+				<Publish Property="YEAR_2016" Value="1">1</Publish>
+				<Publish Property="YEAR_2018" Value="1">1</Publish>
+				<Publish Property="YEAR_2019" Value="1">1</Publish>
+				<Publish Property="YEAR_2020" Value="1">1</Publish>
+				<Publish Property="YEAR_2021" Value="1">1</Publish>
+				<Publish Property="YEAR_2022" Value="1">1</Publish>
+				<Publish Property="YEAR_2023" Value="1">1</Publish>
+				<Publish Property="YEAR_2024" Value="1">1</Publish>
+				<Publish Property="YEAR_2025" Value="1">1</Publish>
+				<Publish Property="YEAR_2026" Value="1">1</Publish>
+				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="NoYearsButton" Type="PushButton" X="250" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
-				<Publish Event="DoAction" Value="CA_ClearArxYears">1</Publish>
-				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
+				<Publish Property="YEAR_2010" Value="{}">1</Publish>
+				<Publish Property="YEAR_2012" Value="{}">1</Publish>
+				<Publish Property="YEAR_2013" Value="{}">1</Publish>
+				<Publish Property="YEAR_2014" Value="{}">1</Publish>
+				<Publish Property="YEAR_2015" Value="{}">1</Publish>
+				<Publish Property="YEAR_2016" Value="{}">1</Publish>
+				<Publish Property="YEAR_2018" Value="{}">1</Publish>
+				<Publish Property="YEAR_2019" Value="{}">1</Publish>
+				<Publish Property="YEAR_2020" Value="{}">1</Publish>
+				<Publish Property="YEAR_2021" Value="{}">1</Publish>
+				<Publish Property="YEAR_2022" Value="{}">1</Publish>
+				<Publish Property="YEAR_2023" Value="{}">1</Publish>
+				<Publish Property="YEAR_2024" Value="{}">1</Publish>
+				<Publish Property="YEAR_2025" Value="{}">1</Publish>
+				<Publish Property="YEAR_2026" Value="{}">1</Publish>
+				<Publish Property="YEAR_2027" Value="{}">1</Publish>
 			</Control>
-			<Control Id="InvertYearsButton" Type="PushButton" X="304" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
-				<Publish Event="DoAction" Value="CA_InvertArxYears">1</Publish>
-				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
+				<!-- Inverting reads each year's current value, and a publish pair that tests the very
+				     property it is about to change cannot work: setting it to 1 makes the "clear it"
+				     condition true as well, so both events fire and cancel out. Snapshot the selection
+				     into ARXINV_* first, then flip against the snapshot. -->
+				<Publish Property="ARXINV_2010" Value="[YEAR_2010]">1</Publish>
+				<Publish Property="ARXINV_2012" Value="[YEAR_2012]">1</Publish>
+				<Publish Property="ARXINV_2013" Value="[YEAR_2013]">1</Publish>
+				<Publish Property="ARXINV_2014" Value="[YEAR_2014]">1</Publish>
+				<Publish Property="ARXINV_2015" Value="[YEAR_2015]">1</Publish>
+				<Publish Property="ARXINV_2016" Value="[YEAR_2016]">1</Publish>
+				<Publish Property="ARXINV_2018" Value="[YEAR_2018]">1</Publish>
+				<Publish Property="ARXINV_2019" Value="[YEAR_2019]">1</Publish>
+				<Publish Property="ARXINV_2020" Value="[YEAR_2020]">1</Publish>
+				<Publish Property="ARXINV_2021" Value="[YEAR_2021]">1</Publish>
+				<Publish Property="ARXINV_2022" Value="[YEAR_2022]">1</Publish>
+				<Publish Property="ARXINV_2023" Value="[YEAR_2023]">1</Publish>
+				<Publish Property="ARXINV_2024" Value="[YEAR_2024]">1</Publish>
+				<Publish Property="ARXINV_2025" Value="[YEAR_2025]">1</Publish>
+				<Publish Property="ARXINV_2026" Value="[YEAR_2026]">1</Publish>
+				<Publish Property="ARXINV_2027" Value="[YEAR_2027]">1</Publish>
+				<Publish Property="YEAR_2010" Value="1"><![CDATA[ARXINV_2010<>"1"]]></Publish>
+				<Publish Property="YEAR_2010" Value="{}"><![CDATA[ARXINV_2010="1"]]></Publish>
+				<Publish Property="YEAR_2012" Value="1"><![CDATA[ARXINV_2012<>"1"]]></Publish>
+				<Publish Property="YEAR_2012" Value="{}"><![CDATA[ARXINV_2012="1"]]></Publish>
+				<Publish Property="YEAR_2013" Value="1"><![CDATA[ARXINV_2013<>"1"]]></Publish>
+				<Publish Property="YEAR_2013" Value="{}"><![CDATA[ARXINV_2013="1"]]></Publish>
+				<Publish Property="YEAR_2014" Value="1"><![CDATA[ARXINV_2014<>"1"]]></Publish>
+				<Publish Property="YEAR_2014" Value="{}"><![CDATA[ARXINV_2014="1"]]></Publish>
+				<Publish Property="YEAR_2015" Value="1"><![CDATA[ARXINV_2015<>"1"]]></Publish>
+				<Publish Property="YEAR_2015" Value="{}"><![CDATA[ARXINV_2015="1"]]></Publish>
+				<Publish Property="YEAR_2016" Value="1"><![CDATA[ARXINV_2016<>"1"]]></Publish>
+				<Publish Property="YEAR_2016" Value="{}"><![CDATA[ARXINV_2016="1"]]></Publish>
+				<Publish Property="YEAR_2018" Value="1"><![CDATA[ARXINV_2018<>"1"]]></Publish>
+				<Publish Property="YEAR_2018" Value="{}"><![CDATA[ARXINV_2018="1"]]></Publish>
+				<Publish Property="YEAR_2019" Value="1"><![CDATA[ARXINV_2019<>"1"]]></Publish>
+				<Publish Property="YEAR_2019" Value="{}"><![CDATA[ARXINV_2019="1"]]></Publish>
+				<Publish Property="YEAR_2020" Value="1"><![CDATA[ARXINV_2020<>"1"]]></Publish>
+				<Publish Property="YEAR_2020" Value="{}"><![CDATA[ARXINV_2020="1"]]></Publish>
+				<Publish Property="YEAR_2021" Value="1"><![CDATA[ARXINV_2021<>"1"]]></Publish>
+				<Publish Property="YEAR_2021" Value="{}"><![CDATA[ARXINV_2021="1"]]></Publish>
+				<Publish Property="YEAR_2022" Value="1"><![CDATA[ARXINV_2022<>"1"]]></Publish>
+				<Publish Property="YEAR_2022" Value="{}"><![CDATA[ARXINV_2022="1"]]></Publish>
+				<Publish Property="YEAR_2023" Value="1"><![CDATA[ARXINV_2023<>"1"]]></Publish>
+				<Publish Property="YEAR_2023" Value="{}"><![CDATA[ARXINV_2023="1"]]></Publish>
+				<Publish Property="YEAR_2024" Value="1"><![CDATA[ARXINV_2024<>"1"]]></Publish>
+				<Publish Property="YEAR_2024" Value="{}"><![CDATA[ARXINV_2024="1"]]></Publish>
+				<Publish Property="YEAR_2025" Value="1"><![CDATA[ARXINV_2025<>"1"]]></Publish>
+				<Publish Property="YEAR_2025" Value="{}"><![CDATA[ARXINV_2025="1"]]></Publish>
+				<Publish Property="YEAR_2026" Value="1"><![CDATA[ARXINV_2026<>"1"]]></Publish>
+				<Publish Property="YEAR_2026" Value="{}"><![CDATA[ARXINV_2026="1"]]></Publish>
+				<Publish Property="YEAR_2027" Value="1"><![CDATA[ARXINV_2027<>"1"]]></Publish>
+				<Publish Property="YEAR_2027" Value="{}"><![CDATA[ARXINV_2027="1"]]></Publish>
 			</Control>
-			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" />
-			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" />
-			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="214" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" />
-			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="232" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" />
-			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="250" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" />
-			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="268" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" />
-			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="286" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" />
-			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="304" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" />
-			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="178" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" />
-			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="196" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" />
-			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="214" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" />
-			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="232" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" />
-			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="250" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" />
-			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="268" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" />
-			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="286" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" />
-			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="304" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" />
+			<!-- One year per binary-compatible generation, so a project still loads into the other
+			     AutoCAD releases sharing that SDK. 2017 is absent because the year table has no such
+			     entry and 2018's props already covers 2017/2018 (both R22). -->
+			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="159" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Compatible" TabSkip="no">
+				<Publish Property="YEAR_2010" Value="{}">1</Publish>
+				<Publish Property="YEAR_2012" Value="{}">1</Publish>
+				<Publish Property="YEAR_2013" Value="{}">1</Publish>
+				<Publish Property="YEAR_2014" Value="1">1</Publish>
+				<Publish Property="YEAR_2015" Value="{}">1</Publish>
+				<Publish Property="YEAR_2016" Value="1">1</Publish>
+				<Publish Property="YEAR_2018" Value="1">1</Publish>
+				<Publish Property="YEAR_2019" Value="{}">1</Publish>
+				<Publish Property="YEAR_2020" Value="1">1</Publish>
+				<Publish Property="YEAR_2021" Value="{}">1</Publish>
+				<Publish Property="YEAR_2022" Value="{}">1</Publish>
+				<Publish Property="YEAR_2023" Value="{}">1</Publish>
+				<Publish Property="YEAR_2024" Value="1">1</Publish>
+				<Publish Property="YEAR_2025" Value="{}">1</Publish>
+				<Publish Property="YEAR_2026" Value="1">1</Publish>
+				<Publish Property="YEAR_2027" Value="1">1</Publish>
+			</Control>
+			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="214" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="232" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="250" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="268" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="286" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="304" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="178" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="196" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="214" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="232" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="250" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="268" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="286" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="304" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
 			<Control Id="PropsDirLabel" Type="Text" X="18" Y="326" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Property sheet folder (shared with the VS wizard):" TabSkip="no" />
 			<Control Id="PropsDirEdit" Type="PathEdit" X="18" Y="338" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
 			<Control Id="BrowsePropsDir" Type="PushButton" X="275" Y="338" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Bro&amp;wse..." TabSkip="no">
 				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
+		</Dialog>
+
+		<!-- Where the year selection is read back. MSI binds a check box to its property only when the
+		     dialog is created, so what the bulk buttons on SdkForm produced can only be shown on a page
+		     built afterwards - here, from ARX_YEARS_SUMMARY. Back returns to SdkForm to adjust single
+		     years, Next goes on to the confirmation page. -->
+		<Dialog Id="YearSummaryForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+				<Publish Event="NewDialog" Value="ConfirmInstallForm">1</Publish>
+			</Control>
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+				<Publish Event="SpawnDialog" Value="Cancel" />
+			</Control>
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Target AutoCAD Versions - Selection" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="SummaryText" Type="Text" X="18" Y="66" Width="340" Height="90" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ARX_YEARS_SUMMARY]" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="HintText" Type="Text" X="18" Y="176" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}Press Back to tick individual years on the previous page, or Next to install this selection." TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 	</UI>

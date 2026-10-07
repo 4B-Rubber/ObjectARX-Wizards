@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Small helper the Burn bundle runs to install the VSIX for the current user. AnyCPU so that
-     SpecialFolder.ProgramFiles resolves to C:\Program Files (a 32-bit process would get x86). -->
+<!-- Small helper the Burn bundle runs instead of chaining the MSI directly. AnyCPU so that
+     SpecialFolder.System resolves to the 64-bit System32: the MSI is x64. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Exe</OutputType>
     <OutputPath>..\Bundle\</OutputPath>
-    <AssemblyName>ArxWizardsVsixSetup</AssemblyName>
+    <AssemblyName>ArxWizardsMsiSetup</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <WarningLevel>4</WarningLevel>
-    <!-- Without this the C# targets default Prefer32Bit to true, so "AnyCPU" ran as 32-bit and
-         SpecialFolder.ProgramFiles resolved to Program Files (x86) - the opposite of what the
-         edition fallback below assumes. -->
+    <!-- The C# targets default Prefer32Bit to true, which turns "AnyCPU" into a 32-bit process:
+         SpecialFolder.System would resolve to SysWOW64 and the x64 MSI would be handed to the
+         32-bit msiexec. Keep it native. -->
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="VsixSetup.cs" />
+    <Compile Include="MsiSetup.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -53,6 +53,11 @@
     <ComponentRef Id="C__430528B95DD14C3696062253C1095AA1" />
     <ComponentRef Id="C__02E715ACEB904B219362AB70DA1560F3" />
 
+    <!-- Global multi-year MSBuild props -->
+    <ComponentRef Id="C_OBJARX_PROPS_GLOBAL" />
+    <!-- Records the props folder location for the wizards -->
+    <ComponentRef Id="C_ARXPROPS_REG" />
+
     <!-- ObjectARX -->
     <ComponentRef Id="C__3CB44E97F42E46E887E1610C0898A33F" />
     <!-- Visual Studio 2022 -->

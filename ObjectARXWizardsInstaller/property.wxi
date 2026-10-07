@@ -7,15 +7,21 @@
     <!-- Specify the ErrorDialog name in use in UI.wxi -->
     <Property Id="WelcomeForm_NextArgs" Value="ObjectARXForm" />
     <Property Id="ObjectARXForm_PrevArgs" Value="WelcomeForm" />
-    <Property Id="ObjectARXForm_NextArgs" Value="ConfirmInstallForm" />
-    <Property Id="ConfirmInstallForm_PrevArgs" Value="ObjectARXForm" />
+    <Property Id="ObjectARXForm_NextArgs" Value="SdkForm" />
+    <Property Id="SdkForm_PrevArgs" Value="ObjectARXForm" />
+    <Property Id="SdkForm_NextArgs" Value="ConfirmInstallForm" />
+    <Property Id="ConfirmInstallForm_PrevArgs" Value="SdkForm" />
     <Property Id="MaintenanceForm_Action" Value="Repair" />
     <Property Id="AdminMaintenanceForm_Action" Value="Repair" />
 
     <CustomAction Id="CA_TARGETDIR" Property="TARGETDIR" Value="[ProgramFilesFolder][Manufacturer]\[ProductName]" Execute="firstSequence" />
-    <Property Id="ARXPATH" Value="C:\ObjectARX"/>
-    <Property Id="RDS" Value="TST"/>
-    <Property Id="ACAD" Value="C:\Program Files\Autodesk\AutoCAD 2026\">
+    <!-- A directory property is only resolved at costing, and our dialogs run before CostFinalize, so
+         seed the props folder from PROPSDIR_PROBE (previous install, else the default) up front.
+         A command line ARXPROPSDIR=... wins because of the condition at the call site. -->
+    <CustomAction Id="CA_DefaultPropsDir" Property="ARXPROPSDIR" Value="[PROPSDIR_PROBE]" Execute="firstSequence" />
+    <Property Id="ARXPATH" Value="C:\ObjectARX" Secure="yes"/>
+    <Property Id="RDS" Value="TST" Secure="yes"/>
+    <Property Id="ACAD" Value="C:\Program Files\Autodesk\AutoCAD 2026\" Secure="yes">
 
         <!--Tip: To find out Install Registry path, launch accoreconsole of Target AutoCAD release.
       accoreconsole
@@ -38,5 +44,139 @@
     <Property Id="ARPHELPTELEPHONE" Value="  " />
     <Property Id="ARPSIZE" Value="1200" />
 
+    <!-- ============================================================================
+         Target-year selection (SdkForm). The Autodesk.arx-<year>.props files are no
+         longer MSI payload: the ArxProps custom actions generate the ticked years at
+         install time from the embedded year table + skeletons. Only 2018-2027 are
+         ticked by default; a year whose props already exist (an upgrade) is re-ticked
+         by the AppSearch results regardless of that default.
+         ============================================================================ -->
+    <Property Id="ARXROOT" Value="C:\Program Files\Autodesk\" Secure="yes" />
+    <Property Id="ACADROOT" Value="C:\Program Files\Autodesk\" Secure="yes" />
+    <!-- The props folder itself is user-selectable: ARXPROPSDIR is the directory id that holds the
+         shared payload props, so costing resolves it and SdkForm can edit it (no <Property> needed).
+         PROPSDIR_PROBE carries the *previous* location from the registry and feeds the year detection
+         below, which runs before costing and therefore cannot use ARXPROPSDIR yet. -->
+    <Property Id="PROPSDIR_PROBE" Value="C:\Program Files\Autodesk\ObjectARX Props" Secure="yes">
+      <RegistrySearch Id="RS_ARXPROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="raw" Win64="yes" />
+    </Property>
+    <!-- Set only when a previous install recorded a props folder. Doubles as the "this is an
+         upgrade, restore the previous year selection" marker for DefaultArxYears. -->
+    <Property Id="PREV_PROPSDIR" Secure="yes">
+      <RegistrySearch Id="RS_PREV_PROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="raw" Win64="yes" />
+    </Property>
+
+    <!-- All 16 year flags are authored secure but without a value. DefaultArxYears fills in the
+         2018-2027 default on a first install only, so an upgrade keeps exactly the previous
+         selection instead of unioning it with the default. -->
+    <Property Id="YEAR_2010" Secure="yes" />
+    <Property Id="YEAR_2012" Secure="yes" />
+    <Property Id="YEAR_2013" Secure="yes" />
+    <Property Id="YEAR_2014" Secure="yes" />
+    <Property Id="YEAR_2015" Secure="yes" />
+    <Property Id="YEAR_2016" Secure="yes" />
+    <Property Id="YEAR_2018" Secure="yes" />
+    <Property Id="YEAR_2019" Secure="yes" />
+    <Property Id="YEAR_2020" Secure="yes" />
+    <Property Id="YEAR_2021" Secure="yes" />
+    <Property Id="YEAR_2022" Secure="yes" />
+    <Property Id="YEAR_2023" Secure="yes" />
+    <Property Id="YEAR_2024" Secure="yes" />
+    <Property Id="YEAR_2025" Secure="yes" />
+    <Property Id="YEAR_2026" Secure="yes" />
+    <Property Id="YEAR_2027" Secure="yes" />
+
+    <!-- DET_YEAR_<year> is set (to the found path) by AppSearch when that year's props exist,
+         which means a previous install generated it. AppSearch precedes the dialogs. -->
+    <Property Id="DET_YEAR_2010">
+      <DirectorySearch Id="DS_YEAR_2010" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2010" Name="Autodesk.arx-2010.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2012">
+      <DirectorySearch Id="DS_YEAR_2012" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2012" Name="Autodesk.arx-2012.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2013">
+      <DirectorySearch Id="DS_YEAR_2013" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2013" Name="Autodesk.arx-2013.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2014">
+      <DirectorySearch Id="DS_YEAR_2014" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2014" Name="Autodesk.arx-2014.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2015">
+      <DirectorySearch Id="DS_YEAR_2015" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2015" Name="Autodesk.arx-2015.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2016">
+      <DirectorySearch Id="DS_YEAR_2016" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2016" Name="Autodesk.arx-2016.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2018">
+      <DirectorySearch Id="DS_YEAR_2018" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2018" Name="Autodesk.arx-2018.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2019">
+      <DirectorySearch Id="DS_YEAR_2019" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2019" Name="Autodesk.arx-2019.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2020">
+      <DirectorySearch Id="DS_YEAR_2020" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2020" Name="Autodesk.arx-2020.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2021">
+      <DirectorySearch Id="DS_YEAR_2021" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2021" Name="Autodesk.arx-2021.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2022">
+      <DirectorySearch Id="DS_YEAR_2022" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2022" Name="Autodesk.arx-2022.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2023">
+      <DirectorySearch Id="DS_YEAR_2023" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2023" Name="Autodesk.arx-2023.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2024">
+      <DirectorySearch Id="DS_YEAR_2024" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2024" Name="Autodesk.arx-2024.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2025">
+      <DirectorySearch Id="DS_YEAR_2025" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2025" Name="Autodesk.arx-2025.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2026">
+      <DirectorySearch Id="DS_YEAR_2026" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2026" Name="Autodesk.arx-2026.props" />
+      </DirectorySearch>
+    </Property>
+    <Property Id="DET_YEAR_2027">
+      <DirectorySearch Id="DS_YEAR_2027" Path="[PROPSDIR_PROBE]" Depth="0">
+        <FileSearch Id="FS_YEAR_2027" Name="Autodesk.arx-2027.props" />
+      </DirectorySearch>
+    </Property>
+
+    <!-- Under UAC elevation the client-side selection must reach the deferred ArxProps custom actions.
+         WiX forbids authoring SecureCustomProperties / AdminProperties directly, so every public
+         property above carries Secure="yes"; ARXPROPSDIR is a directory id, secured here.
+         The CA_* properties carry CustomActionData for the deferred actions: PrepArxPropsData fills
+         them at run time because a type-51 action cannot hold the result (255 character column cap). -->
+    <Property Id="ARXPROPSDIR" Secure="yes" />
+    <Property Id="CA_CREATEARXPROPS" Secure="yes" />
+    <Property Id="CA_CLEANUPUNSELECTEDARXPROPS" Secure="yes" />
+    <Property Id="CA_REMOVEARXPROPS" Secure="yes" />
 
 </Include>

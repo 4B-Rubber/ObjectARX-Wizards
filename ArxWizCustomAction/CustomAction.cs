@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Deployment.WindowsInstaller;
 using System.IO;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web.Script.Serialization;
 
 
 //Written by Madhukar Moogala ADN
@@ -155,5 +159,563 @@ namespace ArxWizCustomAction
             return (ActionResult.Success);
         }
 
+        /// <summary>
+        /// The legacy HTML wizard keeps the props folder in a hardcoded JS constant. Point it at the
+        /// folder the user chose so the old and the new wizards resolve the same place.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult PatchArxCommonJsFiles(Session session)
+        {
+#if DEBUG
+            System.Diagnostics.Debugger.Launch();
+#endif
+            session.Log("Begin PatchArxCommonJsFiles");
+            try
+            {
+                string targetDir = session["TARGETDIR"];
+                string propsDir = session["ARXPROPSDIR"];
+                session.Log(" >> PatchArxCommonJsFiles: propsDir = " + propsDir + " / TARGETDIR = " + targetDir);
+                if (string.IsNullOrEmpty(targetDir) || string.IsNullOrEmpty(propsDir) || !Directory.Exists(targetDir))
+                {
+                    session.Log(" >> PatchArxCommonJsFiles: nothing to patch");
+                    return ActionResult.Success;
+                }
+
+                // JavaScript string literal: every backslash has to be doubled.
+                string jsPath = propsDir.TrimEnd('\\').Replace("\\", "\\\\") + "\\\\";
+                foreach (string file in Directory.GetFiles(targetDir, "arxCommon.js", SearchOption.AllDirectories))
+                {
+                    string text = File.ReadAllText(file);
+                    string updated = Regex.Replace(text, "var ARX_PROPS_DIR\\s*=\\s*\"[^\"]*\"\\s*;",
+                                                   m => "var ARX_PROPS_DIR =\"" + jsPath + "\" ;");
+                    if (updated != text)
+                    {
+                        File.WriteAllText(file, updated);
+                        session.Log(" >> PatchArxCommonJsFiles: patched " + file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                session.Log(ex.Message);
+                return ActionResult.Failure;
+            }
+            session.Log("Ending PatchArxCommonJsFiles");
+            return (ActionResult.Success);
+        }
+
+    }
+
+    /// <summary>
+    /// Generates the per-year ObjectARX property sheets at install time instead of shipping all 33 of
+    /// them as MSI payload. The year table and the three skeletons embedded in this assembly are the
+    /// very files under tools\arx-props, so the generator and this CA share one source of truth.
+    ///
+    /// The generated files are not tracked by the MSI File table, so removal and repair are handled
+    /// here as well (RemoveArxProps / CleanupUnselectedArxProps).
+    /// </summary>
+    public static class ArxProps
+    {
+        const string PropsDirDefault = @"C:\Program Files\Autodesk\ObjectARX Props";
+
+        const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
+        const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
+        const string ResNetFx   = "ArxWizCustomAction.ArxProps.props-net-fx-template.props";
+        const string ResNetCore = "ArxWizCustomAction.ArxProps.props-net-core-template.props";
+
+        static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// First install only: tick 2018-2027. On an upgrade (PREV_PROPSDIR is set) the previous
+        /// selection is restored by the year detection in the UI instead, so nothing gets unioned in.
+        /// A selection passed on the command line also wins.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult DefaultArxYears(Session session)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(session["PREV_PROPSDIR"]))
+                {
+                    Log(session, "DefaultArxYears: upgrade, keeping the previous year selection");
+                    return ActionResult.Success;
+                }
+                foreach (var entry in PropsTable.Load().Years)
+                {
+                    if (string.IsNullOrEmpty(session["YEAR_" + entry.Year])) continue;
+                    Log(session, "DefaultArxYears: explicit selection, leaving it alone");
+                    return ActionResult.Success;
+                }
+                foreach (var year in new[] { "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027" })
+                    session["YEAR_" + year] = "1";
+                Log(session, "DefaultArxYears: first install, ticked 2018-2027");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "DefaultArxYears failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>
+        /// Backs the SdkForm All / None / Invert buttons. The first two could be done with declarative
+        /// Publish elements, but inverting a property's value cannot be expressed as an MSI condition,
+        /// so all three live here. The dialog re-enters itself so the check boxes pick the new values up.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult SetAllArxYears(Session session) { return SetYears(session, y => "1"); }
+
+        [CustomAction]
+        public static ActionResult ClearArxYears(Session session) { return SetYears(session, y => "0"); }
+
+        [CustomAction]
+        public static ActionResult InvertArxYears(Session session)
+        {
+            return SetYears(session, y => session["YEAR_" + y] == "1" ? "0" : "1");
+        }
+
+        static ActionResult SetYears(Session session, Func<string, string> value)
+        {
+            try
+            {
+                var years = new List<YearEntry>(PropsTable.Load().Years);
+                foreach (var entry in years) session["YEAR_" + entry.Year] = value(entry.Year);
+                Log(session, "SetYears: applied to " + years.Count + " years");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "SetYears failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>
+        /// Deferred custom actions only receive CustomActionData, and a type-51 property-set action is
+        /// capped at 255 characters in the MSI CustomAction table - far too small for four folder paths
+        /// plus 16 year flags. Assemble the data here instead: this immediate action runs during script
+        /// generation, so the values are in place before the deferred actions are scheduled.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult PrepArxPropsData(Session session)
+        {
+            try
+            {
+                var years = new StringBuilder();
+                foreach (var entry in PropsTable.Load().Years)
+                {
+                    years.Append("YEAR_").Append(entry.Year).Append('=')
+                         .Append(session["YEAR_" + entry.Year] ?? "").Append(';');
+                }
+
+                string propsDir = session["ARXPROPSDIR"] ?? "";
+                session["CA_CREATEARXPROPS"] =
+                    "PROPSDIR=" + propsDir +
+                    ";PREVDIR=" + (session["PROPSDIR_PROBE"] ?? "") +
+                    ";ARXROOT=" + (session["ARXROOT"] ?? "") +
+                    ";ACADROOT=" + (session["ACADROOT"] ?? "") + ";" + years;
+                session["CA_CLEANUPUNSELECTEDARXPROPS"] = "PROPSDIR=" + propsDir + ";" + years;
+                session["CA_REMOVEARXPROPS"] = "PROPSDIR=" + propsDir;
+
+                Log(session, "PrepArxPropsData: propsDir=" + propsDir + " sdkRoot=" + session["ARXROOT"]);
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "PrepArxPropsData failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        [CustomAction]
+        public static ActionResult CreateArxProps(Session session)
+        {
+            try
+            {
+                var data = ParseData(session["CustomActionData"]);
+                var table = PropsTable.Load();
+                string dir = Value(data, "PROPSDIR", PropsDirDefault);
+                string sdkRoot = Value(data, "ARXROOT", table.DefaultRoot);
+                string acadRoot = Value(data, "ACADROOT", table.DefaultRoot);
+                var selected = SelectedYears(data, table);
+
+                if (selected.Count == 0)
+                {
+                    Log(session, "CreateArxProps: no year selected, nothing to generate");
+                    return ActionResult.Success;
+                }
+
+                // If the folder moved (the user picked a new one, or a previous install used another),
+                // the old generated files are not known to the File table, so drop them here.
+                string prevDir = Value(data, "PREVDIR", null);
+                if (!string.IsNullOrEmpty(prevDir) &&
+                    !string.Equals(prevDir.TrimEnd('\\'), dir.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+                {
+                    Log(session, "CreateArxProps: props folder moved, cleaning " + prevDir);
+                    DeleteOurFiles(session, prevDir, "CreateArxProps: removed stale ", includeShared: true);
+                }
+
+                Directory.CreateDirectory(dir);
+                Log(session, "CreateArxProps: dir=" + dir + " sdkRoot=" + sdkRoot + " acadRoot=" + acadRoot +
+                             " selected=" + string.Join(",", selected.ToArray()));
+
+                foreach (var entry in table.Years)
+                {
+                    if (!selected.Contains(entry.Year)) continue;
+                    WriteFile(session, dir, "Autodesk.arx-" + entry.Year + ".props",
+                              Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, null)));
+                    if (!string.IsNullOrEmpty(entry.CompatToolset))
+                        WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-Compat.props",
+                                  Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, entry.CompatToolset)));
+                    WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-net.props",
+                              Expand(ReadResource(entry.NetKind == "core" ? ResNetCore : ResNetFx),
+                                     BuildMap(table, entry, sdkRoot, null)));
+                }
+
+                WriteUserProps(session, dir, sdkRoot, acadRoot, table.DefaultRoot);
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "CreateArxProps failed: " + ex);
+                return ActionResult.Success; // sequenced with Return="ignore"; never abort the install
+            }
+        }
+
+        /// <summary>Deletes the generated props of every year the user did NOT tick (upgrades leave stale ones).</summary>
+        [CustomAction]
+        public static ActionResult CleanupUnselectedArxProps(Session session)
+        {
+            try
+            {
+                var data = ParseData(session["CustomActionData"]);
+                var table = PropsTable.Load();
+                string dir = Value(data, "PROPSDIR", PropsDirDefault);
+                if (!Directory.Exists(dir)) return ActionResult.Success;
+
+                var selected = SelectedYears(data, table);
+                foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
+                {
+                    var m = YearInName.Match(Path.GetFileName(path));
+                    if (!m.Success) continue;
+                    if (selected.Contains(m.Groups[1].Value)) continue;
+                    try { File.Delete(path); Log(session, "CleanupUnselectedArxProps: removed " + path); }
+                    catch (Exception ex) { Log(session, "CleanupUnselectedArxProps: cannot delete " + path + " (" + ex.Message + ")"); }
+                }
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "CleanupUnselectedArxProps failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>Removes everything we generated — the MSI does not know these files exist.</summary>
+        [CustomAction]
+        public static ActionResult RemoveArxProps(Session session)
+        {
+            try
+            {
+                var data = ParseData(session["CustomActionData"]);
+                DeleteOurFiles(session, Value(data, "PROPSDIR", PropsDirDefault), "RemoveArxProps: removed ");
+                return ActionResult.Success;
+            }
+            catch (Exception ex)
+            {
+                Log(session, "RemoveArxProps failed: " + ex);
+                return ActionResult.Success;
+            }
+        }
+
+        /// <summary>Shared props the MSI payload installs alongside the generated ones.</summary>
+        static readonly string[] SharedPropsPatterns =
+        {
+            "ObjectARX.*.props", "ObjectDBX.*.props", "ObjectGRX.*.props",
+            "ObjectZRX.*.props", "HCSoft.*.props", "ZWSoft.*.props"
+        };
+
+        /// <summary>
+        /// Removes every file this CA generates from <paramref name="dir"/>. With
+        /// <paramref name="includeShared"/> it also drops the shared payload props, which is what a
+        /// moved props folder needs: they are in a Permanent component, so uninstall would strand
+        /// them at the old location.
+        /// </summary>
+        static void DeleteOurFiles(Session session, string dir, string reason, bool includeShared = false)
+        {
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+            foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
+            {
+                try { File.Delete(path); Log(session, reason + path); }
+                catch (Exception ex) { Log(session, reason + "cannot delete " + path + " (" + ex.Message + ")"); }
+            }
+            string user = Path.Combine(dir, "ObjectARX.User.props");
+            if (File.Exists(user))
+            {
+                try { File.Delete(user); Log(session, reason + user); }
+                catch (Exception ex) { Log(session, reason + "cannot delete " + user + " (" + ex.Message + ")"); }
+            }
+            if (!includeShared) return;
+            foreach (var pattern in SharedPropsPatterns)
+            {
+                foreach (var path in Directory.GetFiles(dir, pattern))
+                {
+                    try { File.Delete(path); Log(session, reason + path); }
+                    catch (Exception ex) { Log(session, reason + "cannot delete " + path + " (" + ex.Message + ")"); }
+                }
+            }
+        }
+
+        // ---- generation helpers (mirrors tools\arx-props\gen-arx-props.ps1) ----
+
+        static HashSet<string> SelectedYears(Dictionary<string, string> data, PropsTable table)
+        {
+            var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in table.Years)
+            {
+                string key = "YEAR_" + entry.Year;
+                if (data.ContainsKey(key) && data[key] == "1") selected.Add(entry.Year);
+            }
+            return selected;
+        }
+
+        static void WriteFile(Session session, string dir, string name, string content)
+        {
+            string path = Path.Combine(dir, name);
+            File.WriteAllText(path, content.Replace("\n", "\r\n"), new UTF8Encoding(false));
+            Log(session, "CreateArxProps: wrote " + path);
+        }
+
+        /// <summary>
+        /// Writes the user-overridable roots file. Never clobbers user edits: existing values win and
+        /// only missing entries are appended.
+        /// </summary>
+        static void WriteUserProps(Session session, string dir, string sdkRoot, string acadRoot, string defaultRoot)
+        {
+            string path = Path.Combine(dir, "ObjectARX.User.props");
+            if (!File.Exists(path))
+            {
+                var sb = new StringBuilder();
+                sb.Append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n");
+                sb.Append("<Project xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\r\n");
+                sb.Append("  <!-- Roots used by the generated Autodesk.arx-<year>.props. Edit these values and\r\n");
+                sb.Append("       rebuild to relocate the SDK / AutoCAD without reinstalling. -->\r\n");
+                sb.Append("  <PropertyGroup>\r\n");
+                sb.Append("    <ArxSdkRoot>" + (sdkRoot ?? defaultRoot) + "</ArxSdkRoot>\r\n");
+                sb.Append("    <AcadRoot>" + (acadRoot ?? defaultRoot) + "</AcadRoot>\r\n");
+                sb.Append("  </PropertyGroup>\r\n");
+                sb.Append("</Project>\r\n");
+                File.WriteAllText(path, sb.ToString(), new UTF8Encoding(false));
+                Log(session, "CreateArxProps: wrote " + path);
+                return;
+            }
+
+            string text = File.ReadAllText(path);
+            string updated = EnsureProperty(text, "ArxSdkRoot", sdkRoot ?? defaultRoot);
+            updated = EnsureProperty(updated, "AcadRoot", acadRoot ?? defaultRoot);
+            if (!string.Equals(text, updated, StringComparison.Ordinal))
+            {
+                File.WriteAllText(path, updated, new UTF8Encoding(false));
+                Log(session, "CreateArxProps: completed missing roots in " + path);
+            }
+        }
+
+        static string EnsureProperty(string text, string name, string value)
+        {
+            if (text.IndexOf("<" + name, StringComparison.OrdinalIgnoreCase) >= 0) return text;
+            string line = "  <" + name + ">" + value + "</" + name + ">\r\n";
+            int idx = text.LastIndexOf("</Project>", StringComparison.OrdinalIgnoreCase);
+            return idx < 0 ? text + "\r\n" + line : text.Substring(0, idx) + line + text.Substring(idx);
+        }
+
+        static Dictionary<string, string> BuildMap(PropsTable table, YearEntry y, string root, string toolsetOverride)
+        {
+            var m = new Dictionary<string, string>(StringComparer.Ordinal);
+            m["YEAR"] = y.Year;
+            m["PFV"] = y.ProjectFileVersion;
+            m["SDKVERSION"] = y.SdkVersion;
+            m["TOOLSET"] = toolsetOverride ?? y.Toolset;
+            m["TOOLSVERSION"] = y.ToolsVersion;
+            m["CFGB"] = y.Year + "B";
+            m["CFGS"] = y.Year + "S";
+            m["CFGD"] = y.Year + "d";
+            m["SDKROOT"] = root;
+            m["ACADROOT"] = root;
+            m["WIN32ROOT"] = y.Win32X86 ? table.Win32RootX86 : root;
+            m["NETTFV"] = y.NetTfVersion ?? "";
+            m["NETTF"] = y.NetTargetFramework ?? "";
+            m["CRXNETCOND"] = y.HasCrx ? "'$(ArxAppType)'=='crxnet' or " : "";
+            m["ARXLIBINCS"] = y.LibPathArxLibIncs ? "$(ArxLibIncs);" : "";
+            m["TFCOMMENT"] = y.NetTfComment
+                ? " <!-- That will force Platform Toolset to vc9 in Visual Studio 2010 -->" : "";
+
+            // Whole-line blocks; the value keeps its own indentation and trailing newline.
+            m["USERIMPORT"] = "\t<Import Project=\"$(MSBuildThisFileDirectory)ObjectARX.User.props\" " +
+                              "Condition=\"Exists('$(MSBuildThisFileDirectory)ObjectARX.User.props')\" />\n";
+            m["NO32COMMENT"] = y.No32Comment
+                ? "\t<!--There is No 32 Bit AutoCAD Starting From AutoCAD 2020-->\n" : "";
+            m["WIN32ACAD"] = y.HasWin32
+                ? "\t\t<AcadDir Condition=\"'$(Platform)'=='Win32' And '$(AcadDir)' == ''\">" +
+                  "@@WIN32ROOT@@AutoCAD @@YEAR@@\\</AcadDir>\n" : "";
+            m["ACADEXE"] = y.HasCrx
+                ? "\t\t<AcadExe Condition=\"'$(ArxAppType)'=='dbx' or '$(ArxAppType)'=='dbxnet' or " +
+                  "'$(ArxAppType)'=='arx' or '$(ArxAppType)'=='arxnet'\">acad.exe</AcadExe>\n" +
+                  "\t\t<AcadExe Condition=\"'$(ArxAppType)'=='crx' or '$(ArxAppType)'=='crxnet'\">" +
+                  "accoreconsole.exe</AcadExe>\n"
+                : "";
+            m["SDKINCS_WIN32"] = y.HasWin32
+                ? "\t\t<ArxSdkIncs Condition=\"'$(Platform)'=='Win32'\">" +
+                  "$(ArxSdkDir)\\inc;$(ArxSdkDir)\\inc-win32</ArxSdkIncs>\n" : "";
+            m["SDKLIBSS_WIN32"] = y.HasWin32
+                ? "\t\t<ArxSdkLibs Condition=\"'$(Platform)'=='Win32'\">" +
+                  "$(ArxSdkDir)\\lib-win32</ArxSdkLibs>\n" : "";
+            m["CRXIMPORT"] = y.HasCrx
+                ? "\t\t<Import Condition=\"'$(ArxAppType)'=='crx' or '$(ArxAppType)'=='crxnet'\" " +
+                  "Project=\"$(ArxSdkDir)\\inc\\crx.props\" />\n" : "";
+            m["TF35BLOCK"] = y.LegacyV35
+                ? "\t<PropertyGroup>\n\t\t<TargetFrameworkVersion>v3.5</TargetFrameworkVersion> " +
+                  "<!-- That will force Platform Toolset to vc9 in Visual Studio 2010 -->\n\t</PropertyGroup>\n" : "";
+            m["DBGCMD"] = y.LegacyV35
+                ? "\t\t<LocalDebuggerCommand Condition=\"'$(AcadDir)' != ''\">$(AcadDir)\\acad.exe</LocalDebuggerCommand>\n"
+                : "\t\t<LocalDebuggerCommand>$(AcadDir)$(AcadExe)</LocalDebuggerCommand>\n";
+            m["DBGCOMMENT"] = y.DebugComments
+                ? "\t\t<!-- LocalDebuggerMergeEnvironment>true</LocalDebuggerMergeEnvironment -->\n" +
+                  "\t\t<!-- LocalDebuggerAttach>False</LocalDebuggerAttach -->\n" +
+                  "\t\t<!-- LocalDebuggerSQLDebugging>False</LocalDebuggerSQLDebugging -->\n" : "";
+            m["CRXDEF"] = y.HasCrx
+                ? "\t\t\t<PreprocessorDefinitions Condition=\"'$(ArxAppType)'=='crx' or " +
+                  "'$(ArxAppType)'=='crxnet'\">_CRXAPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>\n" : "";
+            m["TMWIN32"] = y.HasWin32
+                ? "\t\t\t<TargetMachine Condition=\"'$(Platform)'=='Win32'\">MachineX86</TargetMachine>\n" : "";
+            m["FORACAD"] = string.IsNullOrEmpty(y.NetForAcad) ? "" : "\t\t<!--  " + y.NetForAcad + " -->\n";
+            return m;
+        }
+
+        static string Expand(string text, Dictionary<string, string> map)
+        {
+            for (int pass = 0; pass < 4; pass++)
+            {
+                string before = text;
+                foreach (var kv in map)
+                {
+                    string v = kv.Value ?? "";
+                    text = Regex.Replace(text, "(?m)^[ \t]*@@" + Regex.Escape(kv.Key) + "@@[ \t]*\n", m => v);
+                }
+                foreach (var kv in map)
+                {
+                    string v = kv.Value ?? "";
+                    text = Regex.Replace(text, "@@" + Regex.Escape(kv.Key) + "@@", m => v);
+                }
+                if (string.Equals(before, text, StringComparison.Ordinal)) break;
+            }
+            return text;
+        }
+
+        static string ReadResource(string logicalName)
+        {
+            var asm = Assembly.GetExecutingAssembly();
+            using (var s = asm.GetManifestResourceStream(logicalName))
+            {
+                if (s == null)
+                    throw new InvalidOperationException("embedded resource not found: " + logicalName);
+                using (var r = new StreamReader(s, Encoding.UTF8))
+                    return r.ReadToEnd().Replace("\r\n", "\n");
+            }
+        }
+
+        static Dictionary<string, string> ParseData(string data)
+        {
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrEmpty(data)) return d;
+            foreach (var part in data.Split(';'))
+            {
+                int i = part.IndexOf('=');
+                if (i > 0) d[part.Substring(0, i).Trim()] = part.Substring(i + 1);
+            }
+            return d;
+        }
+
+        static string Value(Dictionary<string, string> data, string key, string fallback)
+        {
+            string v;
+            return data.TryGetValue(key, out v) && !string.IsNullOrEmpty(v) ? v : fallback;
+        }
+
+        static void Log(Session session, string message)
+        {
+            try { session.Log("ArxProps: " + message); } catch { }
+            try
+            {
+                File.AppendAllText(Path.Combine(Path.GetTempPath(), "ObjectARXWizardsInstaller.log"),
+                                   DateTime.Now.ToString("s") + " " + message + Environment.NewLine);
+            }
+            catch { }
+        }
+
+        sealed class YearEntry
+        {
+            public string Year, ProjectFileVersion, SdkVersion, Toolset, ToolsVersion, CompatToolset;
+            public string NetKind, NetTfVersion, NetTargetFramework, NetForAcad;
+            public bool LegacyV35, HasWin32, Win32X86, HasCrx, DebugComments, No32Comment;
+            public bool LibPathArxLibIncs, NetTfComment;
+        }
+
+        /// <summary>Reader for tools\arx-props\arx-props-table.json (embedded verbatim).</summary>
+        sealed class PropsTable
+        {
+            public string DefaultRoot;
+            public string Win32RootX86;
+            readonly List<YearEntry> _years = new List<YearEntry>();
+
+            public IEnumerable<YearEntry> Years { get { return _years; } }
+
+            public static PropsTable Load()
+            {
+                var root = (Dictionary<string, object>)new JavaScriptSerializer().DeserializeObject(ReadResource(ResTable));
+                var table = new PropsTable
+                {
+                    DefaultRoot = (string)root["defaultRoot"],
+                    Win32RootX86 = (string)root["win32RootX86"],
+                };
+                foreach (Dictionary<string, object> y in (object[])root["years"])
+                {
+                    table._years.Add(new YearEntry
+                    {
+                        Year = Str(y, "year"),
+                        ProjectFileVersion = Str(y, "projectFileVersion"),
+                        SdkVersion = Str(y, "sdkVersion"),
+                        Toolset = Str(y, "toolset"),
+                        ToolsVersion = Str(y, "toolsVersion"),
+                        CompatToolset = Str(y, "compatToolset"),
+                        NetKind = Str(y, "netKind"),
+                        NetTfVersion = Str(y, "netTfVersion"),
+                        NetTargetFramework = Str(y, "netTargetFramework"),
+                        NetForAcad = Str(y, "netForAcad"),
+                        LegacyV35 = Bool(y, "legacyV35"),
+                        HasWin32 = Bool(y, "hasWin32"),
+                        Win32X86 = Bool(y, "win32X86"),
+                        HasCrx = Bool(y, "hasCrx"),
+                        DebugComments = Bool(y, "debugComments"),
+                        No32Comment = Bool(y, "no32Comment"),
+                        LibPathArxLibIncs = Bool(y, "libPathArxLibIncs"),
+                        NetTfComment = Bool(y, "netTfComment"),
+                    });
+                }
+                return table;
+            }
+
+            static string Str(Dictionary<string, object> d, string key)
+            {
+                object v;
+                return d.TryGetValue(key, out v) && v != null ? Convert.ToString(v) : null;
+            }
+
+            static bool Bool(Dictionary<string, object> d, string key)
+            {
+                object v;
+                return d.TryGetValue(key, out v) && v != null && Convert.ToBoolean(v);
+            }
+        }
     }
 }

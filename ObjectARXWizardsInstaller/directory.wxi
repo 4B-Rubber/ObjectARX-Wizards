@@ -42,9 +42,10 @@
 			<Directory Id="D__5181C80D9F88439899938945F8C6C660" Name="HTML">
 				<Directory Id="D__D2BDEF97B8014D07A31BEBE2D261943F" Name="1033">
 					<Component Id="C__10FB4C7AABD04D499BA475F1F46026C6" Guid="{856C3109-A731-4223-BB12-7B7D3D268EDC}" KeyPath="yes">
-						<File Id="_3D74EC87498D4622A257257F8E441A7C" Name="default.htm" Vital="yes" DiskId="1" />
+						<File Id="_3D74EC87498D4622A2D7257F8E441A7C" Name="default.htm" Vital="yes" DiskId="1" />
 						<File Id="_A48B4AD37F16493A8EC70BCAB5506A23" Name="AppType.htm" Vital="yes" DiskId="1" />
-						<File Id="_10FB4C7AABD04D499BA475F1F46026C6" Name="MFC.htm" Vital="yes" DiskId="1" />
+						<File Id="_10FB4C7AABE0101010101010101010101" Name="Version.htm" Vital="yes" DiskId="1" />
+						<File Id="_10FB4C7AABD04D07A31BEBE2D261943F" Name="MFC.htm" Vital="yes" DiskId="1" />
 						<File Id="_69CBB1ABA7E94CBC936D0138BF21A988" Name="COM.htm" Vital="yes" DiskId="1" />
 						<File Id="_6F84042D7D774765B5CF0B86C5A17117" Name="dotNET.htm" Vital="yes" DiskId="1" />
 					</Component>
@@ -104,6 +105,7 @@
 					<Component Id="C__6A6B90DE28DD43CC979E639ED6421624" Guid="{3A16F4B2-5501-4172-9526-B644224C9CF0}" KeyPath="yes">
 						<File Id="_6A6B90DE28DD43CC979E639ED6421624" Name="default.htm" Vital="yes" DiskId="1" />
 						<File Id="_E4968C5C9D894D698FBA1C67D0CCCE66" Name="AppType.htm" Vital="yes" DiskId="1" />
+						<File Id="_6A6B90DE182001020304050607080901" Name="Version.htm" Vital="yes" DiskId="1" />
 						<File Id="_CFECFFE590D84EFEA2876D1E320E8917" Name="MFC.htm" Vital="yes" DiskId="1" />
 						<File Id="_EAF913FF0B8D489C8C08E8442D3DFC2C" Name="COM.htm" Vital="yes" DiskId="1" />
 						<File Id="_A9F6657A277F44DCA85350404D8968D1" Name="dotNET.htm" Vital="yes" DiskId="1" />
@@ -115,6 +117,7 @@
 				<Directory Id="D__8BA30143890E4F72A6912A00DA60A189" Name="1033">
 					<Component Id="C__8BA30143890E4F72A6912A00DA60A189" Guid="{ED229D5A-A1B4-45A0-8C67-E46E76BFA26A}" KeyPath="yes">
 						<File Id="_8BA30143890E4F72A6912A00DA60A189" Name="Templates.inf" Vital="yes" DiskId="1" />
+						<File Id="_8BA30143890E4F72A6912A00DA60A18A" Name="x64win32.vcxproj" Vital="yes" DiskId="1" />
 						<File Id="_4A9913C28E6F4991B01FDCB8EA422E84" Name="acrxEntryPoint.cpp" Vital="yes" DiskId="1" />
 						<File Id="_239844540A2A4F3F9CB8D3BFF1C3F602" Name="AssemblyInfo.cpp" Vital="yes" DiskId="1" />
 						<File Id="_23984454035A4F3F9CB8D3BFF1C3F602" Name="root.cpp" Vital="yes" DiskId="1" />
@@ -131,7 +134,6 @@
 						<File Id="_A57BAAFD4CE27379B95D3591C8EDDDCA" Name="OmfApp.cpp" Vital="yes" DiskId="1" />
 						<File Id="_A57BAAF44CE24BD9805D3591C8EDDDCA" Name="OmfEnuRes.h" Vital="yes" DiskId="1" />
 						<File Id="_A5745AFD4CE24BD9945D3591C8EDDDCA" Name="OmfEnuRes.rc" Vital="yes" DiskId="1" />
-						<File Id="_146338DFF0754A3BB89DE34456BD51FF" Name="OmfEnuRes.vcproj" Vital="yes" DiskId="1" />
 						<File Id="_14633867F0754A3BB89DE34456BD51FF" Name="OmfEnuRes.vcxproj" Vital="yes" DiskId="1" />
 						<File Id="_146338DFF0754A36B89DE34498BD51FF" Name="OmfEnuRes.vcxproj.filters" Vital="yes" DiskId="1" />
 						<File Id="_146338DF65754A3BB89DE34456BD51FF" Name="OmfHeaders.h" Vital="yes" DiskId="1" />
@@ -517,6 +519,56 @@
 						</Directory>
 					</Directory>
 				</Directory>
+			</Directory>
+		</Directory>
+
+		<!-- Global MSBuild props deployed to C:\Program Files\Autodesk\ObjectARX Props\.
+		     Multi-year generated projects import Autodesk.arx-YYYY.props from this folder.
+		     Permanent: leave on uninstall, Autodesk SDK installers may own the same files. -->
+		<Directory Id="ProgramFiles64Folder">
+			<Directory Id="D_AUTODESK_PF" Name="Autodesk">
+				<Directory Id="ARXPROPSDIR" Name="ObjectARX Props">
+					<Component Id="C_OBJARX_PROPS_GLOBAL" Guid="{7F3A2C91-4B6E-4D28-9A1C-7E5B0D8F6201}" Permanent="yes" Win64="yes" KeyPath="yes">
+						<!-- Autodesk.arx-<year>.props / -net.props are NOT payload any more: the installer
+						     generates them at install time from the year table + skeleton (see the
+						     CreateArxProps custom action). Only the shared props below ship in the MSI. -->
+						<File Id="FGP_HCSOFT_GRX_2024_PROPS" Name="HCSoft.grx-2024.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2024.props" />
+						<File Id="FGP_HCSOFT_GRX_2025_NET_PROPS" Name="HCSoft.grx-2025-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2025-net.props" />
+						<File Id="FGP_HCSOFT_GRX_2025_PROPS" Name="HCSoft.grx-2025.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2025.props" />
+						<File Id="FGP_HCSOFT_GRX_2026_NET_PROPS" Name="HCSoft.grx-2026-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2026-net.props" />
+						<File Id="FGP_HCSOFT_GRX_2026_PROPS" Name="HCSoft.grx-2026.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2026.props" />
+						<File Id="FGP_HCSOFT_GRX_2027_NET_PROPS" Name="HCSoft.grx-2027-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2027-net.props" />
+						<File Id="FGP_HCSOFT_GRX_2027_PROPS" Name="HCSoft.grx-2027.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2027.props" />
+						<File Id="FGP_OBJECTARX_CLI_PROPS" Name="ObjectARX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CLI.props" />
+						<File Id="FGP_OBJECTARX_CLI2_PROPS" Name="ObjectARX.CLI2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CLI2.props" />
+						<File Id="FGP_OBJECTARX_CSHARP_PROPS" Name="ObjectARX.CSharp.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CSharp.props" />
+						<File Id="FGP_OBJECTARX_COMMON_COMPAT_PROPS" Name="ObjectARX.Common-Compat.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common-Compat.props" />
+						<File Id="FGP_OBJECTARX_COMMON_PROPS" Name="ObjectARX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common.props" />
+						<File Id="FGP_OBJECTARX_COMMON2_COMPAT_PROPS" Name="ObjectARX.Common2-Compat.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common2-Compat.props" />
+						<File Id="FGP_OBJECTARX_COMMON2_PROPS" Name="ObjectARX.Common2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common2.props" />
+						<File Id="FGP_OBJECTDBX_CLI_PROPS" Name="ObjectDBX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.CLI.props" />
+						<File Id="FGP_OBJECTDBX_CLI2_PROPS" Name="ObjectDBX.CLI2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.CLI2.props" />
+						<File Id="FGP_OBJECTDBX_COMMON_PROPS" Name="ObjectDBX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.Common.props" />
+						<File Id="FGP_OBJECTDBX_COMMON2_PROPS" Name="ObjectDBX.Common2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.Common2.props" />
+						<File Id="FGP_OBJECTGRX_CLI_PROPS" Name="ObjectGRX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectGRX.CLI.props" />
+						<File Id="FGP_OBJECTGRX_COMMON_PROPS" Name="ObjectGRX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectGRX.Common.props" />
+						<File Id="FGP_OBJECTZRX_CLI_PROPS" Name="ObjectZRX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.CLI.props" />
+						<File Id="FGP_OBJECTZRX_CSHARP_PROPS" Name="ObjectZRX.CSharp.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.CSharp.props" />
+						<File Id="FGP_OBJECTZRX_COMMON_PROPS" Name="ObjectZRX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.Common.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2024_NET_PROPS" Name="ZWSoft.zrx-2024-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2024-net.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2024_PROPS" Name="ZWSoft.zrx-2024.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2024.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2025_NET_PROPS" Name="ZWSoft.zrx-2025-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2025-net.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2025_PROPS" Name="ZWSoft.zrx-2025.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2025.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2026_NET_PROPS" Name="ZWSoft.zrx-2026-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2026-net.props" />
+						<File Id="FGP_ZWSOFT_ZRX_2026_PROPS" Name="ZWSoft.zrx-2026.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2026.props" />
+					</Component>
+				</Directory>
+					<!-- Records where the props folder ended up. The directory id above is the ARXPROPSDIR
+				     property (SdkForm edits it), so costing writes the payload to the chosen folder;
+				     the VSIX wizard and the legacy HTML wizard read this value to stay in sync. -->
+				<Component Id="C_ARXPROPS_REG" Guid="{46B9D471-5B72-4428-A7A1-2C5D927E3A29}" Win64="yes">
+					<RegistryValue Id="RV_ARXPROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="string" Value="[ARXPROPSDIR]" KeyPath="yes" />
+				</Component>
 			</Directory>
 		</Directory>
 	</Directory>

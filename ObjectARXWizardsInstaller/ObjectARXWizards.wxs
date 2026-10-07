@@ -144,7 +144,7 @@
 	     everything below the legacy RTM version is this restarted line, anything from there up is the
 	     old line, and both are removed and replaced (see RemoveExistingProducts below). -->
 	<Upgrade Id="$(var.UpgradeCode)">
-		<UpgradeVersion Minimum="0.0.0" IncludeMinimum="yes" Maximum="$(var.RTMProductVersion)" IncludeMaximum="no" OnlyDetect="yes" Property="NEWERPRODUCTFOUND" />
+		<UpgradeVersion Minimum="$(var.ProductVersion)" IncludeMinimum="no" Maximum="$(var.RTMProductVersion)" IncludeMaximum="no" OnlyDetect="yes" Property="NEWERPRODUCTFOUND" />
 		<UpgradeVersion Minimum="0.0.0" IncludeMinimum="yes" OnlyDetect="no" Property="UPGRADEFOUND" />
 		<!-- Detect for changes in 4th field only -->
 		<!-- UpgradeVersion Minimum="$(var.version)" IncludeMinimum="yes" Maximum="$(var.version)" IncludeMaximum="yes" OnlyDetect="yes" Property="ANOTHERBUILDINSTALLED" / -->

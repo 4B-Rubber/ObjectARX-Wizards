@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+
+  <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
+       installed for the current user by install-vsix.cmd (which locates VSIXInstaller.exe).
+       The bundle is per-machine because the MSI is; the VSIX must not be, hence the .cmd hop. -->
+  <Bundle Name="ObjectARX Multi-Year Wizards (2010-2027)"
+          Version="26.2.0"
+          Manufacturer="Autodesk"
+          UpgradeCode="{956924F4-FEFE-4815-B486-A219B4406CCB}">
+
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense">
+      <bal:WixStandardBootstrapperApplication LicenseUrl="http://www.autodesk.com/developautocad"
+                                              SuppressOptionsUI="yes" />
+    </BootstrapperApplicationRef>
+
+    <Chain>
+      <MsiPackage Id="ArxWizardsMsi"
+                  SourceFile="bin\Release\ObjectARXWizard.msi"
+                  Vital="yes" />
+
+      <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.
+           The launcher must build an executable, which is why Burn cannot just call cmd.exe here. -->
+      <ExePackage Id="ArxWizardsVsix"
+                  Vital="no"
+                  Permanent="yes"
+                  SourceFile="Bundle\ArxWizardsVsixSetup.exe"
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiYearWizards.vsix"'
+                  DetectCondition="false">
+        <Payload SourceFile="..\ObjectARXMultiYearWizards.vsix" Compressed="yes" />
+      </ExePackage>
+    </Chain>
+  </Bundle>
+</Wix>

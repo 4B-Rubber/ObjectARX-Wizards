@@ -19,6 +19,8 @@
          seed the props folder from PROPSDIR_PROBE (previous install, else the default) up front.
          A command line ARXPROPSDIR=... wins because of the condition at the call site. -->
     <CustomAction Id="CA_DefaultPropsDir" Property="ARXPROPSDIR" Value="[PROPSDIR_PROBE]" Execute="firstSequence" />
+    <CustomAction Id="CA_DefaultArxRoot" Property="ARXROOT" Value="[ARXROOT_PROBE]" Execute="firstSequence" />
+    <CustomAction Id="CA_DefaultAcadRoot" Property="ACADROOT" Value="[ACADROOT_PROBE]" Execute="firstSequence" />
     <Property Id="ARXPATH" Value="C:\ObjectARX" Secure="yes"/>
     <Property Id="RDS" Value="TST" Secure="yes"/>
     <Property Id="ACAD" Value="C:\Program Files\Autodesk\AutoCAD 2026\" Secure="yes">
@@ -47,12 +49,22 @@
     <!-- ============================================================================
          Target-year selection (SdkForm). The Autodesk.arx-<year>.props files are no
          longer MSI payload: the ArxProps custom actions generate the ticked years at
-         install time from the embedded year table + skeletons. Only 2018-2027 are
+         install time from the embedded year table + skeletons. Only DefaultYears is
          ticked by default; a year whose props already exist (an upgrade) is re-ticked
          by the AppSearch results regardless of that default.
          ============================================================================ -->
-    <Property Id="ARXROOT" Value="C:\Program Files\Autodesk\" Secure="yes" />
-    <Property Id="ACADROOT" Value="C:\Program Files\Autodesk\" Secure="yes" />
+    <!-- The two roots are user-selectable and remembered across installs, so an upgrade or a repair
+         does not make the user type them again. The PROBE properties carry the previous value, or the
+         default on a first install, and seed the real properties through the custom actions below -
+         the same shape PROPSDIR_PROBE uses for the props folder. -->
+    <Property Id="ARXROOT" Secure="yes" />
+    <Property Id="ACADROOT" Secure="yes" />
+    <Property Id="ARXROOT_PROBE" Value="C:\Program Files\Autodesk\" Secure="yes">
+      <RegistrySearch Id="RS_ARXROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="ArxRoot" Type="raw" Win64="yes" />
+    </Property>
+    <Property Id="ACADROOT_PROBE" Value="C:\Program Files\Autodesk\" Secure="yes">
+      <RegistrySearch Id="RS_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="raw" Win64="yes" />
+    </Property>
     <!-- The props folder itself is user-selectable: ARXPROPSDIR is the directory id that holds the
          shared payload props, so costing resolves it and SdkForm can edit it (no <Property> needed).
          PROPSDIR_PROBE carries the *previous* location from the registry and feeds the year detection

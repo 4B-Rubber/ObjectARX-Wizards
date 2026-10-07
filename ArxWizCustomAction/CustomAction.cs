@@ -219,8 +219,16 @@ namespace ArxWizCustomAction
         const string PropsDirDefault = @"C:\Program Files\Autodesk\ObjectARX Props";
 
         /// <summary>Years a first install ticks, and the fallback when nothing can be detected.</summary>
-        static readonly string[] DefaultYears =
-            { "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027" };
+        static readonly string[] DefaultYears = { "2020", "2024", "2026", "2027" };
+
+        /// <summary>
+        /// The "Binary compat" button: the newest year of each binary-compatible generation. A project
+        /// built against one of these also loads into the other AutoCAD releases that share its SDK
+        /// major version, which is why the older year of a generation is left out - 2017 for 2018, for
+        /// instance, or 2013/2015/2019/2021-2023/2025 for the generations below.
+        /// </summary>
+        static readonly string[] BinaryCompatibleYears =
+            { "2014", "2016", "2018", "2020", "2024", "2026", "2027" };
 
         const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
@@ -230,7 +238,7 @@ namespace ArxWizCustomAction
         static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
 
         /// <summary>
-        /// First install only: tick 2018-2027. On an upgrade (PREV_PROPSDIR is set) the previous
+        /// First install only: tick DefaultYears. On an upgrade (PREV_PROPSDIR is set) the previous
         /// selection is restored by the year detection in the UI instead, so nothing gets unioned in.
         /// A selection passed on the command line also wins.
         /// </summary>
@@ -252,7 +260,7 @@ namespace ArxWizCustomAction
                 }
                 foreach (var year in DefaultYears)
                     session["YEAR_" + year] = "1";
-                Log(session, "DefaultArxYears: first install, ticked 2018-2027");
+                Log(session, "DefaultArxYears: first install, ticked the default years");
                 return ActionResult.Success;
             }
             catch (Exception ex)
@@ -288,7 +296,7 @@ namespace ArxWizCustomAction
                 }
                 foreach (var year in DefaultYears)
                     session["YEAR_" + year] = "1";
-                Log(session, "TickDetectedArxYears: nothing detected, ticked the 2018-2027 default");
+                Log(session, "TickDetectedArxYears: nothing detected, ticked the default years");
                 return ActionResult.Success;
             }
             catch (Exception ex)
@@ -315,6 +323,13 @@ namespace ArxWizCustomAction
         public static ActionResult InvertArxYears(Session session)
         {
             return SetYears(session, y => session["YEAR_" + y] == "1" ? "0" : "1");
+        }
+
+        /// <summary>Backs the SdkForm "Binary compat" button: tick one year per SDK generation.</summary>
+        [CustomAction]
+        public static ActionResult SetBinaryCompatibleArxYears(Session session)
+        {
+            return SetYears(session, y => Array.IndexOf(BinaryCompatibleYears, y) >= 0 ? "1" : "0");
         }
 
         static ActionResult SetYears(Session session, Func<string, string> value)

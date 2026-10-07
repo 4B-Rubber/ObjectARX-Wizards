@@ -69,12 +69,15 @@
 	     assembles the data at run time instead (it runs during script generation, before these are
 	     scheduled). -->
 	<CustomAction Id="CA_PrepArxPropsData" BinaryKey="ID_CABinary" DllEntry="PrepArxPropsData" Execute="immediate" Return="check" />
-	<!-- First install only: ticks 2018-2027, so an upgrade keeps exactly the previous selection. -->
+	<!-- First install only: ticks DefaultYears (2020/2024/2026/2027), so an upgrade keeps exactly the
+	     previous selection. -->
 	<CustomAction Id="CA_DefaultArxYears" BinaryKey="ID_CABinary" DllEntry="DefaultArxYears" Execute="immediate" Return="check" />
-	<!-- SdkForm All / None / Invert. Invoked with DoAction, so they need no sequence entry. -->
+	<!-- SdkForm All / None / Invert / Binary compat. Invoked with DoAction, so they need no sequence
+	     entry. -->
 	<CustomAction Id="CA_SetAllArxYears" BinaryKey="ID_CABinary" DllEntry="SetAllArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_ClearArxYears" BinaryKey="ID_CABinary" DllEntry="ClearArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_InvertArxYears" BinaryKey="ID_CABinary" DllEntry="InvertArxYears" Execute="immediate" Return="check" />
+	<CustomAction Id="CA_SetBinaryCompatibleArxYears" BinaryKey="ID_CABinary" DllEntry="SetBinaryCompatibleArxYears" Execute="immediate" Return="check" />
 	<!-- MaintenanceForm "change the target years and reinstall". Also DoAction-only. -->
 	<CustomAction Id="CA_TickDetectedArxYears" BinaryKey="ID_CABinary" DllEntry="TickDetectedArxYears" Execute="immediate" Return="check" />
 	<CustomAction Id="CA_CREATEARXPROPS" BinaryKey="ID_CABinary" DllEntry="CreateArxProps" Execute="deferred" Impersonate="no" Return="ignore" />
@@ -84,6 +87,8 @@
 	<InstallUISequence> <!-- msiexec /i -->
 		<Custom Action="CA_TARGETDIR" After="AppSearch"><![CDATA[TARGETDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDir" After="AppSearch"><![CDATA[ARXPROPSDIR=""]]></Custom>
+		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
+		<Custom Action="CA_DefaultAcadRoot" After="AppSearch"><![CDATA[ACADROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" After="AppSearch"></Custom>
 		<Show Dialog="WelcomeForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
 		<Show Dialog="ResumeForm" Before="CostFinalize"><![CDATA[Installed="" AND RESUME]]></Show>
@@ -98,6 +103,8 @@
 	<InstallExecuteSequence>
 		<Custom Action="CA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDir" Before="CostInitialize"><![CDATA[ARXPROPSDIR=""]]></Custom>
+		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>
+		<Custom Action="CA_DefaultAcadRoot" Before="CostInitialize"><![CDATA[ACADROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"></Custom>
 		<Custom Action="CA_PatchVSFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PatchHTMLWizFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>

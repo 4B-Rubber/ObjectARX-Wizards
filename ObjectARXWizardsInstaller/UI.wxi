@@ -398,17 +398,23 @@
 				<Publish Property="SelectFolderDialog_Property" Value="ACADROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
-			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="176" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Target AutoCAD versions (default 2018-2027):" TabSkip="no" />
-			<Control Id="AllYearsButton" Type="PushButton" X="196" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
+			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD versions:" TabSkip="no" />
+			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_SetAllArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
-			<Control Id="NoYearsButton" Type="PushButton" X="250" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
+			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_ClearArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
-			<Control Id="InvertYearsButton" Type="PushButton" X="304" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
+			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_InvertArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
+			</Control>
+			<!-- One year per binary-compatible generation, so a project still loads into the other
+			     AutoCAD releases that share that SDK. -->
+			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="159" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Compatible" TabSkip="no">
+				<Publish Event="DoAction" Value="CA_SetBinaryCompatibleArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="YearSummaryForm">1</Publish>
 			</Control>
 			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" />
@@ -457,20 +463,24 @@
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Target AutoCAD Versions - Selection" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
 			<Control Id="SummaryText" Type="Text" X="18" Y="66" Width="340" Height="90" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ARX_YEARS_SUMMARY]" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="BulkLabel" Type="Text" X="18" Y="166" Width="176" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Change the selection again:" TabSkip="no" />
-			<Control Id="AllYearsButton" Type="PushButton" X="196" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
+			<Control Id="BulkLabel" Type="Text" X="18" Y="166" Width="110" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Change it again:" TabSkip="no" />
+			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="163" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_SetAllArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
 			</Control>
-			<Control Id="NoYearsButton" Type="PushButton" X="250" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
+			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="163" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_ClearArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
 			</Control>
-			<Control Id="InvertYearsButton" Type="PushButton" X="304" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
+			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="163" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
 				<Publish Event="DoAction" Value="CA_InvertArxYears">1</Publish>
 				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
 			</Control>
-			<Control Id="HintText" Type="Text" X="18" Y="192" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}Press Back to tick individual years on the previous page, or Next to install this selection." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="163" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Compatible" TabSkip="no">
+				<Publish Event="DoAction" Value="CA_SetBinaryCompatibleArxYears">1</Publish>
+				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
+			</Control>
+			<Control Id="HintText" Type="Text" X="18" Y="192" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}Press Back to tick individual years on the previous page, or Next to install this selection. Compatible ticks one year per binary-compatible generation: 2014, 2016, 2018, 2020, 2024, 2026, 2027." TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 	</UI>

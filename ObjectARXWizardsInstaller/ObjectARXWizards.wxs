@@ -4,7 +4,7 @@
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
 	<?define ProductVersion = "0.1.1"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> for ObjectARX 2024-->
-	<?define UpgradeCode = "{02697296-654E-4100-9E4E-144B943DD625}"?>
+	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> for ObjectARX 2024-->
 	<!--ProductCode for ObjectARX 2025-->
 	<!--<?define ProductCode= "{AB65E222-EAB0-494E-AC65-07BF30A915F3}"?>-->	
@@ -138,14 +138,15 @@
 
 
 	<CustomAction Id="PreventDowngrading" Error="Newer version already installed." /> <!-- Prevent downgrading -->
-	<!-- The numbering restarted at 0.1.1 while the line before it reached 26.x, so version comparison
-	     alone cannot tell "older build of this line" from "the legacy line": 26.x is numerically
-	     higher. Upgrading is therefore bounded by product line rather than by ProductVersion:
-	     everything below the legacy RTM version is this restarted line, anything from there up is the
-	     old line, and both are removed and replaced (see RemoveExistingProducts below). -->
+	<!-- 0.1.1 is a new product rather than an upgrade of the old 26.x line: the UpgradeCode changed
+	     along with the numbering, so nothing from that line is looked for here. The two rows are the
+	     standard pair - "a newer build is already installed" has no upper bound, and "an older build
+	     is installed" runs from the start of this line up to, but not including, this build. Excluding
+	     this build is what makes running setup again over the same version show the maintenance page
+	     instead of removing and reinstalling itself. -->
 	<Upgrade Id="$(var.UpgradeCode)">
-		<UpgradeVersion Minimum="$(var.ProductVersion)" IncludeMinimum="no" Maximum="$(var.RTMProductVersion)" IncludeMaximum="no" OnlyDetect="yes" Property="NEWERPRODUCTFOUND" />
-		<UpgradeVersion Minimum="0.0.0" IncludeMinimum="yes" OnlyDetect="no" Property="UPGRADEFOUND" />
+		<UpgradeVersion Minimum="$(var.ProductVersion)" IncludeMinimum="no" OnlyDetect="yes" Property="NEWERPRODUCTFOUND" />
+		<UpgradeVersion Minimum="0.0.0" IncludeMinimum="yes" Maximum="$(var.ProductVersion)" IncludeMaximum="no" OnlyDetect="no" Property="UPGRADEFOUND" />
 		<!-- Detect for changes in 4th field only -->
 		<!-- UpgradeVersion Minimum="$(var.version)" IncludeMinimum="yes" Maximum="$(var.version)" IncludeMaximum="yes" OnlyDetect="yes" Property="ANOTHERBUILDINSTALLED" / -->
 	</Upgrade>	

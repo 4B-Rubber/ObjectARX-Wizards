@@ -144,7 +144,7 @@ namespace ArxVsixWizard.Items
             string text = ReadAllText(resPath);
 
             if (!Regex.IsMatch(text, @"^\s*#define\s+" + Regex.Escape(id) + @"\b", RegexOptions.Multiline))
-                text = text.TrimEnd() + "\r\n#define " + id + " " + value + "\r\n";
+                text = ResourceHeader.InsertDefine(text, "#define " + id + " " + value);
 
             var m = Regex.Match(text, @"(#define\s+_APS_NEXT_RESOURCE_VALUE\s+)(\d+)");
             if (m.Success)

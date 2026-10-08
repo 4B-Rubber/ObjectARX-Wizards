@@ -147,7 +147,7 @@ namespace ArxVsixWizard.Items
             string bumped = m.Groups[1].Value + (id + 1).ToString(CultureInfo.InvariantCulture);
             text = text.Substring(0, m.Index) + bumped + text.Substring(m.Index + m.Length);
 
-            text = text.TrimEnd() + "\r\n#define " + rgsId + "  " + id.ToString(CultureInfo.InvariantCulture) + "\r\n";
+            text = ResourceHeader.InsertDefine(text, "#define " + rgsId + "  " + id.ToString(CultureInfo.InvariantCulture));
             File.WriteAllText(resPath, text);
             Note("AttachRgs: #define " + rgsId + " " + id + " added to " + resPath);
         }

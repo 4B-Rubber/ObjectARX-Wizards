@@ -381,6 +381,34 @@ class Program
             File.ReadAllText(Path.Combine(dir, "Resource.h")), "#define IDD_TESTDLG").Count;
         Check(ref failures, occurrences == 1, "MfcResourceEditor -> second run does not duplicate the id");
 
+        // The real Resource.h carries the bookkeeping block the resource editor owns; a new id has to
+        // land above it, not after it, or the editor never sees it. This is the shape the wizard
+        // actually writes (see Templates\ArxApp\Resource.h).
+        string dir2 = Path.Combine(outDir, "_rescheck2");
+        if (Directory.Exists(dir2)) Directory.Delete(dir2, true);
+        Directory.CreateDirectory(dir2);
+        File.WriteAllText(Path.Combine(dir2, "Resource.h"),
+            "//{{NO_DEPENDENCIES}}\r\n#define IDS_PROJNAME 100\r\n#define IDR_MAINFRAME 101\r\n\r\n"
+            + "// Next default values for new objects\r\n//\r\n#ifdef APSTUDIO_INVOKED\r\n"
+            + "#ifndef APSTUDIO_READONLY_SYMBOLS\r\n#define _APS_NEXT_RESOURCE_VALUE 102\r\n"
+            + "#define _APS_NEXT_COMMAND_VALUE 32768\r\n#define _APS_NEXT_CONTROL_VALUE 100\r\n"
+            + "#define _APS_NEXT_SYMED_VALUE 102\r\n#endif\r\n#endif\r\n");
+        File.WriteAllText(Path.Combine(dir2, "MyProj.rc"), "IDR_MAINFRAME ICON \"MyProj.ico\"\r\n");
+
+        var model2 = new ArxVsixWizard.Items.MfcSupportItemModel("CMyMfcClass");
+        model2.Symbols.Set("BASE_CLASS", "CAdUiDockControlBar");
+        model2.Symbols.Set("IDD_DIALOG", "IDD_MYMFCCLASS");
+        model2.OnFieldsChanged();
+        ArxVsixWizard.Items.MfcResourceEditor.Apply(model2, new ArxVsixWizard.Items.ItemContext { TargetDir = dir2 });
+
+        string res2 = File.ReadAllText(Path.Combine(dir2, "Resource.h"));
+        int idAt = res2.IndexOf("#define IDD_MYMFCCLASS", StringComparison.Ordinal);
+        int blockAt = res2.IndexOf("// Next default values for new objects", StringComparison.Ordinal);
+        Check(ref failures, idAt > 0 && blockAt > 0 && idAt < blockAt,
+            "MfcResourceEditor -> the new id is defined above the resource editor's bookkeeping block");
+        Check(ref failures, res2.Contains("#define IDS_PROJNAME 100"),
+            "MfcResourceEditor -> IDS_PROJNAME survives the insertion");
+
         return failures;
     }
 

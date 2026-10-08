@@ -371,3 +371,57 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 - 从 Bundle 里解包内嵌的 VSIX 复核：**9/9 模板带 `0.1.2.0`、manifest `0.1.2`** —— 证明装到用户机器上的那份是对的，不只是仓库根那份。
 - 五套测试全绿：VSIX 版本一致性、年份一致性、载荷对齐 215 = 215、生成器回归、Inno 沙箱 40 项。
 - 两个安装包均已重建（VSIX 17:35 → 安装包 18:13）。
+
+## 15. 生成 Resource.h 时新 ID 的位置（真机测出，已修）
+
+### 15.1 现象
+
+用 MFC Support 向导加类后，`Resource.h` 长这样：
+
+```c
+#define IDS_PROJNAME 100
+
+// Next default values for new objects
+//
+#ifdef APSTUDIO_INVOKED
+...
+#define _APS_NEXT_RESOURCE_VALUE 103
+#endif
+#endif
+#define IDD_MYMFCCLASS 102          // <-- 被追加到了文件最末尾
+```
+
+新 ID 落在**资源编辑器自己那块 bookkeeping 之后**。正确位置是 `IDS_PROJNAME` 这类真实 ID 的后面、`// Next default values for new objects` 之前 —— 那一段往下都是 VS 资源编辑器拥有的 `_APS_NEXT_*` 记账区，追加到它后面等于不在编辑器管理的范围内。
+
+### 15.2 根因与修法
+
+两处都是 `TrimEnd()` 后直接拼接，所以永远追加到文件尾：
+
+| 文件 | 方法 | 用途 |
+|---|---|---|
+| `Items\MfcSupport\MfcResourceEditor.cs` | `UpdateResourceHeader` | 写 `#define IDD_<类名> <值>` |
+| `Items\AtlCommon\AtlItemSupport.cs` | `EnsureResourceDefine` | 写 `#define IDR_<名> <值>`（ATL/COM 的 .rgs 资源） |
+
+新增 `Items\ResourceHeader.cs`（同在 `ArxVsixWizard.Items`），`InsertDefine(text, definition)` 把定义行插到 `// Next default values for new objects` **之前**；该标记缺失时退到 `#ifdef APSTUDIO_INVOKED` 之前，再没有才追加到末尾。两处调用都改成走它。
+
+修完的实际输出：
+
+```c
+#define IDS_PROJNAME 100
+#define IDR_MAINFRAME 101
+#define IDD_MYMFCCLASS 102
+
+// Next default values for new objects
+...
+#define _APS_NEXT_RESOURCE_VALUE 103
+```
+
+### 15.3 防回归
+
+模板冒烟测试（`TemplateSmokeTest`）原有的 `_rescheck` 用例里，合成 `Resource.h` 只有 `_APS_NEXT_RESOURCE_VALUE` 一行、没有 bookkeeping 块，正好只覆盖了「退到追加」这条分支。新增 `_rescheck2`：用与 `Templates\ArxApp\Resource.h` 同形的完整文件（含 `// Next default values` + `#ifdef APSTUDIO_INVOKED`），断言新 ID 的偏移 **小于** 该标记的偏移，且 `IDS_PROJNAME` 不被破坏。
+
+### 15.4 验证
+
+- 模板冒烟测试：**ALL CHECKS PASSED**（含新增两条断言，既有 6 条 MfcResourceEditor 断言未受影响）。
+- 其余四套同样全绿：VSIX 版本一致性、年份一致性、载荷对齐 215 = 215、Inno 沙箱 40 项。
+- VSIX 与两个安装包均已重建（VSIX 模板是内嵌资源，必须重建才会带出去）。

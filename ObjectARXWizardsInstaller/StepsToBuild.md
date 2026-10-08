@@ -18,6 +18,11 @@ Before you begin, ensure you have the following installed:
 
 ## 🏗️ Build Process
 
+> Faster than the IDE walkthrough below:
+> - `make.bat` (in this folder) drives `candle -arch x64` + `light` and writes `ObjectARXMultiVersionWizards.msi`.
+> - `msbuild ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` builds the Burn bootstrapper (`bin\Release\ObjectARXMultiVersionWizardsSetup.exe`).
+> - The VSIX line and the Inno line are described in the root [README.md](../README.md).
+
 ### Step 1: Setup Environment
 
 1. **Install WiX Toolset**
@@ -45,7 +50,7 @@ The solution contains two important projects:
 - Main WiX installer project
 - **Configuration**: Set to **x86** (32-bit)
 
-> ⚠️ **Critical**: Both projects MUST be set to **x86** architecture. The MSI engine uses a 32-bit custom action server, and using x64 will cause `BadImageFormatException` errors.
+> ⚠️ **Architecture**: the two projects are no longer both x86. The custom action (`ArxWizCustomAction`) stays **x86** - it is an SfxCA stub that runs in MSI's 32-bit server - while the installer itself is **x64**: `ObjectARXWizard.wixproj` sets `<InstallerPlatform>x64</InstallerPlatform>` and `make.bat` passes `candle -arch x64`, so every component is marked 64-bit to match a payload that lands in the 64-bit Program Files. Keep the projects' `Platform` at x86 (that only controls the custom action); `InstallerPlatform` is what decides the MSI's architecture.
 
 ### Step 4: Build the Solution
 
@@ -58,8 +63,8 @@ The solution contains two important projects:
    - Or use `Ctrl+Shift+B`
 
 3. **Output**:
-   - The MSI installer will be generated in the `bin` folder
-   - Look for `ObjectARXWizards.msi`
+   - The MSI lands in `bin\Release\ObjectARXWizard.msi` (this is the file the Burn bundle embeds)
+   - `make.bat` writes the same MSI beside the sources as `ObjectARXMultiVersionWizards.msi`
 
 ---
 

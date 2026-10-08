@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared install-time props generator for both installer lines (MSI uses the same logic in
+       ArxWizCustomAction; the Inno line runs this EXE). Same year table + skeletons as
+       tools\arx-props, embedded verbatim so there is one source of truth. .NET Framework 4.8 is
+       the smallest runtime that is guaranteed present on every supported Windows. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>arx-genprops</AssemblyName>
+    <RootNamespace>ArxGenProps</RootNamespace>
+    <LangVersion>7.3</LangVersion>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\arx-props\arx-props-table.json" LogicalName="ArxGenProps.table.json" />
+    <EmbeddedResource Include="..\arx-props\props-template.props" LogicalName="ArxGenProps.props-template.props" />
+    <EmbeddedResource Include="..\arx-props\props-net-fx-template.props" LogicalName="ArxGenProps.props-net-fx-template.props" />
+    <EmbeddedResource Include="..\arx-props\props-net-core-template.props" LogicalName="ArxGenProps.props-net-core-template.props" />
+  </ItemGroup>
+
+</Project>

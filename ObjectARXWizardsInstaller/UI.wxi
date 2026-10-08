@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
+	<!-- The product ships Chinese-only (Product Codepage/Language 936/2052), so the strings below are
+	     written in place. The Inno line can pick a language at run time; an MSI cannot - it carries one
+	     language -, and the decision on this line was to keep the wizard Chinese rather than carry a
+	     separate English package plus a transform. -->
+
 	<Binary Id="DefBannerBitmap" SourceFile="Installerbitmaps\DefBannerBitmap.bmp" />
 	<Binary Id="UpFldrBtn" SourceFile="Installerbitmaps\UpFldrBtn.ico" />
 	<Binary Id="NewFldrBtn" SourceFile="Installerbitmaps\NewFldrBtn.ico" />
@@ -12,14 +17,14 @@
 		
 		<!-- Start / End Dialogs -->
 		<Dialog Id="WelcomeForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return"><![CDATA[WelcomeForm_NextArgs=""]]></Publish>
 				<Publish Event="NewDialog" Value="[WelcomeForm_NextArgs]"><![CDATA[WelcomeForm_NextArgs<>""]]></Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
 				<Condition Action="disable"><![CDATA[WelcomeForm_PrevArgs=""]]></Condition>
 				<Condition Action="enable"><![CDATA[WelcomeForm_PrevArgs<>""]]></Condition>
 				<Publish Event="NewDialog" Value="[WelcomeForm_PrevArgs]"><![CDATA[WelcomeForm_PrevArgs<>""]]></Publish>
@@ -27,36 +32,36 @@
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Welcome to the [ProductName] Setup" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="CopyrightWarningText" Type="Text" X="9" Y="186" Width="354" Height="66" Text="{\VSI_MS_Sans_Serif13.0_0_0}WARNING: This computer program is protected by copyright law and international treaties. Unauthorized duplication or distribution of this program, or any portion of it, may result in severe civil or criminal penalties, and will be prosecuted to the maximum extent possible under the law." TabSkip="yes" NoPrefix="yes" />
-			<Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="114" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer will guide you through the steps required to install [ProductName] on your computer." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}欢迎使用 [ProductName] 安装程序" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="CopyrightWarningText" Type="Text" X="9" Y="186" Width="354" Height="66" Text="{\VSI_MS_Sans_Serif13.0_0_0}警告：本计算机程序受著作权法及国际条约保护。未经授权复制或分发本程序或其任何部分，可能招致严厉的民事或刑事处罚，并将在法律允许的最大范围内被起诉。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="114" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序将引导您完成在本机安装 [ProductName] 所需的步骤。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[NOT(InAdminUISequence) OR (Installed="" AND NOT RESUME)]]></Condition>
 				<Condition Action="hide"><![CDATA[InAdminUISequence AND (Installed<>"" OR RESUME)]]></Condition>
 			</Control>
 		</Dialog>
 		
 		<Dialog Id="ResumeForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Finish" TabSkip="no" Default="yes">
+			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}完成(&amp;F)" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Welcome to the [ProductName] Setup Wizard" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer will resume the installation of [ProductName] on your computer.&#xD;&#xA;&#xD;&#xA;Click &quot;Finish&quot; to continue." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}欢迎使用 [ProductName] 安装向导" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序将恢复 [ProductName] 在本机上的安装。&#xD;&#xA;&#xD;&#xA;单击“完成”继续。" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 		<RadioButtonGroup Property="MaintenanceForm_Action">
-			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Repair [ProductName]" Value="Repair" Width="348" X="0" Y="0" />
-			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Change the target AutoCAD versions and reinstall" Value="Change" Width="348" X="0" Y="18" />
-			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}Re&amp;move [ProductName]" Value="Remove" Width="348" X="0" Y="36" />
+			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}修复 [ProductName](&amp;R)" Value="Repair" Width="348" X="0" Y="0" />
+			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}更改目标 AutoCAD 版本并重新安装(&amp;C)" Value="Change" Width="348" X="0" Y="18" />
+			<RadioButton Height="17" Text="{\VSI_MS_Sans_Serif13.0_0_0}删除 [ProductName](&amp;M)" Value="Remove" Width="348" X="0" Y="36" />
 		</RadioButtonGroup>
 		<Dialog Id="MaintenanceForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Finish" TabSkip="no" Default="yes">
+			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}完成(&amp;F)" TabSkip="no" Default="yes">
 				<!-- Repair reinstalls with the years already on disk; Change routes through SdkForm
 				     first so a different set can be ticked. Both are a full REINSTALL. -->
 				<Publish Property="REINSTALL" Value="ALL"><![CDATA[MaintenanceForm_Action<>"Remove"]]></Publish>
@@ -72,32 +77,32 @@
 				<Publish Event="EndDialog" Value="Return"><![CDATA[MaintenanceForm_Action<>"Change"]]></Publish>
 			</Control>
 			<Control Id="RepairRadioGroup" Type="RadioButtonGroup" X="18" Y="108" Width="348" Height="54" Property="MaintenanceForm_Action" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiRadioButtonGroup" TabSkip="no" />
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Welcome to the [ProductName] Setup Wizard" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}Select whether you want to repair [ProductName], change the target AutoCAD versions and reinstall, or remove it." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}欢迎使用 [ProductName] 安装向导" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择要修复 [ProductName]、更改目标 AutoCAD 版本并重新安装，还是将其删除。" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 		
 		<Dialog Id="FinishedForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Close" TabSkip="no" Default="yes" Cancel="yes">
+			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}关闭(&amp;C)" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Disabled="yes" />
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installation Complete" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="138" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] has been successfully installed.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装完成" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="138" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] 已成功安装。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
-			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="138" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] has been successfully removed.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="138" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] 已成功删除。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
@@ -108,70 +113,70 @@
 		</Dialog>
 
 		<Dialog Id="AdminFinishedForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Close" TabSkip="no" Default="yes" Cancel="yes">
+			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}关闭(&amp;C)" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Disabled="yes" />
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installation Complete" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyTextInstall" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}A network image of [ProductName] has been successfully created.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装完成" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyTextInstall" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] 的管理安装映像已成功创建。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] has been successfully removed.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] 已成功删除。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
 		</Dialog>
 			
 		<Dialog Id="Cancel" X="50" Y="50" Width="271" Height="78" Title="[ProductName]" NoMinimize="yes">
-			<Control Id="NoButton" Type="PushButton" X="198" Y="48" Width="65" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;No" TabSkip="no" Default="yes" Cancel="yes">
+			<Control Id="NoButton" Type="PushButton" X="198" Y="48" Width="65" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}否(&amp;N)" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return" />
 			</Control>
-			<Control Id="YesButton" Type="PushButton" X="126" Y="48" Width="65" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Yes" TabSkip="no">
+			<Control Id="YesButton" Type="PushButton" X="126" Y="48" Width="65" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}是(&amp;Y)" TabSkip="no">
 				<Publish Event="EndDialog" Value="Exit" />
 			</Control>
-			<Control Id="BodyText" Type="Text" X="6" Y="9" Width="258" Height="24" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installation is not yet complete. Are you sure you want to exit?" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="6" Y="9" Width="258" Height="24" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装尚未完成。确定要退出吗？" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 		
 		<Dialog Id="UserExitForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Close" TabSkip="no" Default="yes" Cancel="yes">
+			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}关闭(&amp;C)" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Disabled="yes" />
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installation Interrupted" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyTextInstall" Type="Text" X="18" Y="63" Width="342" Height="24" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installation was interrupted before [ProductName] could be installed. You need to restart the installer to try again." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装被中断" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyTextInstall" Type="Text" X="18" Y="63" Width="342" Height="24" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装被中断，[ProductName] 未能安装。需要重新运行安装程序再试一次。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
-			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer was interrupted before [ProductName] could be removed. You need to restart the installer to try again.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序被中断，[ProductName] 未能删除。需要重新运行安装程序再试一次。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
 		</Dialog>
 		
 		<Dialog Id="FatalErrorForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Close" TabSkip="no" Default="yes" Cancel="yes">
+			<Control Id="CloseButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}关闭(&amp;C)" TabSkip="no" Default="yes" Cancel="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Disabled="yes" />
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installation Incomplete" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyTextInstall" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer was interrupted before [ProductName] could be installer. You need to restart the installer to try again.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装未完成" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyTextInstall" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序被中断，[ProductName] 未能安装。需要重新运行安装程序再试一次。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
-			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer was interrupted before [ProductName] could be removed. You need to restart the installer to try again.&#xD;&#xA;&#xD;&#xA;Click &quot;Close&quot; to exit." TabSkip="yes" NoPrefix="yes">
+			<Control Id="BodyTextRemove" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序被中断，[ProductName] 未能删除。需要重新运行安装程序再试一次。&#xD;&#xA;&#xD;&#xA;单击“关闭”退出。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
@@ -180,59 +185,59 @@
 		<!-- System Dialogs -->
 		<Dialog Id="ErrorDialog" X="50" Y="50" Width="330" Height="101" Title="[ProductName]" ErrorDialog="yes">
 			<Control Id="ErrorText" Type="Text" X="6" Y="9" Width="318" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Disabled="yes" NoPrefix="yes" />
-			<Control Id="N" Type="PushButton" X="120" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;No" TabSkip="yes">
+			<Control Id="N" Type="PushButton" X="120" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}否(&amp;N)" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorNo" />
 			</Control>
-			<Control Id="Y" Type="PushButton" X="240" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Yes" TabSkip="yes">
+			<Control Id="Y" Type="PushButton" X="240" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}是(&amp;Y)" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorYes" />
 			</Control>
-			<Control Id="A" Type="PushButton" X="0" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}E&amp;xit Installation" TabSkip="yes">
+			<Control Id="A" Type="PushButton" X="0" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}退出安装(&amp;X)" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorAbort" />
 			</Control>
-			<Control Id="C" Type="PushButton" X="42" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="yes">
+			<Control Id="C" Type="PushButton" X="42" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorCancel" />
 			</Control>
-			<Control Id="I" Type="PushButton" X="81" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}C&amp;ontinue" TabSkip="yes">
+			<Control Id="I" Type="PushButton" X="81" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}继续(&amp;O)" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorIgnore" />
 			</Control>
-			<Control Id="O" Type="PushButton" X="159" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}OK" TabSkip="yes">
+			<Control Id="O" Type="PushButton" X="159" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}确定" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorOk" />
 			</Control>
-			<Control Id="R" Type="PushButton" X="198" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Try Again" TabSkip="yes">
+			<Control Id="R" Type="PushButton" X="198" Y="72" Width="81" Height="21" Text="{\VSI_MS_Sans_Serif13.0_0_0}重试(&amp;T)" TabSkip="yes">
 				<Publish Event="EndDialog" Value="ErrorRetry" />
 			</Control>
 		</Dialog>
 		
 		<Dialog Id="FilesInUse" X="50" Y="50" Width="361" Height="177" Title="[ProductName] Files in Use" NoMinimize="yes">
-			<Control Id="RetryButton" Type="PushButton" X="99" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Try Again" TabSkip="no" Default="yes">
+			<Control Id="RetryButton" Type="PushButton" X="99" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}重试(&amp;T)" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Retry" />
 			</Control>
-			<Control Id="ContinueButton" Type="PushButton" X="186" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Continue" TabSkip="no">
+			<Control Id="ContinueButton" Type="PushButton" X="186" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}继续(&amp;C)" TabSkip="no">
 				<Publish Event="EndDialog" Value="Ignore" />
 			</Control>
-			<Control Id="ExitButton" Type="PushButton" X="273" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}E&amp;xit Installation" TabSkip="no" Cancel="yes">
+			<Control Id="ExitButton" Type="PushButton" X="273" Y="150" Width="81" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}退出安装(&amp;X)" TabSkip="no" Cancel="yes">
 				<Publish Event="EndDialog" Value="Exit" />
 			</Control>
 			<Control Id="ListFilesInUse" Type="ListBox" X="6" Y="51" Width="348" Height="90" Property="FileInUseProcess" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiFilesInUse" TabSkip="no" Sunken="yes" Sorted="yes" />
-			<Control Id="InstallBodyText" Type="Text" X="6" Y="9" Width="345" Height="36" Text="{\VSI_MS_Sans_Serif13.0_0_0}The following applications are using files which the installer must update. You can either close the applications and click &quot;Try Again&quot;, or click &quot;Continue&quot; so that the installer continues the installation, and replaces these files when your system restarts." TabSkip="yes" NoPrefix="yes">
+			<Control Id="InstallBodyText" Type="Text" X="6" Y="9" Width="345" Height="36" Text="{\VSI_MS_Sans_Serif13.0_0_0}以下应用程序正在使用安装程序必须更新的文件。您可以关闭这些应用程序后单击“重试”，或单击“继续”以便安装程序继续安装，并在系统重新启动后替换这些文件。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
-			<Control Id="RemoveBodyText" Type="Text" X="6" Y="9" Width="345" Height="36" Text="{\VSI_MS_Sans_Serif13.0_0_0}The following applications are using files which the installer must remove. You can either close the applications and click &quot;Try Again&quot;, or click &quot;Continue&quot; so that the installer continues the installation, and replaces these files when your system restarts." TabSkip="yes" NoPrefix="yes">
+			<Control Id="RemoveBodyText" Type="Text" X="6" Y="9" Width="345" Height="36" Text="{\VSI_MS_Sans_Serif13.0_0_0}以下应用程序正在使用安装程序必须删除的文件。您可以关闭这些应用程序后单击“重试”，或单击“继续”以便安装程序继续安装，并在系统重新启动后替换这些文件。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
 		</Dialog>
 
 		<Dialog Id="ConfirmInstallForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Install Now" TabSkip="no" Default="yes">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}立即安装(&amp;I)" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return"><![CDATA[ConfirmInstallForm_NextArgs=""]]></Publish>
 				<Publish Event="NewDialog" Value="[ConfirmInstallForm_NextArgs]"><![CDATA[ConfirmInstallForm_NextArgs<>""]]></Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
 				<Condition Action="disable"><![CDATA[ConfirmInstallForm_PrevArgs=""]]></Condition>
 				<Condition Action="enable"><![CDATA[ConfirmInstallForm_PrevArgs<>""]]></Condition>
 				<Publish Event="NewDialog" Value="[ConfirmInstallForm_PrevArgs]"><![CDATA[ConfirmInstallForm_PrevArgs<>""]]></Publish>
@@ -240,16 +245,16 @@
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Confirm Installation" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText1" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer is ready to install [ProductName] on your computer.&#xD;&#xA;&#xD;&#xA;Click &quot;Next&quot; to start the installation." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}确认安装" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText1" Type="Text" X="9" Y="63" Width="354" Height="180" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序已准备好在本机安装 [ProductName]。&#xD;&#xA;&#xD;&#xA;单击“下一步”开始安装。" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 		<Dialog Id="ProgressForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]" Modeless="yes">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Disabled="yes" />
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Disabled="yes" />
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no" Disabled="yes" />
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="ProgressBar" Type="ProgressBar" X="18" Y="108" Width="336" Height="15" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiProgressBar" TabSkip="yes" Disabled="yes">
@@ -267,34 +272,34 @@
 				<Subscribe Event="SetProgress" Attribute="Progress" />
 			</Control>
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="ProgressLabel" Type="Text" X="18" Y="96" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Please wait..." TabSkip="yes" />
-			<Control Id="InstalledBody" Type="Text" X="9" Y="63" Width="354" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] is being installed." TabSkip="yes" NoPrefix="yes">
+			<Control Id="ProgressLabel" Type="Text" X="18" Y="96" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}请稍候..." TabSkip="yes" />
+			<Control Id="InstalledBody" Type="Text" X="9" Y="63" Width="354" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}正在安装 [ProductName]。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
-			<Control Id="RemovedBody" Type="Text" X="18" Y="63" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] is being removed." TabSkip="yes" NoPrefix="yes">
+			<Control Id="RemovedBody" Type="Text" X="18" Y="63" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}正在删除 [ProductName]。" TabSkip="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
-			<Control Id="RemoveBannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Removing [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
+			<Control Id="RemoveBannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}正在删除 [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
 			</Control>
-			<Control Id="InstalledBannerText" Type="Text" X="9" Y="9" Width="255" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installing [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
+			<Control Id="InstalledBannerText" Type="Text" X="9" Y="9" Width="255" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}正在安装 [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
 				<Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
 				<Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
 			</Control>
 		</Dialog>
 			
-		<Dialog Id="SelectFolderDialog" X="50" Y="50" Width="313" Height="223" Title="Browse for Folder" NoMinimize="yes">
-			<Control Id="OKButton" Type="PushButton" X="168" Y="198" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}OK" TabSkip="no" Default="yes">
+		<Dialog Id="SelectFolderDialog" X="50" Y="50" Width="313" Height="223" Title="浏览文件夹" NoMinimize="yes">
+			<Control Id="OKButton" Type="PushButton" X="168" Y="198" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}确定" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="240" Y="198" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="240" Y="198" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="Reset" Value="{}">1</Publish>
 				<Publish Event="EndDialog" Value="Return">1</Publish>
 			</Control>
-			<Control Id="BrowseText" Type="Text" X="6" Y="9" Width="60" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Browse:" TabSkip="no" />
+			<Control Id="BrowseText" Type="Text" X="6" Y="9" Width="60" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;B)：" TabSkip="no" />
 			<Control Id="FolderCombo" Type="DirectoryCombo" X="66" Y="6" Width="198" Height="120" Property="SelectFolderDialog_Property" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiDirectoryCombo" TabSkip="no" Indirect="yes" Removable="yes" Fixed="yes" Remote="yes" RAMDisk="yes" Floppy="yes" />
 			<Control Id="FolderUpButton" Type="PushButton" X="270" Y="6" Width="18" Height="18" Text="UpFldrBtn" TabSkip="no" IconSize="16" FixedSize="yes" Icon="yes">
 				<Publish Event="DirectoryListUp" Value="{}">1</Publish>
@@ -303,13 +308,50 @@
 				<Publish Event="DirectoryListNew" Value="{}">1</Publish>
 			</Control>
 			<Control Id="FolderList" Type="DirectoryList" X="6" Y="30" Width="300" Height="129" Property="SelectFolderDialog_Property" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiDirectoryList" TabSkip="no" Sunken="yes" Indirect="yes" />
-			<Control Id="FolderText" Type="Text" X="6" Y="171" Width="60" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Folder:" TabSkip="no" />
+			<Control Id="FolderText" Type="Text" X="6" Y="171" Width="60" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}文件夹(&amp;F)：" TabSkip="no" />
 			<Control Id="FolderPathEdit" Type="PathEdit" X="66" Y="168" Width="240" Height="18" Property="SelectFolderDialog_Property" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" Indirect="yes" />
 		</Dialog>
 
 		<!-- User Dialogs -->
+		<!-- Where the wizards are installed. The MSI's TARGETDIR used to be a fixed (x86) folder with no
+		     page at all; the Inno line made it selectable and moved it to the 64-bit Program Files, and
+		     the property sheet folder follows it (see CA_DefaultPropsDir / ARXPROPSDIR_AUTO). -->
+		<Dialog Id="InstallDirForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
+				<!-- Keep the property sheet folder in step with the install folder, but only while it still
+				     holds the value we put there ourselves (ARXPROPSDIR_AUTO): once the user typed a
+				     folder of their own on SdkForm - or passed ARXPROPSDIR=... - the two differ and this
+				     is skipped, so coming Back and pressing Next again cannot silently discard it. The
+				     second publish records the new auto value; it has to come after the first, because
+				     publishes run in order and this one would otherwise already move the target. -->
+				<Publish Property="ARXPROPSDIR" Value="[TARGETDIR]"><![CDATA[ARXPROPSDIR="" OR ARXPROPSDIR="[ARXPROPSDIR_AUTO]"]]></Publish>
+				<Publish Property="ARXPROPSDIR_AUTO" Value="[TARGETDIR]">1</Publish>
+				<Publish Event="EndDialog" Value="Return"><![CDATA[InstallDirForm_NextArgs=""]]></Publish>
+				<Publish Event="NewDialog" Value="[InstallDirForm_NextArgs]"><![CDATA[InstallDirForm_NextArgs<>""]]></Publish>
+			</Control>
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
+				<Publish Event="SpawnDialog" Value="Cancel" />
+			</Control>
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
+				<Condition Action="disable"><![CDATA[InstallDirForm_PrevArgs=""]]></Condition>
+				<Condition Action="enable"><![CDATA[InstallDirForm_PrevArgs<>""]]></Condition>
+				<Publish Event="NewDialog" Value="[InstallDirForm_PrevArgs]"><![CDATA[InstallDirForm_PrevArgs<>""]]></Publish>
+			</Control>
+			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装位置" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择安装这套向导的文件夹。属性表目录默认跟随它，稍后也可以在下一页单独指定。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="DirLabel" Type="Text" X="18" Y="118" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装目录(&amp;D)：" TabSkip="no" />
+			<Control Id="DirEdit" Type="PathEdit" X="18" Y="130" Width="252" Height="18" Property="TARGETDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseDir" Type="PushButton" X="275" Y="130" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="TARGETDIR">1</Publish>
+				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
+			</Control>
+		</Dialog>
+
 		<Dialog Id="ObjectARXForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-                <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+                <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
                     <!-- On an upgrade, re-tick every year whose props already exist (i.e. the previous
                          selection). YEARS_DETECTED keeps Back/Next from re-applying it later. -->
                     <Publish Property="YEAR_2010" Value="1"><![CDATA[DET_YEAR_2010<>"" AND NOT YEARS_DETECTED]]></Publish>
@@ -332,31 +374,25 @@
                     <Publish Event="EndDialog" Value="Return"><![CDATA[ObjectARXForm_NextArgs=""]]></Publish>
                     <Publish Event="NewDialog" Value="[ObjectARXForm_NextArgs]"><![CDATA[ObjectARXForm_NextArgs<>""]]></Publish>
                 </Control>
-                <Control Id="RDSLabel" Type="Text" X="18" Y="108" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Enter your prefered default RDS symbol:" TabSkip="no" />
+                <Control Id="RDSLabel" Type="Text" X="18" Y="108" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}请输入默认的 RDS 符号（可留空）：" TabSkip="no" />
                 <Control Id="RDSEdit" Type="Edit" X="18" Y="120" Width="348" Height="18" Property="RDS" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Sunken="yes" />
-                <Control Id="ArxLabel" Type="Text" X="18" Y="180" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK location:" TabSkip="no" />
-                <Control Id="ArxEdit" Type="PathEdit" X="18" Y="192" Width="252" Height="18" Property="ARXPATH" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-                <Control Id="BrowseArx" Type="PushButton" X="275" Y="192" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Bro&amp;wse..." TabSkip="no">
+                <Control Id="ArxLabel" Type="Text" X="18" Y="150" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK 位置（会往它的 inc 目录写文件）：" TabSkip="no" />
+                <Control Id="ArxEdit" Type="PathEdit" X="18" Y="162" Width="252" Height="18" Property="ARXPATH" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+                <Control Id="BrowseArx" Type="PushButton" X="275" Y="162" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
                     <Publish Property="SelectFolderDialog_Property" Value="ARXPATH">1</Publish>
                     <Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
                 </Control>
-                <Control Id="AcadLabel" Type="Text" X="18" Y="216" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD location:" TabSkip="no" />
-                <Control Id="AcadEdit" Type="PathEdit" X="18" Y="228" Width="252" Height="18" Property="ACAD" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-                <Control Id="BrowseAcad" Type="PushButton" X="275" Y="228" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}B&amp;rowse..." TabSkip="no">
-                    <Publish Property="SelectFolderDialog_Property" Value="ACAD">1</Publish>
-                    <Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-                </Control>
-                <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+                <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
                     <Publish Event="SpawnDialog" Value="Cancel" />
                 </Control>
-                <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+                <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
                     <Condition Action="disable"><![CDATA[ObjectARXForm_PrevArgs=""]]></Condition>
                     <Condition Action="enable"><![CDATA[ObjectARXForm_PrevArgs<>""]]></Condition>
                     <Publish Event="NewDialog" Value="[ObjectARXForm_PrevArgs]"><![CDATA[ObjectARXForm_PrevArgs<>""]]></Publish>
                 </Control>
                 <Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
-                <Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Registered Developer Symbol (RDS)" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-                <Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}Please take a moment to specify your prefered RDS symbol to be used when creating new projects. Find more information about RDS symbols at http://www.autodesk.com/objectarx -&gt; 'Symbols Registration'" TabSkip="yes" NoPrefix="yes" />
+                <Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}注册开发者符号 (RDS)" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+                <Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}请花一点时间指定创建新工程时默认使用的 RDS 符号，可以留空。关于 RDS 符号的说明见 http://www.autodesk.com/objectarx -&gt; 'Symbols Registration'" TabSkip="yes" NoPrefix="yes" />
                 <Control Id="Control273" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
                 <Control Id="Control278" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif16.0_1_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
             </Dialog>
@@ -368,45 +404,39 @@
 		     of the dialog"), and a twin dialog is impossible because the CheckBox table is keyed by
 		     Property: one property can back only one check box in the whole package. Next therefore
 		     goes on to YearSummaryForm, which is where the selection can be read back as text. -->
-		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="394" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="372" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="370" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<!-- The selection is only reported as text on YearSummaryForm, which reads
 				     ARX_YEARS_SUMMARY when it is created, so build it here. -->
 				<Publish Event="DoAction" Value="CA_BuildYearsSummary">1</Publish>
 				<Publish Event="EndDialog" Value="Return"><![CDATA[SdkForm_NextArgs=""]]></Publish>
 				<Publish Event="NewDialog" Value="[SdkForm_NextArgs]"><![CDATA[SdkForm_NextArgs<>""]]></Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="372" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="372" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
 				<Condition Action="disable"><![CDATA[SdkForm_PrevArgs=""]]></Condition>
 				<Condition Action="enable"><![CDATA[SdkForm_PrevArgs<>""]]></Condition>
 				<Publish Event="NewDialog" Value="[SdkForm_PrevArgs]"><![CDATA[SdkForm_PrevArgs<>""]]></Publish>
 			</Control>
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="Line2" Type="Line" X="0" Y="364" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}ObjectARX SDK and Target Versions" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="59" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer generates one property sheet per ticked year into the ObjectARX Props folder. Unticked years are not created; ticking a year you do not have installed is harmless." TabSkip="yes" NoPrefix="yes" />
-			<Control Id="ArxRootLabel" Type="Text" X="18" Y="92" Width="240" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK root folder:" TabSkip="no" />
+			<Control Id="Line2" Type="Line" X="0" Y="340" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}ObjectARX SDK 与目标版本" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="59" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序会为每个勾选的年份在属性表目录下各生成一份属性表。未勾选的年份不生成；勾选一个本机没装的年份没有副作用。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="ArxRootLabel" Type="Text" X="18" Y="92" Width="240" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Autodesk 根目录（SDK 与 AutoCAD 都在它下面）：" TabSkip="no" />
 			<Control Id="ArxRootEdit" Type="PathEdit" X="18" Y="104" Width="252" Height="18" Property="ARXROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseArxRoot" Type="PushButton" X="275" Y="104" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Bro&amp;wse..." TabSkip="no">
+			<Control Id="BrowseArxRoot" Type="PushButton" X="275" Y="104" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
 				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
-			<Control Id="AcadRootLabel" Type="Text" X="18" Y="126" Width="240" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD root folder (only used for the debugger command):" TabSkip="no" />
-			<Control Id="AcadRootEdit" Type="PathEdit" X="18" Y="138" Width="252" Height="18" Property="ACADROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseAcadRoot" Type="PushButton" X="275" Y="138" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}B&amp;rowse..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ACADROOT">1</Publish>
-				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-			</Control>
-			<Control Id="YearLabel" Type="Text" X="18" Y="162" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD versions:" TabSkip="no" />
+			<Control Id="YearLabel" Type="Text" X="18" Y="138" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD 版本：" TabSkip="no" />
 			<!-- Bulk selection is pure declarative publishing: no custom action and no page change, so the
 			     check boxes stay where they are. A YEAR_* that is not ticked has to be EMPTY - MSI clears
 			     a check box's property when it is cleared, and a non-empty value such as "0" renders as
 			     ticked. Invert needs a pair per year because MSI cannot toggle a property on its own. -->
-			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;All" TabSkip="no">
+			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="135" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全部(&amp;A)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="1">1</Publish>
 				<Publish Property="YEAR_2012" Value="1">1</Publish>
 				<Publish Property="YEAR_2013" Value="1">1</Publish>
@@ -424,7 +454,7 @@
 				<Publish Property="YEAR_2026" Value="1">1</Publish>
 				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="159" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;None" TabSkip="no">
+			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="135" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全不选(&amp;N)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="{}">1</Publish>
 				<Publish Property="YEAR_2012" Value="{}">1</Publish>
 				<Publish Property="YEAR_2013" Value="{}">1</Publish>
@@ -442,7 +472,7 @@
 				<Publish Property="YEAR_2026" Value="{}">1</Publish>
 				<Publish Property="YEAR_2027" Value="{}">1</Publish>
 			</Control>
-			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="159" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Invert" TabSkip="no">
+			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="135" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}反选(&amp;I)" TabSkip="no">
 				<!-- Inverting reads each year's current value, and a publish pair that tests the very
 				     property it is about to change cannot work: setting it to 1 makes the "clear it"
 				     condition true as well, so both events fire and cancel out. Snapshot the selection
@@ -499,7 +529,7 @@
 			<!-- One year per binary-compatible generation, so a project still loads into the other
 			     AutoCAD releases sharing that SDK. 2017 is absent because the year table has no such
 			     entry and 2018's props already covers 2017/2018 (both R22). -->
-			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="159" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Compatible" TabSkip="no">
+			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="135" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}兼容(&amp;C)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="{}">1</Publish>
 				<Publish Property="YEAR_2012" Value="{}">1</Publish>
 				<Publish Property="YEAR_2013" Value="{}">1</Publish>
@@ -517,25 +547,25 @@
 				<Publish Property="YEAR_2026" Value="1">1</Publish>
 				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="178" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="196" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="214" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="232" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="250" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="268" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="286" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="304" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="178" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="196" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="214" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="232" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="250" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="268" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="286" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="304" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="PropsDirLabel" Type="Text" X="18" Y="326" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Property sheet folder (shared with the VS wizard):" TabSkip="no" />
-			<Control Id="PropsDirEdit" Type="PathEdit" X="18" Y="338" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowsePropsDir" Type="PushButton" X="275" Y="338" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Bro&amp;wse..." TabSkip="no">
+			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="154" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="172" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="190" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="208" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="226" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="244" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="262" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="280" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="154" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="172" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="190" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="208" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="226" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="244" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="262" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="280" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="PropsDirLabel" Type="Text" X="18" Y="302" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用，默认跟随安装目录）：" TabSkip="no" />
+			<Control Id="PropsDirEdit" Type="PathEdit" X="18" Y="314" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowsePropsDir" Type="PushButton" X="275" Y="314" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
 				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
@@ -546,21 +576,21 @@
 		     built afterwards - here, from ARX_YEARS_SUMMARY. Back returns to SdkForm to adjust single
 		     years, Next goes on to the confirmation page. -->
 		<Dialog Id="YearSummaryForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<Publish Event="NewDialog" Value="ConfirmInstallForm">1</Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
 				<Publish Event="NewDialog" Value="SdkForm">1</Publish>
 			</Control>
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Target AutoCAD Versions - Selection" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}目标 AutoCAD 版本 - 所选内容" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
 			<Control Id="SummaryText" Type="Text" X="18" Y="66" Width="340" Height="90" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ARX_YEARS_SUMMARY]" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="HintText" Type="Text" X="18" Y="176" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}Press Back to tick individual years on the previous page, or Next to install this selection." TabSkip="yes" NoPrefix="yes" />
+			<Control Id="HintText" Type="Text" X="18" Y="176" Width="340" Height="48" Text="{\VSI_MS_Sans_Serif13.0_0_0}按“上一步”回到上一页逐个勾选年份，或按“下一步”按当前所选安装。" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 	</UI>

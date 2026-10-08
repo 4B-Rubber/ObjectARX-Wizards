@@ -13,9 +13,24 @@ using System.Web.Script.Serialization;
 
 namespace ArxWizCustomAction
 {
+    /// <summary>Path helpers shared by the two custom action classes below.</summary>
+    static class Paths
+    {
+        /// <summary>
+        /// The Autodesk root is used as a *prefix*: the generated property sheets concatenate it with
+        /// the year ("$(AcadRoot)AutoCAD <year>\"). The shipped defaults end in a backslash, but a path
+        /// typed into the wizard need not, and a missing one turns the value into
+        /// "...\AutodeskAutoCAD <year>\". Normalising here is the same guard the Inno line applies.
+        /// </summary>
+        internal static string EnsureTrailingSlash(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            return path.TrimEnd('\\') + "\\";
+        }
+    }
+
     public static class CustomActions
     {
-
 
         /// <summary>
         /// The Objective of this custom action is, we will replace [TARGETDIRECTORY] which is retrieved at time of Installation session in to
@@ -81,7 +96,6 @@ namespace ArxWizCustomAction
             string TARGETDIR = session["TARGETDIR"];
             string RDS = String.IsNullOrEmpty(session["RDS"]) ? "ADSK" : session["RDS"];
             session.Log(" >> PatchHTMLWizFiles: RDS = " + RDS + " / TARGETDIR = " + TARGETDIR);
-            //C:\Program Files (x86)\Autodesk\ObjectARX 2026 Wizards\
 
             DirectoryInfo di = new DirectoryInfo(TARGETDIR);
             FileInfo[] files = di.GetFiles("default.htm", SearchOption.AllDirectories)
@@ -106,59 +120,6 @@ namespace ArxWizCustomAction
             session.Log("Ending PatchHTMLWizFiles");
             return (ActionResult.Success);
         }
-        /// <summary>
-        /// This custom action will update ArxSdkDir and ACAD Elements in Autodesk.arx-2020.props file post installation 
-        /// </summary>
-        /// <param name="session"></param>
-        /// <returns>ActionResult</returns>
-
-        [CustomAction]
-        public static ActionResult PatchPropsWizFiles(Session session)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif    
-            session.Log("Begin PatchPropsWizFiles");
-            //Debugger.Break () ;
-
-            string TARGETDIR = session["TARGETDIR"];
-            string ARXPATH = session["ARXPATH"];
-            session.Log(" >> PatchPropsWizFiles: ARXPATH = " + ARXPATH + " / TARGETDIR = " + TARGETDIR);
-            //C:\Program Files (x86)\Autodesk\ObjectARX 2026 Wizards\
-            string ACAD = session["ACAD"];
-            session.Log(" >> PatchPropsWizFiles: ACAD = " + ACAD);
-
-            DirectoryInfo di = new DirectoryInfo(TARGETDIR);
-            FileInfo[] files = di.GetFiles("*2026.props", SearchOption.AllDirectories).ToArray();
-            session.Log(" >> PatchPropsWizFiles:   DirectoryInfo = " + files.Length.ToString());
-            var _arxpath = ARXPATH;
-            var _acad = ACAD;
-            foreach (FileInfo file in files)
-            {
-                try
-                {
-                    session.Log(" >> PatchPropsWizFiles:   =>> " + file.FullName);
-                    string content = File.ReadAllText(file.FullName);
-                    content = content.Replace(@"C:\ObjectARX\", _arxpath);
-                    var from = @"C:\Program Files\Autodesk\AutoCAD 2026\";
-                    var to = _acad;
-                    session.Log($" >> PatchPropsWizFiles:   =>> replacing {from} with {to}");
-                    content = content.Replace(from, to);
-                    File.WriteAllText(file.FullName, content);
-                    session.Log(" >> PatchPropsWizFiles:   =>> saving");
-
-                }
-                catch (Exception ex)
-                {
-                    session.Log(ex.Message);
-                    return ActionResult.Failure;
-                }
-
-            }
-            session.Log("Ending PatchPropsWizFiles");
-            return (ActionResult.Success);
-        }
-
         /// <summary>
         /// The legacy HTML wizard keeps the props folder in a hardcoded JS constant. Point it at the
         /// folder the user chose so the old and the new wizards resolve the same place.
@@ -315,7 +276,7 @@ namespace ArxWizCustomAction
                 foreach (var entry in PropsTable.Load().Years)
                     if (session["YEAR_" + entry.Year] == "1") ticked.Add(entry.Year);
                 session["ARX_YEARS_SUMMARY"] = ticked.Count == 0
-                    ? "None. No property sheet is generated, and any generated earlier is removed."
+                    ? "无。不生成任何属性表，并且会把以前生成的清掉。"
                     : string.Join(", ", ticked.ToArray());
                 Log(session, "BuildYearsSummary: " + ticked.Count + " ticked");
                 return ActionResult.Success;
@@ -349,8 +310,7 @@ namespace ArxWizCustomAction
                 session["CA_CREATEARXPROPS"] =
                     "PROPSDIR=" + propsDir +
                     ";PREVDIR=" + (session["PROPSDIR_PROBE"] ?? "") +
-                    ";ARXROOT=" + (session["ARXROOT"] ?? "") +
-                    ";ACADROOT=" + (session["ACADROOT"] ?? "") + ";" + years;
+                    ";ARXROOT=" + Paths.EnsureTrailingSlash(session["ARXROOT"]) + ";" + years;
                 session["CA_CLEANUPUNSELECTEDARXPROPS"] = "PROPSDIR=" + propsDir + ";" + years;
                 session["CA_REMOVEARXPROPS"] = "PROPSDIR=" + propsDir;
 
@@ -372,8 +332,10 @@ namespace ArxWizCustomAction
                 var data = ParseData(session["CustomActionData"]);
                 var table = PropsTable.Load();
                 string dir = Value(data, "PROPSDIR", PropsDirDefault);
+                // One Autodesk root for both: the SDK and AutoCAD live under it, and the year is
+                // appended by each generated sheet rather than by this installer.
                 string sdkRoot = Value(data, "ARXROOT", table.DefaultRoot);
-                string acadRoot = Value(data, "ACADROOT", table.DefaultRoot);
+                string acadRoot = sdkRoot;
                 var selected = SelectedYears(data, table);
 
                 if (selected.Count == 0)

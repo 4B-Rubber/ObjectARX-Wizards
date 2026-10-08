@@ -7,10 +7,11 @@ set CANDLE=%WIX_BIN%\candle.exe
 set LIGHT=%WIX_BIN%\light.exe
 set EXT_PATH=%WIX_BIN%\WixVSExtension.dll
 
-:: Input and output files
+:: Input and output files. The MSI name is deliberately year-neutral: this is a multi-year product
+:: (2010-2027), so nothing here may be tied to a single release.
 set WXS=ObjectARXWizards.wxs
 set WIXOBJ=ObjectARXWizards.wixobj
-set MSI=ObjectARX2026Wizards.msi
+set MSI=ObjectARXMultiYearWizards.msi
 
 :: Clean old outputs
 if exist %WIXOBJ% del /f %WIXOBJ%

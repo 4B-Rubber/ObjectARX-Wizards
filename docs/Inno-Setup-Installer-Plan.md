@@ -425,3 +425,38 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 - 模板冒烟测试：**ALL CHECKS PASSED**（含新增两条断言，既有 6 条 MfcResourceEditor 断言未受影响）。
 - 其余四套同样全绿：VSIX 版本一致性、年份一致性、载荷对齐 215 = 215、Inno 沙箱 40 项。
 - VSIX 与两个安装包均已重建（VSIX 模板是内嵌资源，必须重建才会带出去）。
+
+## 16. 版本升到 0.1.3（为了能覆盖安装）
+
+### 16.1 之前到底能不能覆盖
+
+两条线的判定完全不同，之前之所以"装上去没变化"，问题只在 VSIX：
+
+| 线 | 判定依据 | 结论 |
+|---|---|---|
+| **MSI / Burn** | `UpgradeCode` 相同 → `UPGRADEFOUND` 区间 `[0.0.0, ProductVersion)` 命中即 `RemoveExistingProducts`；`NEWERPRODUCTFOUND` 只拦更高的版本 | **0.1.2 能自动覆盖 0.1.1**。但区间**不含当前版本**，所以重跑同一个 0.1.2 只会进维护页——必须升号才能产生一次真正的升级 |
+| **Inno** | 只看 `AppId`（常量 GUID），没有任何版本比较 | 永远直接覆盖，不受版本限制 |
+| **VSIX** | `VSIXInstaller` 比 `Identity/@Version` | **版本不变就判定"已安装"、静默跳过** —— 这正是前面反复要手动 `/uninstall` 的原因 |
+
+所以结论：升最后一位数字就能让三处都干净地覆盖。
+
+### 16.2 改动（0.1.2 → 0.1.3）
+
+| 位置 | 改动 |
+|---|---|
+| `ObjectARXWizards.wxs` | `ProductVersion` → 0.1.3，**`ProductCode` 同步换新**（`{2D2AA7F2-…}`）—— 项目硬约束：两者必须成对变更，只改一个会报 1638 |
+| `Bundle.wxs` | `Version` → 0.1.3；`UninstallCommand` 里的 ProductCode 跟着换 |
+| `ArxVsixWizard.csproj` | `<Version>` → 0.1.3（程序集由此为 0.1.3.0） |
+| `source.extension.vsixmanifest` | `Identity/@Version`、`Asset/@AssemblyName` → 0.1.3 / 0.1.3.0 |
+| `Packaging\**\*.vstemplate`（9 个） | `<Assembly>` → `Version=0.1.3.0` —— **上次 0.1.1 就是漏了这里才导致向导全部加载失败**，这次由 `test-version-consistency.ps1` 兜着 |
+| `ObjectARXMultiYearWizards.iss` | `AppVersion` → 0.1.3 |
+
+### 16.3 验证
+
+- MSI 内部：`Version="0.1.3"`、新 ProductCode、`Codepage=936 Language=2052`；升级区间为 `[0.0.0, 0.1.3)`，不含自身。
+- Bundle 内嵌的 VSIX 与仓库根那份**逐字节一致**；其 manifest 为 0.1.3、9/9 模板为 0.1.3.0。
+- 五套测试全绿：VSIX 版本一致性、年份一致性、模板冒烟、载荷对齐 215 = 215、Inno 沙箱 40 项。
+
+### 16.4 升级路径（这次不用先卸载）
+
+0.1.3 换了 ProductCode，所以 Burn/MSI 会把它识别为一次正常升级；VSIX 版本也变了，`VSIXInstaller` 不再跳过。**任意旧版（0.1.1 / 0.1.2，两条线）都能直接装 0.1.3**。

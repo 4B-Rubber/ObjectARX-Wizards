@@ -24,7 +24,7 @@
     <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap3File$">Wrap3.txt</ProjectItem>
   </TemplateContent>
   <WizardExtension>
-    <Assembly>ArxVsixWizard, Version=0.1.2.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <Assembly>ArxVsixWizard, Version=0.1.3.0, Culture=neutral, PublicKeyToken=null</Assembly>
     <FullClassName>ArxVsixWizard.Items.MfcSupportItemWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

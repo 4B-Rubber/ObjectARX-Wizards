@@ -6,7 +6,7 @@
        installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
        The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process. -->
   <Bundle Name="ObjectARX Multi-Year Wizards (2010-2027)"
-          Version="0.1.2"
+          Version="0.1.3"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
@@ -34,7 +34,7 @@
                   Vital="yes"
                   Permanent="no"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi"'
-                  UninstallCommand='/uninstall {D8C4DE84-665B-4442-85C0-2DE1C293EBE0}'>
+                  UninstallCommand='/uninstall {2D2AA7F2-1804-4816-ADEF-1932D00CB77C}'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 

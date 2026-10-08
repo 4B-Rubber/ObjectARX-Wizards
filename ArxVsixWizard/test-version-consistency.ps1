@@ -34,8 +34,8 @@ function Check([string]$name, [bool]$ok, [string]$detail = '') {
 $csproj = [System.IO.File]::ReadAllText($csprojPath)
 $m = [regex]::Match($csproj, '<Version>([^<]+)</Version>')
 if (-not $m.Success) { throw 'no <Version> in ArxVsixWizard.csproj' }
-$v = $m.Groups[1].Value.Trim()          # 0.1.2
-$assembly = $v + '.0'                   # 0.1.2.0
+$v = $m.Groups[1].Value.Trim()          # e.g. 0.1.3
+$assembly = $v + '.0'                   # e.g. 0.1.3.0
 Write-Host ('project version: ' + $v + '  (assembly ' + $assembly + ')')
 
 # ---- the manifest

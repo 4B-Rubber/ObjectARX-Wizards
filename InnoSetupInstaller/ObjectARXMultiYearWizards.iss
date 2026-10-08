@@ -1,4 +1,4 @@
-﻿; ============================================================================================
+; ============================================================================================
 ;  ObjectARX Multi-Year Wizards — Inno Setup installer (branch dev)
 ;
 ;  Replicates, on this branch, what the WiX line does on `main`:
@@ -48,7 +48,7 @@
 ; ============================================================================================
 
 #define AppName "ObjectARX Multi-Year Wizards (2010-2027)"
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the

@@ -334,3 +334,40 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 - 重编 MSI 后用 `dark` 反编译与改造前的基线**逐行 diff：312 行完全一致**——证明本轮只补了构建属性，没动任何对话框/行为；`PatchPropsWizFiles`、`ObjectARX2026` 仍为 0。
 - 三套既有测试全绿：载荷对齐 **215 = 215**、Inno 沙箱 40 项全过、生成器回归全过。
 - 四产物已重建：`Setup.exe` 1.30 MB（中文）、`ObjectARXMultiYearWizards.msi` 1.10 MB（45/45 Win64）、`...-Inno.exe` 2.43 MB。
+
+## 14. VSIX 向导加载失败（真机测出，已修）
+
+真机装完在 VS 里新建工程时报：
+
+```
+错误: 此模板尝试加载组件程序集 "ArxVsixWizard, Version=26.2.0.0, Culture=neutral,
+      PublicKeyToken=null"。有关此问题和如何启用此模板的详细信息，请参阅有关"自定义项目模板"的文档。
+```
+
+### 14.1 根因
+
+`ArxVsixWizard\Packaging\**` 下 **9 个 `.vstemplate`** 的 `<Assembly>` 仍写着 **`Version=26.2.0.0`** —— 那是旧 26.x 产品线的版本号。而程序集本身已经是 `0.1.2.0`，于是 VS 按模板声明的标识去加载程序集，找不到就报上面那句。
+
+**0.1.1 那次"版本号重新起算"漏了这 9 个文件。** 这不是新引入的问题，而是这一轮"去版本化"的同一类残留 —— 之前只清了 MSI/Inno 侧，VSIX 模板侧没扫到。`ArxVsixWizard\README.md` 里其实早就把它记成了已知坑（"版本号变更时要同步"），但没有测试兜住，所以静默漂移了一个版本。
+
+### 14.2 修法与防回归
+
+- 9 个 `.vstemplate` 的 `<Assembly>` 由 `26.2.0.0` 改为 `0.1.2.0`；
+- 重建 VSIX 并刷新仓库根的 `ObjectARXMultiYearWizards.vsix`；
+- 新增 `ArxVsixWizard\test-version-consistency.ps1`：断言**四份版本声明**一致，并直接解包**已构建的 VSIX** 复核其中的每个 `.vstemplate` 与 manifest——
+
+  | 位置 | 应等于 |
+  |---|---|
+  | `ArxVsixWizard.csproj` 的 `<Version>` | `0.1.2` |
+  | `source.extension.vsixmanifest` 的 `Identity/@Version` | `0.1.2` |
+  | 同文件的 `Asset/@AssemblyName` 里的版本 | `0.1.2.0` |
+  | `Packaging\**\*.vstemplate` 的 `<Assembly>` 标识（9 个） | `ArxVsixWizard, Version=0.1.2.0, Culture=neutral, PublicKeyToken=null` |
+
+这个测试在修之前**精准复现了报错**（当时报告 9 个模板全是旧的），修完全绿 —— 所以它确实拦得住这类漂移。
+
+### 14.3 验证
+
+- `test-version-consistency.ps1`：**ALL CHECKS PASSED**（9/9 模板 + manifest + 已构建产物）。
+- 从 Bundle 里解包内嵌的 VSIX 复核：**9/9 模板带 `0.1.2.0`、manifest `0.1.2`** —— 证明装到用户机器上的那份是对的，不只是仓库根那份。
+- 五套测试全绿：VSIX 版本一致性、年份一致性、载荷对齐 215 = 215、生成器回归、Inno 沙箱 40 项。
+- 两个安装包均已重建（VSIX 17:35 → 安装包 18:13）。

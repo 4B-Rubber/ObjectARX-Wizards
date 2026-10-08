@@ -48,7 +48,7 @@ $msb = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current
 ```
 ArxVsixWizard/
 ├── ArxVsixWizard.csproj
-├── source.extension.vsixmanifest      # VSIX 清单（Id=ObjectARX.MultiYear.Wizard, v26.1.0）
+├── source.extension.vsixmanifest      # VSIX 清单（Id=ObjectARX.MultiYear.Wizard）
 ├── ArxProjectWizard.cs                # IWizard 主实现 + OmfProjectWizard（薄子类）
 ├── ArxWizard.cs                       # ⚠ 早期骨架残留的空类，可删
 ├── Models/
@@ -108,7 +108,7 @@ ArxVsixWizard/
 原来 `Packaging\ArxApp\**` 被 `Link="ArxApp\..."` 打进去，安装后落盘为 `Extensions\<id>\ArxApp\ArxApp.vstemplate`；**VS 只把扩展里的 `ProjectTemplates` 目录当作项目模板扫描根**（对照微软官方模板扩展：`ProjectTemplates\VC\1033\<名>\<名>.vstemplate`，asset 为 `Path="ProjectTemplates"`）。因此模板从来不会出现在"新建项目"里——这才是"向导不能用"的主因，P0b 的源文件问题是它下游的。
 - 修法：`Packaging` 重组为 `ProjectTemplates\VC\1033\{ArxApp,OmfApp}\`；csproj 的 `Content` 改为 `Packaging\ProjectTemplates\**\*` → `Link="ProjectTemplates\%(RecursiveDir)..."`；manifest 两个 ProjectTemplate asset 合并为一个 `<Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />`；顺带把 `.ico` 移进各自模板目录（原来放在 `Packaging\*.ico` 不被 `ArxApp\**` 匹配，压根没进 VSIX）。
 - 打包形式结论（原第 5 节存疑项）：**松散目录即可，不需要压 zip**——官方扩展也是松散 `ProjectTemplates` 目录。
-- 重装坑：VSIX 版本号未变（26.1.0）时 `VSIXInstaller /quiet` 会认为"已安装"而静默跳过，必须先 `/uninstall:ObjectARX.MultiYear.Wizard` 再装。安装需写 `%LOCALAPPDATA%\Microsoft\VisualStudio\...`，沙箱内会被拒。
+- 重装坑：VSIX 版本号未变时 `VSIXInstaller /quiet` 会认为"已安装"而静默跳过，必须先 `/uninstall:ObjectARX.MultiYear.Wizard` 再装。安装需写 `%LOCALAPPDATA%\Microsoft\VisualStudio\...`，沙箱内会被拒。
 - 已实测：卸载+重装后 VS2022/VS2026 扩展目录均出现 `ProjectTemplates\VC\1033\{ArxApp,OmfApp}\...` 与 `templateManifest0.1033.vstman`。
 
 ### ~~P0b — vstemplate 没有列任何 ProjectItem，真实 VS 里源文件不会被生成~~（已修复）
@@ -141,7 +141,7 @@ ArxVsixWizard/
 - VSTHRD010 警告：IWizard 回调本就在 UI 线程，可在方法入口加 `ThreadHelper.ThrowIfNotOnUIThread()` 明示。
 - 模板源文件为 Windows-1252 编码，渲染器按 1252 解码；P0 修法落盘时建议对 cpp/h/rc 保持与老向导一致的 ANSI 写出（vcxproj/filters 用 UTF-8 无 BOM），避免 .rc 中扩展字符乱码。
 - RDS 仅 MaxLength=4，未做字符集校验；空 RDS 已在 vcxproj 条件处理。
-- WizardExtension 程序集标识写死 `ArxVsixWizard, Version=26.1.0.0, ..., PublicKeyToken=null`，版本号变更时要同步；可考虑强名称签名。
+- WizardExtension 程序集标识写死在三处，版本号变更时必须同步，否则 VS 会以"此模板尝试加载组件程序集 …"拒绝加载向导：`ArxVsixWizard.csproj` 的 `<Version>`、`source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName`、以及 `Packaging\**\*.vstemplate` 的 `<Assembly>`。**0.1.1 那次改版就漏了这 9 个 `.vstemplate`**（里面还是 26.2.0.0），导致所有向导都加载失败。现由 [test-version-consistency.ps1](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/test-version-consistency.ps1) 对四处 + 已构建的 VSIX 做断言，改版本后跑它即可；可考虑强名称签名。
 - VS2022 上老 MSI（.vsz）向导与新 VSIX 会**并存显示两个入口**，分发策略要决定：共存、MSI 退役、还是改名区分。
 - TemplateSmokeTest 在项目子目录中、不打进 VSIX；别把它的 obj/bin 当产物分发。
 - 当前 VS2026 (devenv) 可能仍在运行，调试/重装扩展前先全部关闭。
@@ -165,4 +165,4 @@ ArxVsixWizard/
   D:\Demo\ObjectARX-Wizards\ObjectARXMultiYearWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiYearWizards.vsix](file:///D:/Demo/ObjectARX-Wizards/ObjectARXMultiYearWizards.vsix)（约 113 KB，26.1.0）。
+产物 VSIX：[ObjectARXMultiYearWizards.vsix](file:///D:/Demo/ObjectARX-Wizards/ObjectARXMultiYearWizards.vsix)（约 175 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

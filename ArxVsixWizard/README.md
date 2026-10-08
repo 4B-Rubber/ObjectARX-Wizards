@@ -1,7 +1,7 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**工程可编译、VSIX 可安装、离/在线模板渲染与命令行编译已验证。P0（真实 VS 下不生成源文件）已修复；但 Visual Studio 内"新建项目"端到端流程仍未做真机验证，其余问题见第 6 节。**
-> 最后更新：2026-10-07
+> 状态：**0.1.7 已提交（`c8b93b0`）；仓库已迁到本机工作副本（路径随机器而异）。VSIX 可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见，项模板"添加"可用（`ProvideDefaultName=false`，名称框需手动输入类名）。唯一未解决项：VS 18 选中模板时 IDE 崩溃，见第 6 节首条。**
+> 最后更新：2026-10-09
 
 ---
 
@@ -25,8 +25,9 @@
 - 用 VS2022 的 MSBuild 即可构建出 VSIX：
 
 ```powershell
-$msb = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe"
-& $msb ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release -v:m -nologo
+# $vs = 你的 VS 安装根；按版本号与版本调整（Enterprise / Professional / Community）
+$vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
+& "$vs\MSBuild\Current\Bin\MSBuild.exe" ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release -v:m -nologo
 # 产物：bin\Release\ArxVsixWizard.vsix
 ```
 
@@ -38,7 +39,8 @@ $msb = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current
 安装（实测可同时装到 VS2022 与 VS2026）：
 
 ```powershell
-& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
+# 沿用上面的 $vs；装到 VS2026 时把它换成 `${env:ProgramFiles}\Microsoft Visual Studio\18\Enterprise`
+& "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 # 日志：%TEMP%\vsixinstall.log
 # VS2026 每用户扩展目录：%LOCALAPPDATA%\Microsoft\VisualStudio\18.0_436ebb14\Extensions\<随机名>\
 ```
@@ -79,7 +81,7 @@ ArxVsixWizard/
 - **符号表**：`ProjectModel.BuildSymbols()` 复刻两个 `default.js` 的 OnFinish：APP_ARX/DBX/CRX_TYPE、MFC_*、*_COM_*、DOTNET_*、OMF_APP/MAP_API、PRJ_TYPE_APP(arx/dbx/crx/arxnet/dbxnet/crxnet)、ARX_MFC/ATL_SUPPORT、ARX_OMF_DEFS/ZM、三个 GUID 等；GUID 用 `Guid.NewGuid().ToString("D").ToUpper()`（等价 FormatGuid(...,0)，无花括号大写）。
 - **文件计划**：`BuildPlan()` 复刻两个 `Templates.inf` 的条件包含关系与重命名规则。注意 OMF 的 GetTargetName 只对小写 `omf`/`Root` 前缀做替换，`OmfApp.cpp/.h`、`OmfHeaders.h` **保持原名**（此处曾误改为 `<项目名>App.cpp`，已修复）。
 - **OMF Enu 子项目**：`CreateOmfResourceProject()` 渲染 Enu\Resource.h / `<名>Enu.rc` / `<名>Enu.vcxproj(.filters)`，`Solution.AddFromFile` 加入并用 `BuildDependencies.AddProject` 设主项目依赖资源 DLL。
-- 以后新增年份（如 2028）：只需在 [ArxVersion.cs](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/Models/ArxVersion.cs) 的表中加一行；WPF 年份勾选框由表动态生成。
+- 以后新增年份（如 2028）：只需在 [ArxVersion.cs](Models/ArxVersion.cs) 的表中加一行；WPF 年份勾选框由表动态生成。
 
 ## 4. 已完成的验证（离线，均通过）
 
@@ -104,6 +106,17 @@ ArxVsixWizard/
 
 ## 6. 已知问题与待修复（按优先级）
 
+### 未解决 — VS2026(18.x) 选中我们的项目模板时 IDE 直接结束进程（`0x80040201`）
+
+在 VS 18（18.10.12224.181）里选中我们的**项目模板**时 VS 弹异常并直接消失（项模板在 `ProvideDefaultName=false` 下不崩）。转储（`%LOCALAPPDATA%\CrashDumps\devenv.exe.*.dmp`）里抛异常的调用链是：
+
+```
+NewProjectDialog.TemplateSelectionChangedDelayed → ApplyTemplateSelection
+  → UpdateNameField → ServiceHelper.GenerateItemName      (UIA ElementNotAvailableException, 0x80040201)
+```
+
+栈上没有一帧属于本扩展——崩在向导拿到控制权之前，属 VS 对话框自己的代码。已实测确认：`ProvideDefaultName=false` **挡不住**这条调用（9 个模板全 `false` 时"创建我们的项目"照样崩）；用 VS 自带的 C++ 项目、以及用我们的项模板添加项，都不崩。**目前仍未解决**：完整转储分析、对照实验结果与复现步骤见 `docs\Inno-Setup-Installer-Plan.md` 第 18 节。
+
 ### ~~P0（真正的阻断点）— 模板未放在 `ProjectTemplates` 下，VS 根本不识别~~（已修复）
 原来 `Packaging\ArxApp\**` 被 `Link="ArxApp\..."` 打进去，安装后落盘为 `Extensions\<id>\ArxApp\ArxApp.vstemplate`；**VS 只把扩展里的 `ProjectTemplates` 目录当作项目模板扫描根**（对照微软官方模板扩展：`ProjectTemplates\VC\1033\<名>\<名>.vstemplate`，asset 为 `Path="ProjectTemplates"`）。因此模板从来不会出现在"新建项目"里——这才是"向导不能用"的主因，P0b 的源文件问题是它下游的。
 - 修法：`Packaging` 重组为 `ProjectTemplates\VC\1033\{ArxApp,OmfApp}\`；csproj 的 `Content` 改为 `Packaging\ProjectTemplates\**\*` → `Link="ProjectTemplates\%(RecursiveDir)..."`；manifest 两个 ProjectTemplate asset 合并为一个 `<Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />`；顺带把 `.ico` 移进各自模板目录（原来放在 `Packaging\*.ico` 不被 `ArxApp\**` 匹配，压根没进 VSIX）。
@@ -116,14 +129,14 @@ ArxVsixWizard/
 
 **已采用的修法**（比原推荐方案更简单，不依赖模板 item、也不需要 `AddFile`）：
 - 关键点：生成的 vcxproj 本身已通过 `$ArxItemsXml$`（`ProjectModel.BuildItemsXml()`）声明了全部 `ClCompile/ClInclude/ResourceCompile/Midl` 项，且 StdAfx.cpp 的 `Create` PCH、AssemblyInfo.cpp 的 `NotUsing` PCH 元数据都在其中。因此**不需要** `VCProject.AddFile`——那反而会与 vcxproj 已有项重复。
-- 改为在 [ArxProjectWizard.cs](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/ArxProjectWizard.cs) 的 `ProjectFinishedGenerating(Project project)` 中，遍历 `_model.Files` 用 `TemplateRenderer` 渲染后直接写盘到项目目录（vcxproj/filters 用 UTF-8 无 BOM，其余用 Windows-1252）；随后照旧写 `.filters`、OMF 子项目、`project.Save()`。
+- 改为在 [ArxProjectWizard.cs](ArxProjectWizard.cs) 的 `ProjectFinishedGenerating(Project project)` 中，遍历 `_model.Files` 用 `TemplateRenderer` 渲染后直接写盘到项目目录（vcxproj/filters 用 UTF-8 无 BOM，其余用 Windows-1252）；随后照旧写 `.filters`、OMF 子项目、`project.Save()`。
 - `ShouldAddProjectItem` 改为恒返回 `true`，`ProjectItemFinishedGenerating` 改为空实现。
 - 尚未真机验证（属 P1）：文件写盘时机在项目加载之后，Solution Explorer 是否立即刷新显示需实测；若个别场景不显示，再考虑 `project.Save()` 后触发刷新。
 
 ### ~~P0c — 真实 VS 下生成的 vcxproj 非法："无法识别元素 `<ItemGroup>` 下面的元素 `<#text>`"~~（已修复）
 真机新建项目时报：`无法读取项目文件"ArxApp1.vcxproj"。...vcxproj(4,3): 无法识别元素 <ItemGroup> 下面的元素 <#text>。` 打开生成的 vcxproj 可见第 5 行变成 `$    <ProjectConfiguration Include=...>`、结尾 `$  </ItemGroup>`——**自定义参数两侧的 `$` 没被替换掉**。
 - 根因：VS 模板引擎按字典 **key 的字面量**替换；标准 key 形如 `$projectname$`（代码读的也是带 `$` 的），而 `RunStarted` 注入时用的是裸 key（`replacementsDictionary[kv.Key]`，key=`ArxConfigXml`），只匹配到 `$ArxConfigXml$` 中间的 `ArxConfigXml`，两边的 `$` 残留 → 非法 XML。离线冒烟测试写的是 `"$" + kv.Key + "$"`，正好补上了 `$`，所以离线通过、真机失败。
-- 修法：[ArxProjectWizard.cs](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/ArxProjectWizard.cs#L54-L59) 改为 `replacementsDictionary["$" + kv.Key + "$"] = kv.Value;`。
+- 修法：[ArxProjectWizard.cs](ArxProjectWizard.cs#L54-L59) 改为 `replacementsDictionary["$" + kv.Key + "$"] = kv.Value;`。
 
 ### P1 — 必须做一次真实 UI 端到端
 装新版 VSIX 后在 VS2026 新建项目搜 "ObjectARX"，验证：模板可见→弹出 WPF→选年份→生成工程→2024 与 2027 配置各编译一次（arx/dbx/arxnet/ATL/MFC/OMF 非 OMF 模式）。若模板不出现：
@@ -134,14 +147,14 @@ ArxVsixWizard/
 扩展目录里出现 `Microsoft.VisualStudio.Extensibility.Editor.Contracts.dll`、`Microsoft.VisualStudio.Linux.ConnectionManager.Store.dll`、`System.Text.Encodings.Web.dll`（SDK 包引用的 CopyLocal 依赖，VS 自带）。在 csproj 中对相关引用设 `Private=false` / `<ExcludeFromVsix>true</ExcludeFromVsix>`，避免与宿主版本冲突。
 
 ### P2 — 杂项
-- [ArxWizard.cs](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/ArxWizard.cs) 是空 IWizard 骨架残留，删除。
+- [ArxWizard.cs](ArxWizard.cs) 是空 IWizard 骨架残留，删除。
 - csproj 中 `<BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>` 是排查时加的，无用可删；真正防止把 TemplateSmokeTest 源码 glob 进主项目的是下面的 `<Compile Remove="TemplateSmokeTest\**"/>` 一组，保留。
-- `Packaging/ProjectTemplates/VC/1033/*/*.ico` 是 60 字节占位 ICO，换成正式图标。
+- ~~`Packaging/ProjectTemplates/VC/1033/*/*.ico` 是 60 字节占位 ICO，换成正式图标。~~（**已完成**：0.1.5 起 7 个项图标取自 `_Installs\VC\VCAddClass\ObjectARX`，2 个项目图标取自 `_Installs\VC\vcprojects\Autodesk` 的多尺寸 ICO；冒烟测试加了"图标必须大于占位桩"的断言。）
 - 已删除 vcxproj 里的 `/Wv:17.00.61030`（老模板为压 VS2015 警告所加）：低版本工具集会报"无效的数值参数"，高版本也不需要。OMF 骨架保留了同行的 `$ArxOmfZm$`（`-Zm1000`），只去掉 `/Wv:`。
 - VSTHRD010 警告：IWizard 回调本就在 UI 线程，可在方法入口加 `ThreadHelper.ThrowIfNotOnUIThread()` 明示。
 - 模板源文件为 Windows-1252 编码，渲染器按 1252 解码；P0 修法落盘时建议对 cpp/h/rc 保持与老向导一致的 ANSI 写出（vcxproj/filters 用 UTF-8 无 BOM），避免 .rc 中扩展字符乱码。
 - RDS 仅 MaxLength=4，未做字符集校验；空 RDS 已在 vcxproj 条件处理。
-- WizardExtension 程序集标识写死在三处，版本号变更时必须同步，否则 VS 会以"此模板尝试加载组件程序集 …"拒绝加载向导：`ArxVsixWizard.csproj` 的 `<Version>`、`source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName`、以及 `Packaging\**\*.vstemplate` 的 `<Assembly>`。**0.1.1 那次改版就漏了这 9 个 `.vstemplate`**（里面还是 26.2.0.0），导致所有向导都加载失败。现由 [test-version-consistency.ps1](file:///D:/Demo/ObjectARX-Wizards/ArxVsixWizard/test-version-consistency.ps1) 对四处 + 已构建的 VSIX 做断言，改版本后跑它即可；可考虑强名称签名。
+- WizardExtension 程序集标识写死在三处，版本号变更时必须同步，否则 VS 会以"此模板尝试加载组件程序集 …"拒绝加载向导：`ArxVsixWizard.csproj` 的 `<Version>`、`source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName`、以及 `Packaging\**\*.vstemplate` 的 `<Assembly>`。**0.1.1 那次改版就漏了这 9 个 `.vstemplate`**（里面还是 26.2.0.0），导致所有向导都加载失败。现由 [test-version-consistency.ps1](test-version-consistency.ps1) 对四处 + 已构建的 VSIX 做断言，改版本后跑它即可；可考虑强名称签名。
 - VS2022 上老 MSI（.vsz）向导与新 VSIX 会**并存显示两个入口**，分发策略要决定：共存、MSI 退役、还是改名区分。
 - TemplateSmokeTest 在项目子目录中、不打进 VSIX；别把它的 obj/bin 当产物分发。
 - 当前 VS2026 (devenv) 可能仍在运行，调试/重装扩展前先全部关闭。
@@ -149,20 +162,22 @@ ArxVsixWizard/
 ## 7. 快速复现命令
 
 ```powershell
+# 以下命令在仓库根执行；$vs = 你的 VS 安装根（按版本号与版本调整）
+$vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
+
 # 构建
-& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
-  D:\Demo\ObjectARX-Wizards\ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release -v:m -nologo
+& "$vs\MSBuild\Current\Bin\MSBuild.exe" `
+  ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release -v:m -nologo
 
 # 离线渲染回归
-& "D:\Demo\ObjectARX-Wizards\ArxVsixWizard\TemplateSmokeTest\bin\ArxVsixSmokeTest.exe" D:\Demo\ObjectARX-Wizards\_E2EGen
+& ArxVsixWizard\TemplateSmokeTest\bin\ArxVsixSmokeTest.exe _E2EGen
 
 # 编译一个生成的工程（2024/v143）
-& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
-  D:\Demo\ObjectARX-Wizards\_E2EGen\ArxPlain\ArxPlain.vcxproj -p:Configuration=2024 -p:Platform=x64 -v:m -nologo
+& "$vs\MSBuild\Current\Bin\MSBuild.exe" `
+  _E2EGen\ArxPlain\ArxPlain.vcxproj -p:Configuration=2024 -p:Platform=x64 -v:m -nologo
 
 # 安装 VSIX（先关闭所有 VS）
-& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet `
-  D:\Demo\ObjectARX-Wizards\ObjectARXMultiVersionWizards.vsix
+& "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix](file:///D:/Demo/ObjectARX-Wizards/ObjectARXMultiVersionWizards.vsix)（约 175 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix](../ObjectARXMultiVersionWizards.vsix)（0.1.7，约 226 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

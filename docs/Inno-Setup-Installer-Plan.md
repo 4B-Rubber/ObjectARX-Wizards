@@ -102,14 +102,14 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 - 新增 **`InnoSetupInstaller/`**：`ObjectARXMultiVersionWizards.iss`、payload、图标
 - 产物名 **`ObjectARXMultiVersionWizardsSetup-Inno.exe`**，与 MSI/Burn 的 `...Setup.exe` 区分
-- 构建（ISCC 不在 PATH，写全路径）：`& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss`
+- 构建（ISCC 不在 PATH，写全路径）：`& "${env:ProgramFiles}\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss`
 - 对比：`git diff --stat v0.1.1-msi v0.1.2-inno`，并实测体积 / 耗时 / 静默参数 / 卸载残留（两处 `Autodesk\` 目录 + 注册表三项）/ 企业分发
 
 ## 8. 未决与风险
 
 | # | 问题 | 现状 |
 |---|---|---|
-| R1 | Inno Setup 本机已装两版：**7.0.2**（`C:\Program Files\Inno Setup 7\ISCC.exe`）与 **6.7.3**（`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`） | 都不在 PATH，脚本里写全路径；建议先定一版为准（6.7.3 资料多，7.0.2 更新） |
+| R1 | Inno Setup 本机已装两版：**7.0.2**（`${env:ProgramFiles}\Inno Setup 7\ISCC.exe`）与 **6.7.3**（`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`） | 都不在 PATH，脚本里写全路径；建议先定一版为准（6.7.3 资料多，7.0.2 更新） |
 | R2 | 生成器抽 EXE 还是各写一份 | 倾向抽 EXE（第 4 节） |
 | R3 | `VSIXInstaller` 返回码语义、失败是否回滚 | 参考 MSI：先检测 VS 是否在运行并中止 |
 | R4 | 代码签名 | 两版都没有，暂不在范围内 |
@@ -138,9 +138,9 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 构建（ISCC 与 msbuild 都不在 PATH，写全路径）：
 
 ```powershell
-& "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
+& "${env:ProgramFiles}\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
   tools\arx-genprops\arx-genprops.csproj -restore -p:Configuration=Release
-& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
+& "${env:ProgramFiles}\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
 ```
 
 - **R1 已定**：用 **Inno Setup 7.0.2** 编译（6.7.3 的 `TNewCheckListBox.AddCheckBox` 签名与 7 相同，脚本对两版都兼容）。
@@ -232,7 +232,7 @@ MSI 没有 Inno 那种“在 Pascal 里比较两个字段”的能力，所以�
 
 ### 11.4 验证情况
 
-- 首次校验时本机没有 WiX，先临时取了 **WiX 3.14.1** 二进制到 `%USERPROFILE%\.cache\wix314`；**随后已正式安装**：`winget` 的 `WiXToolset.WiXToolset 3.14.1.8722`（= 官方 `wix314.exe`，需 UAC），装到 `C:\Program Files (x86)\WiX Toolset v3.14\`，注册表 `InstallRoot` 与 `…\MSBuild\Microsoft\WiX\v3.x\Wix.targets` 均已就位。
+- 首次校验时本机没有 WiX，先临时取了 **WiX 3.14.1** 二进制到 `%USERPROFILE%\.cache\wix314`；**随后已正式安装**：`winget` 的 `WiXToolset.WiXToolset 3.14.1.8722`（= 官方 `wix314.exe`，需 UAC），装到 `${env:ProgramFiles(x86)}\WiX Toolset v3.14\`，注册表 `InstallRoot` 与 `…\MSBuild\Microsoft\WiX\v3.x\Wix.targets` 均已就位。
 - 用 `candle` + `light`（含 `-v` 全量 ICE 校验）编译：**通过**；只有一个改动前就存在的 `ICE48` 警告（`ARXPATH` 默认值是写死的本地盘路径）。
 - 装好 WiX 后两条构建入口都实测通过：`ObjectARXWizardsInstaller\make.bat`（直接调 candle/light）与 `msbuild ObjectARXWizard.wixproj`（VS 走的那条）。
 - **构建产物不再弄脏工作区**：`make.bat` 的输出名原来叫 `ObjectARX2026Wizards.msi`（单年度"ObjectARX 2026 Wizards"时代的遗留，和年份表无关），现已改为年份中性的 **`ObjectARXMultiVersionWizards.msi`**，连 `.wixpdb` 一并写进 `.gitignore`。另外把三个**本就声明要忽略、却被上游误提交**的构建产物取消跟踪：`ObjectARX2026Wizards.wixpdb`（改名后成无主文件，已删除）、`ObjectARXWizards.wixpdb`、`temp/ObjectARXWizards.wixobj`（后两个由 `.gitignore` 第 6-7 行声明）—— 文件仍在磁盘上，历史里也能找回。

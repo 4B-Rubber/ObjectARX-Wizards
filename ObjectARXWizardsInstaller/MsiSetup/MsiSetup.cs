@@ -34,7 +34,7 @@ static class MsiSetup
         if (string.IsNullOrEmpty(msi) || !File.Exists(msi))
         {
             MessageBox(IntPtr.Zero, "The installer payload was not found:\r\n" + (msi ?? "(no argument)"),
-                       "ObjectARX Multi-Year Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
+                       "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
             return ErrorInstallFailure;
         }
 
@@ -55,7 +55,7 @@ static class MsiSetup
                        "The installer adds the ObjectARX wizards to Visual Studio, and that step " +
                        "cannot run while Visual Studio is open. Nothing has been installed yet - " +
                        "close Visual Studio and start the setup again.",
-                       "ObjectARX Multi-Year Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
+                       "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
             return ErrorUserExit;
         }
 

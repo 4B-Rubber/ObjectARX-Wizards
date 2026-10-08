@@ -7,7 +7,7 @@ using System.IO;
 
 static class VsixSetup
 {
-    const string DefaultVsixName = "ObjectARXMultiYearWizards.vsix";
+    const string DefaultVsixName = "ObjectARXMultiVersionWizards.vsix";
 
     static int Main(string[] args)
     {

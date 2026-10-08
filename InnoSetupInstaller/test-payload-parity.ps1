@@ -4,7 +4,7 @@
 
   Reads ObjectARXWizardsInstaller\directory.wxi, rebuilds the file set the MSI drops into
   TARGETDIR (the install folder), and compares it with what InnoSetupInstaller\
-  ObjectARXMultiYearWizards.iss installs into {app}. The two must be identical: the Inno line is
+  ObjectARXMultiVersionWizards.iss installs into {app}. The two must be identical: the Inno line is
   meant to install the same wizards, neither more nor less.
 
   Run it after touching either payload - a file added under ArxAppWiz\ but not to directory.wxi

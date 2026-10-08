@@ -1,4 +1,4 @@
-# Reinstalls the ObjectARX Multi-Year wizards VSIX into every Visual Studio on this
+# Reinstalls the ObjectARX Multi-Version wizards VSIX into every Visual Studio on this
 # machine (VS2022 = 17.x, VS2026 = 18.x).
 #
 # Why this exists: an interrupted install/uninstall leaves the extension folder on
@@ -12,7 +12,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$vsix = Join-Path (Split-Path -Parent $PSScriptRoot) 'ObjectARXMultiYearWizards.vsix'
+$vsix = Join-Path (Split-Path -Parent $PSScriptRoot) 'ObjectARXMultiVersionWizards.vsix'
 if (-not (Test-Path -LiteralPath $vsix)) { throw "VSIX not found: $vsix" }
 
 $running = @(Get-Process devenv -ErrorAction SilentlyContinue)

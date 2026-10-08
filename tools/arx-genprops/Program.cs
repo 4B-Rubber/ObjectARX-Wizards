@@ -19,7 +19,7 @@ namespace ArxGenProps
     ///   arx-genprops generate --props-dir &lt;dir&gt; [--sdk-root &lt;dir&gt;] [--acad-root &lt;dir&gt;]
     ///                         [--years 2020,2024,...] [--log &lt;file&gt;]
     ///   arx-genprops cleanup  --props-dir &lt;dir&gt; [--keep 2020,...] [--log &lt;file&gt;]
-    ///   arx-genprops remove   --props-dir &lt;dir&gt; [--include-shared] [--log &lt;file&gt;]
+    ///   arx-genprops remove   --props-dir &lt;dir&gt; [--log &lt;file&gt;]
     ///
     /// Exit codes: 0 success, 1 fatal error, 2 bad command line.
     /// </summary>
@@ -31,13 +31,6 @@ namespace ArxGenProps
         const string ResNetCore = "ArxGenProps.props-net-core-template.props";
 
         static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
-
-        /// <summary>Shared props the installer payload drops next to the generated ones.</summary>
-        static readonly string[] SharedPropsPatterns =
-        {
-            "ObjectARX.*.props", "ObjectDBX.*.props", "ObjectGRX.*.props",
-            "ObjectZRX.*.props", "HCSoft.*.props", "ZWSoft.*.props"
-        };
 
         static string _logFile;
 
@@ -77,7 +70,7 @@ namespace ArxGenProps
         {
             Console.Error.WriteLine("usage: arx-genprops generate --props-dir <dir> [--sdk-root <dir>] [--acad-root <dir>] [--years y1,y2,...] [--log <file>]");
             Console.Error.WriteLine("       arx-genprops cleanup  --props-dir <dir> [--keep y1,y2,...] [--log <file>]");
-            Console.Error.WriteLine("       arx-genprops remove   --props-dir <dir> [--include-shared] [--log <file>]");
+            Console.Error.WriteLine("       arx-genprops remove   --props-dir <dir> [--log <file>]");
         }
 
         // ---- commands ----
@@ -150,7 +143,7 @@ namespace ArxGenProps
             string dir = Get(opt, "props-dir", null);
             if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return 0;
 
-            DeleteGenerated(dir, "remove: removed ", Has(opt, "include-shared"));
+            DeleteGenerated(dir, "remove: removed ");
             return 0;
         }
 
@@ -308,23 +301,17 @@ namespace ArxGenProps
         }
 
         /// <summary>
-        /// Removes every file this tool generates from <paramref name="dir"/>. With
-        /// <paramref name="includeShared"/> it also drops the shared payload props, which is what a
-        /// moved props folder needs: the installer keeps those permanently, so uninstall would
-        /// otherwise strand them at the old location.
+        /// Removes every file this tool generates from <paramref name="dir"/>. Nothing else in that
+        /// folder is ours: the installers ship no property sheet, so whatever else lives there
+        /// belongs to the machine and is left alone.
         /// </summary>
-        static void DeleteGenerated(string dir, string reason, bool includeShared = false)
+        static void DeleteGenerated(string dir, string reason)
         {
             foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
                 TryDelete(path, reason);
 
             string user = Path.Combine(dir, "ObjectARX.User.props");
             if (File.Exists(user)) TryDelete(user, reason);
-
-            if (!includeShared) return;
-            foreach (var pattern in SharedPropsPatterns)
-                foreach (var path in Directory.GetFiles(dir, pattern))
-                    TryDelete(path, reason);
         }
 
         static void TryDelete(string path, string reason)

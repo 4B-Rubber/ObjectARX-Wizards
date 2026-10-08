@@ -1,5 +1,5 @@
 ; ============================================================================================
-;  ObjectARX Multi-Year Wizards — Inno Setup installer (branch dev)
+;  ObjectARX Multi-Version Wizards — Inno Setup installer (branch dev)
 ;
 ;  Replicates, on this branch, what the WiX line does on `main`:
 ;    * the wizard payload under a per-machine install folder,
@@ -22,8 +22,8 @@
 ;
 ;  BUILD (both tools are installed outside PATH on the authoring machine):
 ;     msbuild tools\arx-genprops\arx-genprops.csproj -restore -p:Configuration=Release
-;     & "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiYearWizards.iss
-;  Product: InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe
+;     & "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
+;  Product: InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe
 ;  (The script holds Chinese text and therefore has to stay saved as UTF-8 *with* a BOM.)
 ;
 ;  The generator is shared with the MSI line: same year table and skeletons from
@@ -47,8 +47,8 @@
 ;     /SKIPVSCHECK=1          install even while Visual Studio is running
 ; ============================================================================================
 
-#define AppName "ObjectARX Multi-Year Wizards (2010-2027)"
-#define AppVersion "0.1.3"
+#define AppName "ObjectARX Multi-Version Wizards (2010-2027)"
+#define AppVersion "0.1.7"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -56,7 +56,7 @@
 #define AppId "{{8B1E4C2A-5F37-4D9B-A6C1-0E7D3A9F5B24}"
 #define RepoRoot ".."
 #define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"
-#define VsixSource RepoRoot + "\ObjectARXMultiYearWizards.vsix"
+#define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]
@@ -81,7 +81,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=Output
-OutputBaseFilename=ObjectARXMultiYearWizardsSetup-Inno
+OutputBaseFilename=ObjectARXMultiVersionWizardsSetup-Inno
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -177,11 +177,10 @@ Source: "{#RepoRoot}\_Installs\rxsdk_common.props"; DestDir: "{code:GetArxSdkInc
 Source: "{#RepoRoot}\_Installs\crx.props"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
 Source: "{#RepoRoot}\_Installs\arxEntryPoint.h"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
 
-; ---- shared property sheets. Permanent (MSI component C_OBJARX_PROPS_GLOBAL, Permanent="yes"),
-;      so uninstall deliberately leaves them behind; that is also why the property sheet folder
-;      does not have to be emptied. Autodesk.arx-*.props are NOT payload: arx-genprops generates
-;      the ticked years instead. ----
-Source: "{#RepoRoot}\_Installs\ObjectARX Props\*"; DestDir: "{code:GetPropsDir}"; Excludes: "Autodesk.arx-*.props"; Flags: ignoreversion uninsneveruninstall
+; No property sheet is payload: arx-genprops generates the ticked years at install time, and the
+; .props files that used to travel alongside them (ObjectARX.*, HCSoft.*, ZWSoft.*, ...) were
+; experiments of the authoring machine that no shipped wizard imports. The folder itself is
+; created below instead.
 
 ; ---- Visual Studio 2022 integration. The MSI guards these with
 ;      <Condition>VS2022_ROOT_FOLDER &lt;&gt; TARGETDIR</Condition>. ----
@@ -192,6 +191,11 @@ Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVs
 Source: "{#GenExeSource}"; Flags: dontcopy
 Source: "{#VsixSource}"; Flags: dontcopy
 
+[Dirs]
+; The property sheet folder is part of the install even when the user ticks no year at all, and
+; uninstall leaves it behind - the MSI's C_OBJARX_PROPS_GLOBAL is Permanent for the same reason.
+Name: "{code:GetPropsDir}"; Flags: uninsneveruninstall
+
 [Registry]
 ; The registry contract the VS wizard and the legacy HTML wizard read back
 ; (ArxVsixWizard\Models\ArxVersion.cs, ArxWizCommon\arxCommon.js). ArxRoot and AcadRoot carry the
@@ -200,6 +204,9 @@ Source: "{#VsixSource}"; Flags: dontcopy
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "PropsDir"; ValueData: "{code:GetPropsDir}"; Flags: uninsdeletekey
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "ArxRoot"; ValueData: "{code:GetArxRoot}"
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "AcadRoot"; ValueData: "{code:GetArxRoot}"
+; The install folder, so the next install pre-fills it instead of resetting to the shipped default.
+; The MSI line writes and reads the same value, so the two remember each other's choice.
+Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"
 
 [Code]
 const
@@ -211,7 +218,7 @@ const
   FallbackArxRoot = 'C:\Program Files\Autodesk\';
   FallbackArxSdkPath = 'C:\ObjectARX';
   GenExeName = 'arx-genprops.exe';
-  VsixName = 'ObjectARXMultiYearWizards.vsix';
+  VsixName = 'ObjectARXMultiVersionWizards.vsix';
   VsVcRelPath = '\Common7\IDE\VC';
   VsVsixInstallerRelPath = '\Common7\IDE\VSIXInstaller.exe';
 
@@ -225,6 +232,7 @@ var
   VsRoot: string;
   VsFound: Boolean;
   PrevPropsDir: string;
+  PrevInstallDir: string;
   UninstallPropsDir: string;
   LogFile: string;
 
@@ -509,6 +517,9 @@ begin
   Alog('InitializeSetup');
 
   if not RegQueryStringValue(HKLM64, RegKey, 'PropsDir', PrevPropsDir) then PrevPropsDir := '';
+  // The install folder of the previous install. Inno reuses its own already (UsePreviousAppDir),
+  // but the MSI line writes the same value, so switching between the two installers keeps it too.
+  if not RegQueryStringValue(HKLM64, RegKey, 'InstallDir', PrevInstallDir) then PrevInstallDir := '';
 
   // page defaults: an explicit switch wins, then the previous install, then the shipped default.
   // RDS is optional: empty (the default) means "leave the ADSK placeholder in the HTML wizard
@@ -667,6 +678,14 @@ var
 begin
   SplitCsv(CsvYearsLeft, LeftYears);
   SplitCsv(CsvYearsRight, RightYears);
+
+  // The select-directory page already exists and its edit box holds whatever decided the folder:
+  // /DIR, Inno's own previous install, or the shipped default. Only the shipped default is
+  // replaced here - anything else was chosen on purpose and must not be overwritten.
+  if (PrevInstallDir <> '') and
+     (CompareText(TrimTrailingSlash(WizardForm.DirEdit.Text),
+                  TrimTrailingSlash(ExpandConstant('{autopf}\Autodesk\{#AppName}'))) = 0) then
+    WizardForm.DirEdit.Text := PrevInstallDir;
 
   // {app} is not initialized yet at this point, and the select-directory page holds the very value
   // it will be set to, so track the install folder from there.
@@ -891,10 +910,10 @@ begin
        ' years=[' + Selected + ']');
 
   // The previous install may have used another props folder. Its generated sheets are unknown to
-  // Inno, and the shared sheets there are permanent, so drop both from the old location.
+  // Inno, so drop them from the old location - nothing else in there is ours any more.
   if (PrevPropsDir <> '') and (CompareText(TrimTrailingSlash(PrevPropsDir), TrimTrailingSlash(Props)) <> 0) then begin
     Alog('props folder moved from ' + PrevPropsDir);
-    RunGen('remove --props-dir ' + QuoteArg(PrevPropsDir) + ' --include-shared');
+    RunGen('remove --props-dir ' + QuoteArg(PrevPropsDir));
   end;
 
   RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Root) +

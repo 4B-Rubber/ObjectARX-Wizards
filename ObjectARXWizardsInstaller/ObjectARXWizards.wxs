@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.1.3"?>
+	<?define ProductVersion = "0.1.7"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
 	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
@@ -18,13 +18,25 @@
       wizard.-->
   <!--<?define ProductCode= "{D8C4DE84-665B-4442-85C0-2DE1C293EBE0}"?>-->
   <!--ProductCode for 0.1.3, which carries the VSIX fixes (the wizard templates named a 26.x assembly,
-      and new resource ids were defined below the resource editor's bookkeeping block).
+      and new resource ids were defined below the resource editor's bookkeeping block).-->
+  <!--<?define ProductCode= "{2D2AA7F2-1804-4816-ADEF-1932D00CB77C}"?>-->
+  <!--ProductCode for 0.1.4, which renames the product to Multi-Version, stops shipping the
+      authoring machine's experimental property sheets, and remembers the previous install folder.-->
+  <!--<?define ProductCode= "{4E9C1F38-6A2D-4B07-9C51-83D7E0A4B6F2}"?>-->
+  <!--ProductCode for 0.1.5, which carries the real wizard icons (the VSIX shipped a 60-byte stub
+      next to every template, so the Add Class and New Project lists had no visual distinction).-->
+  <!--<?define ProductCode= "{A7F2C4E8-5D31-49B6-8E07-C62B1F4A9D53}"?>-->
+  <!--ProductCode for 0.1.6, which drops the retired "Trial" configuration from the property sheets
+      the installer generates.-->
+  <!--<?define ProductCode= "{C31D7B05-9E64-4A2F-8B7D-5F0A6E2C9D14}"?>-->
+  <!--ProductCode for 0.1.7, whose project templates set ProvideDefaultName=false so VS does not run
+      the NewProjectDialog.UpdateNameField -> GenerateItemName call that crashes the IDE (see docs 18).
       ProductVersion and ProductCode have to move together, and both have to move for every build that
       is meant to go on top of an existing install: reusing this code with a different version is
       rejected by msiexec with error 1638 ("another version of this product is already installed"), and
       reusing it with the same version can only ever be a repair of the package that is already there -
       it would show the maintenance page instead of upgrading.-->
-  <?define ProductCode= "{2D2AA7F2-1804-4816-ADEF-1932D00CB77C}"?>  
+  <?define ProductCode= "{E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}"?>
   
 
   <Product
@@ -32,7 +44,7 @@
 		Codepage="936" 
 		Language="2052" 
 		Manufacturer="Autodesk" 
-		Name="ObjectARX Multi-Year Wizards (2010-2027)" 
+		Name="ObjectARX Multi-Version Wizards (2010-2027)" 
 		UpgradeCode="$(var.UpgradeCode)" 
 		Version="$(var.ProductVersion)"
 	>
@@ -92,7 +104,8 @@
 	<CustomAction Id="CA_REMOVEARXPROPS" BinaryKey="ID_CABinary" DllEntry="RemoveArxProps" Execute="deferred" Impersonate="no" Return="ignore" />
 	
 	<InstallUISequence> <!-- msiexec /i -->
-		<Custom Action="CA_TARGETDIR" After="AppSearch"><![CDATA[TARGETDIR=""]]></Custom>
+		<Custom Action="CA_TARGETDIR_PREV" After="AppSearch"><![CDATA[TARGETDIR="" AND INSTALLDIR_PROBE<>""]]></Custom>
+		<Custom Action="CA_TARGETDIR" After="CA_TARGETDIR_PREV"><![CDATA[TARGETDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
@@ -108,7 +121,8 @@
 		<Custom Action="PreventDowngrading" After="FindRelatedProducts"><![CDATA[NEWERPRODUCTFOUND]]></Custom>
 	</InstallUISequence>
 	<InstallExecuteSequence>
-		<Custom Action="CA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
+		<Custom Action="CA_TARGETDIR_PREV" Before="CostInitialize"><![CDATA[TARGETDIR="" AND INSTALLDIR_PROBE<>""]]></Custom>
+		<Custom Action="CA_TARGETDIR" After="CA_TARGETDIR_PREV"><![CDATA[TARGETDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>

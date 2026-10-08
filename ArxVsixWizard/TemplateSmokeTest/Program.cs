@@ -302,11 +302,27 @@ class Program
             Check(ref failures, Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:TemplateGroupID").Length > 0,
                 tag + " -> TemplateGroupID");
 
+            // ProvideDefaultName must stay false. With true, VS asks the project system for a default
+            // name (Microsoft.VisualStudio.Dialogs.DialogsServiceHelper.GenerateItemName) as soon as a
+            // template is selected, and on VS 18 that call throws a UI Automation
+            // ElementNotAvailableException (0x80040201) out of the dialog and kills devenv. The cost of
+            // false is that the Name box is not prefilled, so the user types the class name; that is
+            // deliberate, see docs\Inno-Setup-Installer-Plan.md section 18.
+            Check(ref failures, Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:ProvideDefaultName") == "false",
+                tag + " -> ProvideDefaultName=false (avoids the VS 18 GenerateItemName crash)");
+
             string id = Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:TemplateID");
             Check(ref failures, id.Length > 0 && seenIds.Add(id), tag + " -> unique TemplateID (" + id + ")");
 
+            // A stub icon (the 60-byte placeholder that used to sit next to every template) makes the
+            // whole list look alike in VS, which no automated check noticed. Size is a crude but
+            // sufficient test: the shipped wizard icons are 766 bytes and up.
             string icon = Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:Icon");
-            Check(ref failures, icon.Length > 0 && File.Exists(Path.Combine(dir, icon)), tag + " -> icon " + icon);
+            string iconPath = Path.Combine(dir, icon);
+            Check(ref failures, icon.Length > 0 && File.Exists(iconPath), tag + " -> icon " + icon);
+            Check(ref failures, File.Exists(iconPath) && new FileInfo(iconPath).Length > 200,
+                tag + " -> icon is a real icon, not a stub (" +
+                (File.Exists(iconPath) ? new FileInfo(iconPath).Length.ToString() : "missing") + " bytes)");
 
             string cls = Attr(doc, ns, "/v:VSTemplate/v:WizardExtension/v:FullClassName");
             var type = asm.GetType(cls, false);

@@ -1,14 +1,14 @@
 <VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005"
             xmlns:sdk="http://schemas.microsoft.com/developer/vstemplate-sdkextension/2010">
   <TemplateData>
-    <Name>ObjectARX/DBX Application with OMF Support (Multi-Year)</Name>
+    <Name>ObjectARX/DBX Application with OMF Support (Multi-Version)</Name>
     <Description>Creates an ObjectARX or ObjectDBX application with optional OMF / MAP vertical SDK support. AutoCAD 2014-2027.</Description>
     <Icon>OmfApp.ico</Icon>
     <ProjectType>VC</ProjectType>
     <SortOrder>1001</SortOrder>
     <CreateNewFolder>true</CreateNewFolder>
     <DefaultName>OmfApp</DefaultName>
-    <ProvideDefaultName>true</ProvideDefaultName>
+    <ProvideDefaultName>false</ProvideDefaultName>
     <LocationField>Enabled</LocationField>
     <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
   </TemplateData>
@@ -16,7 +16,7 @@
     <Project File="OmfProject.vcxproj" TargetFileName="$projectname$.vcxproj" ReplaceParameters="true" />
   </TemplateContent>
   <WizardExtension>
-    <Assembly>ArxVsixWizard, Version=0.1.3.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <Assembly>ArxVsixWizard, Version=0.1.7.0, Culture=neutral, PublicKeyToken=null</Assembly>
     <FullClassName>ArxVsixWizard.OmfProjectWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

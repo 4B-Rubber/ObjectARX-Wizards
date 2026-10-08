@@ -514,54 +514,32 @@
 			</Directory>
 		</Directory>
 
-		<!-- Shared MSBuild props. Multi-year generated projects import Autodesk.arx-YYYY.props from
-		     this folder. ARXPROPSDIR is a directory id that CA_DefaultPropsDir seeds with TARGETDIR, so
+		<!-- The property sheet folder. Multi-year generated projects import Autodesk.arx-YYYY.props
+		     from here. ARXPROPSDIR is a directory id that CA_DefaultPropsDir seeds with TARGETDIR, so
 		     the folder follows the install folder by default (the Inno line does the same) and SdkForm
 		     can point it somewhere else.
-		     Permanent: leave on uninstall, Autodesk SDK installers may own the same files. -->
+		     Nothing ships in it: Autodesk.arx-<year>.props / -net.props are generated at install time
+		     from the year table + skeleton (see the CreateArxProps custom action), and every other
+		     .props file that used to travel here was an experiment of the authoring machine, never
+		     something the wizards import. The component below therefore only creates the folder. -->
 		<Directory Id="ProgramFiles64Folder">
 			<Directory Id="D_AUTODESK_PF" Name="Autodesk">
-				<Directory Id="ARXPROPSDIR" Name="ObjectARX Props">
-					<Component Id="C_OBJARX_PROPS_GLOBAL" Guid="{7F3A2C91-4B6E-4D28-9A1C-7E5B0D8F6201}" Permanent="yes" Win64="yes" KeyPath="yes">
-						<!-- Autodesk.arx-<year>.props / -net.props are NOT payload any more: the installer
-						     generates them at install time from the year table + skeleton (see the
-						     CreateArxProps custom action). Only the shared props below ship in the MSI. -->
-						<File Id="FGP_HCSOFT_GRX_2024_PROPS" Name="HCSoft.grx-2024.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2024.props" />
-						<File Id="FGP_HCSOFT_GRX_2025_NET_PROPS" Name="HCSoft.grx-2025-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2025-net.props" />
-						<File Id="FGP_HCSOFT_GRX_2025_PROPS" Name="HCSoft.grx-2025.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2025.props" />
-						<File Id="FGP_HCSOFT_GRX_2026_NET_PROPS" Name="HCSoft.grx-2026-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2026-net.props" />
-						<File Id="FGP_HCSOFT_GRX_2026_PROPS" Name="HCSoft.grx-2026.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2026.props" />
-						<File Id="FGP_HCSOFT_GRX_2027_NET_PROPS" Name="HCSoft.grx-2027-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2027-net.props" />
-						<File Id="FGP_HCSOFT_GRX_2027_PROPS" Name="HCSoft.grx-2027.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\HCSoft.grx-2027.props" />
-						<File Id="FGP_OBJECTARX_CLI_PROPS" Name="ObjectARX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CLI.props" />
-						<File Id="FGP_OBJECTARX_CLI2_PROPS" Name="ObjectARX.CLI2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CLI2.props" />
-						<File Id="FGP_OBJECTARX_CSHARP_PROPS" Name="ObjectARX.CSharp.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.CSharp.props" />
-						<File Id="FGP_OBJECTARX_COMMON_COMPAT_PROPS" Name="ObjectARX.Common-Compat.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common-Compat.props" />
-						<File Id="FGP_OBJECTARX_COMMON_PROPS" Name="ObjectARX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common.props" />
-						<File Id="FGP_OBJECTARX_COMMON2_COMPAT_PROPS" Name="ObjectARX.Common2-Compat.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common2-Compat.props" />
-						<File Id="FGP_OBJECTARX_COMMON2_PROPS" Name="ObjectARX.Common2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectARX.Common2.props" />
-						<File Id="FGP_OBJECTDBX_CLI_PROPS" Name="ObjectDBX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.CLI.props" />
-						<File Id="FGP_OBJECTDBX_CLI2_PROPS" Name="ObjectDBX.CLI2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.CLI2.props" />
-						<File Id="FGP_OBJECTDBX_COMMON_PROPS" Name="ObjectDBX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.Common.props" />
-						<File Id="FGP_OBJECTDBX_COMMON2_PROPS" Name="ObjectDBX.Common2.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectDBX.Common2.props" />
-						<File Id="FGP_OBJECTGRX_CLI_PROPS" Name="ObjectGRX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectGRX.CLI.props" />
-						<File Id="FGP_OBJECTGRX_COMMON_PROPS" Name="ObjectGRX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectGRX.Common.props" />
-						<File Id="FGP_OBJECTZRX_CLI_PROPS" Name="ObjectZRX.CLI.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.CLI.props" />
-						<File Id="FGP_OBJECTZRX_CSHARP_PROPS" Name="ObjectZRX.CSharp.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.CSharp.props" />
-						<File Id="FGP_OBJECTZRX_COMMON_PROPS" Name="ObjectZRX.Common.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ObjectZRX.Common.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2024_NET_PROPS" Name="ZWSoft.zrx-2024-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2024-net.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2024_PROPS" Name="ZWSoft.zrx-2024.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2024.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2025_NET_PROPS" Name="ZWSoft.zrx-2025-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2025-net.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2025_PROPS" Name="ZWSoft.zrx-2025.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2025.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2026_NET_PROPS" Name="ZWSoft.zrx-2026-net.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2026-net.props" />
-						<File Id="FGP_ZWSOFT_ZRX_2026_PROPS" Name="ZWSoft.zrx-2026.props" Vital="yes" DiskId="1" Source="..\_Installs\ObjectARX Props\ZWSoft.zrx-2026.props" />
-					</Component>
-				</Directory>
+				<Directory Id="ARXPROPSDIR" Name="ObjectARX Props" />
+				<!-- Permanent, like the payload props used to be: uninstall leaves the folder behind,
+				     because the generated sheets come back on the next install and an Autodesk SDK
+				     installer may own the same folder. -->
+				<Component Id="C_OBJARX_PROPS_GLOBAL" Guid="{7F3A2C91-4B6E-4D28-9A1C-7E5B0D8F6201}" Permanent="yes" Win64="yes" KeyPath="yes">
+					<CreateFolder Directory="ARXPROPSDIR" />
+				</Component>
 					<!-- Records where the props folder ended up. The directory id above is the ARXPROPSDIR
 					     property (SdkForm edits it), so costing writes the payload to the chosen folder;
 					     the VSIX wizard and the legacy HTML wizard read this value to stay in sync. -->
 				<Component Id="C_ARXPROPS_REG" Guid="{46B9D471-5B72-4428-A7A1-2C5D927E3A29}" Win64="yes">
 					<RegistryValue Id="RV_ARXPROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="string" Value="[ARXPROPSDIR]" KeyPath="yes" />
+					<!-- The install folder, so the next install pre-fills it instead of resetting to the
+					     shipped default (read back by INSTALLDIR_PROBE). The Inno line writes and reads the
+					     same value, so the two remember each other's choice. -->
+					<RegistryValue Id="RV_INSTALLDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="InstallDir" Type="string" Value="[TARGETDIR]" />
 					<!-- Remembered so the next install pre-fills the dialog instead of resetting to the
 					     shipped default (read back by ARXROOT_PROBE). ArxRoot and AcadRoot carry the same
 					     value on purpose: this is a multi-year product, so both point at the Autodesk root

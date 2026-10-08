@@ -34,7 +34,7 @@
 		<Import Condition="'$(ArxAppType)'=='dbx' or '$(ArxAppType)'=='dbxnet'" Project="$(ArxSdkDir)\inc\dbx.props" />
 		<Import Condition="'$(ArxAppType)'=='crx' or '$(ArxAppType)'=='crxnet'" Project="$(ArxSdkDir)\inc\crx.props" />
 		<Import Condition="'$(ArxAppType)'=='arx' or '$(ArxAppType)'=='arxnet'" Project="$(ArxSdkDir)\inc\arx.props" />
-		<Import Condition="'$(Configuration)'=='Release'or'$(Configuration)'=='Trial'or'$(Configuration)'=='2022'or'$(Configuration)'=='2022B'or'$(Configuration)'=='2022S'" Project="$(ArxSdkDir)\inc\rxsdk_Releasecfg.props" />
+		<Import Condition="'$(Configuration)'=='Release'or'$(Configuration)'=='2022'or'$(Configuration)'=='2022B'or'$(Configuration)'=='2022S'" Project="$(ArxSdkDir)\inc\rxsdk_Releasecfg.props" />
 		<Import Condition="'$(Configuration)'=='Debug'or'$(Configuration)'=='2022d'" Project="$(ArxSdkDir)\inc\rxsdk_Debugcfg.props" />
 		<Import Condition="'$(ArxAppType)'=='dbxnet' or '$(ArxAppType)'=='crxnet' or '$(ArxAppType)'=='arxnet'" Project="Autodesk.arx-2022-net.props" />
 	</ImportGroup>

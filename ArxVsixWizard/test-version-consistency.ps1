@@ -12,7 +12,7 @@
     * source.extension.vsixmanifest         Asset/@AssemblyName version = "<v>.0"
     * Packaging\**\*.vstemplate             <Assembly> identity         = "<v>.0"
 
-  When the built ..\ObjectARXMultiYearWizards.vsix is present it is checked too, since that is the file
+  When the built ..\ObjectARXMultiVersionWizards.vsix is present it is checked too, since that is the file
   that actually gets installed.
 #>
 [CmdletBinding()]
@@ -23,7 +23,7 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $csprojPath = Join-Path $repo 'ArxVsixWizard\ArxVsixWizard.csproj'
 $manifestPath = Join-Path $repo 'ArxVsixWizard\source.extension.vsixmanifest'
 $packaging = Join-Path $repo 'ArxVsixWizard\Packaging'
-$vsixPath = Join-Path $repo 'ObjectARXMultiYearWizards.vsix'
+$vsixPath = Join-Path $repo 'ObjectARXMultiVersionWizards.vsix'
 
 $fail = 0
 function Check([string]$name, [bool]$ok, [string]$detail = '') {

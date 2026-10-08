@@ -6,9 +6,9 @@
     <ProductVersion>3.10</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4b3f0f2c-93aa-4d8e-9a2f-1c6f5b7e2d41}</ProjectGuid>
-    <OutputName>ObjectARXMultiYearWizardsSetup</OutputName>
+    <OutputName>ObjectARXMultiVersionWizardsSetup</OutputName>
     <OutputType>Bundle</OutputType>
-    <Name>ObjectARXMultiYearWizardsSetup</Name>
+    <Name>ObjectARXMultiVersionWizardsSetup</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>

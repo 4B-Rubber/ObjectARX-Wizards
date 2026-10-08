@@ -16,6 +16,14 @@
     <Property Id="MaintenanceForm_Action" Value="Repair" />
     <Property Id="AdminMaintenanceForm_Action" Value="Repair" />
 
+    <!-- Where the wizards go. The previous install's folder wins over the shipped default, so an
+         upgrade - or a switch between the MSI line and the Inno line, which writes the same value -
+         does not make the user pick it again. INSTALLDIR_PROBE carries the remembered folder;
+         CA_TARGETDIR still seeds the default when there is none. -->
+    <Property Id="INSTALLDIR_PROBE" Secure="yes">
+      <RegistrySearch Id="RS_INSTALLDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="InstallDir" Type="raw" Win64="yes" />
+    </Property>
+    <CustomAction Id="CA_TARGETDIR_PREV" Property="TARGETDIR" Value="[INSTALLDIR_PROBE]" Execute="firstSequence" />
     <CustomAction Id="CA_TARGETDIR" Property="TARGETDIR" Value="[ProgramFiles64Folder][Manufacturer]\[ProductName]" Execute="firstSequence" />
     <!-- The property sheet folder belongs to the install folder (the Inno line does the same), so it
          defaults to TARGETDIR, not to a fixed folder of its own. A directory property is only

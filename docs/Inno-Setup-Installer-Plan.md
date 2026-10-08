@@ -1,6 +1,6 @@
 # ObjectARX 多年度安装器：Inno Setup 方案（分支 dev）
 
-> **状态**：本分支已合入 MSI 线的全部修复（merge `8ecde18`）。MSI 版定版 **0.1.1 / tag `v0.1.1-msi`**；Inno 侧**已按本文落地**（见第 10 节，产物 `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe`，尚未打 `v0.1.2-inno` tag）。
+> **状态**：本分支已合入 MSI 线的全部修复（merge `8ecde18`）。MSI 版定版 **0.1.1 / tag `v0.1.1-msi`**；Inno 侧**已按本文落地**（见第 10 节，产物 `InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe`，尚未打 `v0.1.2-inno` tag）。
 > 版本号已从 **0.1.1** 重新起算，旧的 26.x 线作废。**两条线现统一为 0.1.2**（MSI 的 ProductVersion + ProductCode、Burn 的 Version、VSIX 的 Identity/程序集、Inno 的 AppVersion）。
 >
 > **MSI 侧已跟进到 0.1.2**（见第 11 节）：第 10.2 节列出的 UI/行为取舍已同步回 WiX 线，两版现在对齐（除了 Inno 才有的中英双语自动选择）。
@@ -100,9 +100,9 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 ## 7. 目录、产物与对比
 
-- 新增 **`InnoSetupInstaller/`**：`ObjectARXMultiYearWizards.iss`、payload、图标
-- 产物名 **`ObjectARXMultiYearWizardsSetup-Inno.exe`**，与 MSI/Burn 的 `...Setup.exe` 区分
-- 构建（ISCC 不在 PATH，写全路径）：`& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiYearWizards.iss`
+- 新增 **`InnoSetupInstaller/`**：`ObjectARXMultiVersionWizards.iss`、payload、图标
+- 产物名 **`ObjectARXMultiVersionWizardsSetup-Inno.exe`**，与 MSI/Burn 的 `...Setup.exe` 区分
+- 构建（ISCC 不在 PATH，写全路径）：`& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss`
 - 对比：`git diff --stat v0.1.1-msi v0.1.2-inno`，并实测体积 / 耗时 / 静默参数 / 卸载残留（两处 `Autodesk\` 目录 + 注册表三项）/ 企业分发
 
 ## 8. 未决与风险
@@ -128,8 +128,8 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 | 路径 | 说明 |
 |---|---|
-| `InnoSetupInstaller\ObjectARXMultiYearWizards.iss` | 安装脚本（载荷 + 目录页 + 年份页 + 注册表 + 修补 + VSIX + 卸载清理） |
-| `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe` | 产物，约 2.4 MB |
+| `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` | 安装脚本（载荷 + 目录页 + 年份页 + 注册表 + 修补 + VSIX + 卸载清理） |
+| `InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe` | 产物，约 2.4 MB |
 | `tools\arx-genprops\` | 共享 props 生成器（net48 控制台 + 内嵌年份表/骨架 + 测试） |
 | `InnoSetupInstaller\test-inno-sandbox.ps1` | 沙箱端到端测试（见 10.5） |
 | `InnoSetupInstaller\test-payload-parity.ps1` | 两条线的载荷对齐检查（对着 `directory.wxi` 比） |
@@ -140,7 +140,7 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 ```powershell
 & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe" `
   tools\arx-genprops\arx-genprops.csproj -restore -p:Configuration=Release
-& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiYearWizards.iss
+& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
 ```
 
 - **R1 已定**：用 **Inno Setup 7.0.2** 编译（6.7.3 的 `TNewCheckListBox.AddCheckBox` 签名与 7 相同，脚本对两版都兼容）。
@@ -192,7 +192,7 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 ### 10.6 还没做的 / 需要你确认的
 
-- **界面还没被人眼看过**：上面全是无 GUI 的自动断言。向导的实际观感（中文是否正常显示、控件有没有重叠/截断）**需要手动双击** `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe` 确认一次。建议带上 `/DIR= /PROPSDIR= /ARXROOT= /ARXSDKPATH= /VSROOT= /SKIPVSIX=1 /SKIPVSCHECK=1` 指向临时目录，这样即使误点安装也不会动到真机。
+- **界面还没被人眼看过**：上面全是无 GUI 的自动断言。向导的实际观感（中文是否正常显示、控件有没有重叠/截断）**需要手动双击** `InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe` 确认一次。建议带上 `/DIR= /PROPSDIR= /ARXROOT= /ARXSDKPATH= /VSROOT= /SKIPVSIX=1 /SKIPVSCHECK=1` 指向临时目录，这样即使误点安装也不会动到真机。
 - **默认安装位置：已确认**用 64 位 `Program Files`（`{autopf}` 配合 `ArchitecturesInstallIn64BitMode=x64compatible` + `PrivilegesRequired=admin` 解析而来）。理由：插件都是 64 位，不再考虑 32 位。与 MSI 的 `(x86)` 布局不一致是刻意的。
 - 打 `v0.1.2-inno` tag 与第 7 节的实测对比（体积 / 耗时 / 静默参数 / 企业分发）需要管理员真机跑一次。
 - 代码签名（R4）两版都还没有。
@@ -235,7 +235,7 @@ MSI 没有 Inno 那种“在 Pascal 里比较两个字段”的能力，所以�
 - 首次校验时本机没有 WiX，先临时取了 **WiX 3.14.1** 二进制到 `%USERPROFILE%\.cache\wix314`；**随后已正式安装**：`winget` 的 `WiXToolset.WiXToolset 3.14.1.8722`（= 官方 `wix314.exe`，需 UAC），装到 `C:\Program Files (x86)\WiX Toolset v3.14\`，注册表 `InstallRoot` 与 `…\MSBuild\Microsoft\WiX\v3.x\Wix.targets` 均已就位。
 - 用 `candle` + `light`（含 `-v` 全量 ICE 校验）编译：**通过**；只有一个改动前就存在的 `ICE48` 警告（`ARXPATH` 默认值是写死的本地盘路径）。
 - 装好 WiX 后两条构建入口都实测通过：`ObjectARXWizardsInstaller\make.bat`（直接调 candle/light）与 `msbuild ObjectARXWizard.wixproj`（VS 走的那条）。
-- **构建产物不再弄脏工作区**：`make.bat` 的输出名原来叫 `ObjectARX2026Wizards.msi`（单年度"ObjectARX 2026 Wizards"时代的遗留，和年份表无关），现已改为年份中性的 **`ObjectARXMultiYearWizards.msi`**，连 `.wixpdb` 一并写进 `.gitignore`。另外把三个**本就声明要忽略、却被上游误提交**的构建产物取消跟踪：`ObjectARX2026Wizards.wixpdb`（改名后成无主文件，已删除）、`ObjectARXWizards.wixpdb`、`temp/ObjectARXWizards.wixobj`（后两个由 `.gitignore` 第 6-7 行声明）—— 文件仍在磁盘上，历史里也能找回。
+- **构建产物不再弄脏工作区**：`make.bat` 的输出名原来叫 `ObjectARX2026Wizards.msi`（单年度"ObjectARX 2026 Wizards"时代的遗留，和年份表无关），现已改为年份中性的 **`ObjectARXMultiVersionWizards.msi`**，连 `.wixpdb` 一并写进 `.gitignore`。另外把三个**本就声明要忽略、却被上游误提交**的构建产物取消跟踪：`ObjectARX2026Wizards.wixpdb`（改名后成无主文件，已删除）、`ObjectARXWizards.wixpdb`、`temp/ObjectARXWizards.wixobj`（后两个由 `.gitignore` 第 6-7 行声明）—— 文件仍在磁盘上，历史里也能找回。
 - `.wixproj` 的 `PostBuildEvent` 用 `7z` 打 zip，本机没装 `7z`，所以走 MSBuild 时要把 `PostBuildEvent` 清空（`/p:PostBuildEvent=`）才能整体返回 0；`make.bat` 不受影响。
 - `ArxWizCustomAction.csproj` 已用 MSBuild 重新编译，`Binary\ArxWizCustomAction.CA.dll` 已更新（MSI 引用的就是这个）。
 - `Bundle.wxs` 能 `candle` + `light` 通过（链上重新构建的 MSI 一起链接成功，产物约 1.37 MB）。
@@ -256,24 +256,24 @@ MSI 升到 0.1.2 之后，另外三处版本号还停在 0.1.1，一并拉齐：
 |---|---|---|
 | `ArxVsixWizard\ArxVsixWizard.csproj` 的 `<Version>` | 0.1.1 | 0.1.2（程序集因此为 0.1.2.0） |
 | `ArxVsixWizard\source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName` | 0.1.1 / 0.1.1.0 | 0.1.2 / 0.1.2.0 |
-| `InnoSetupInstaller\ObjectARXMultiYearWizards.iss` 的 `AppVersion` | 0.1.1 | 0.1.2 |
+| `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` 的 `AppVersion` | 0.1.1 | 0.1.2 |
 
-**VSIX 必须重建，不只是改号**：`ArxVsixWizard.csproj` 把 `Templates\ArxApp\*` 作为 **EmbeddedResource** 编译进 `ArxVsixWizard.dll`（`LogicalName="ArxApp.%(Filename)%(Extension)"`），所以第 12 节对 `Templates\ArxApp\ReadMe.txt` 的中性化改动会落进扩展里 —— 仓库根那份提交过的 `ObjectARXMultiYearWizards.vsix` 一度因此过期。已用 MSBuild 重建（VSSDK 自动还原），并验证内嵌资源里是新的 `Autodesk.arx-<year>.props`，旧的 `Autodesk.arx-2026.props` 与 “installer also provided…” 已不存在。
+**VSIX 必须重建，不只是改号**：`ArxVsixWizard.csproj` 把 `Templates\ArxApp\*` 作为 **EmbeddedResource** 编译进 `ArxVsixWizard.dll`（`LogicalName="ArxApp.%(Filename)%(Extension)"`），所以第 12 节对 `Templates\ArxApp\ReadMe.txt` 的中性化改动会落进扩展里 —— 仓库根那份提交过的 `ObjectARXMultiVersionWizards.vsix` 一度因此过期。已用 MSBuild 重建（VSSDK 自动还原），并验证内嵌资源里是新的 `Autodesk.arx-<year>.props`，旧的 `Autodesk.arx-2026.props` 与 “installer also provided…” 已不存在。
 
 ### 11.8 四个产物（本次构建）
 
 | 产物 | 路径 | 体积 |
 |---|---|---|
-| Burn 引导程序（MSI 线入口，双击用这个） | `ObjectARXMultiYearWizardsSetup.exe`（仓库根） | 1.30 MB |
-| MSI 本体 | `ObjectARXMultiYearWizards.msi`（仓库根） | 1.10 MB |
-| VSIX 扩展 | `ObjectARXMultiYearWizards.vsix`（仓库根） | 0.17 MB |
-| Inno 单文件安装包 | `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe` | 2.43 MB |
+| Burn 引导程序（MSI 线入口，双击用这个） | `ObjectARXMultiVersionWizardsSetup.exe`（仓库根） | 1.30 MB |
+| MSI 本体 | `ObjectARXMultiVersionWizards.msi`（仓库根） | 1.10 MB |
+| VSIX 扩展 | `ObjectARXMultiVersionWizards.vsix`（仓库根） | 0.17 MB |
+| Inno 单文件安装包 | `InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe` | 2.43 MB |
 
-`make.bat` 的输出名已是年份中性的 `ObjectARXMultiYearWizards.msi`；`bin\Release\ObjectARXWizard.msi` 是引导程序真正内嵌的那份载荷（两者内容一致，只是名字与位置不同，历史遗留）。
+`make.bat` 的输出名已是年份中性的 `ObjectARXMultiVersionWizards.msi`；`bin\Release\ObjectARXWizard.msi` 是引导程序真正内嵌的那份载荷（两者内容一致，只是名字与位置不同，历史遗留）。
 
 ### 11.6 构建产物不再弄脏工作区
 
-`make.bat` 的输出名原来叫 `ObjectARX2026Wizards.msi`（单年度“ObjectARX 2026 Wizards”时代的遗留，和年份表无关），现已改为年份中性的 **`ObjectARXMultiYearWizards.msi`**，连 `.wixpdb` 一并写进 `.gitignore`。另外把三个**本就声明要忽略、却被上游误提交**的构建产物取消跟踪：`ObjectARX2026Wizards.wixpdb`（改名后成无主文件，已删除）、`ObjectARXWizards.wixpdb`、`temp/ObjectARXWizards.wixobj`（后两个由 `.gitignore` 第 6-7 行声明）—— 文件仍在磁盘上，历史里也能找回。
+`make.bat` 的输出名原来叫 `ObjectARX2026Wizards.msi`（单年度“ObjectARX 2026 Wizards”时代的遗留，和年份表无关），现已改为年份中性的 **`ObjectARXMultiVersionWizards.msi`**，连 `.wixpdb` 一并写进 `.gitignore`。另外把三个**本就声明要忽略、却被上游误提交**的构建产物取消跟踪：`ObjectARX2026Wizards.wixpdb`（改名后成无主文件，已删除）、`ObjectARXWizards.wixpdb`、`temp/ObjectARXWizards.wixobj`（后两个由 `.gitignore` 第 6-7 行声明）—— 文件仍在磁盘上，历史里也能找回。
 
 ## 12. 去版本化：多年度产品不该带单年度设定
 
@@ -282,16 +282,18 @@ MSI 升到 0.1.2 之后，另外三处版本号还停在 0.1.1，一并拉齐：
 | 项 | 原状 | 处理 |
 |---|---|---|
 | 单年度属性表载荷 | `_Installs\Autodesk.arx-2026.props` + `-net`，装到 `{app}` 与 `ArxAppWiz\Templates\1033\`，再由 `PatchPropsWizFiles` 按 `*2026.props` 通配修补 | **删除载荷与修补动作**，两线同步（MSI：4 个 `File` 项 + `CA_PatchPropsWizFiles` 及其 3 处序列；Inno：2 条 `[Files]` + `PatchPropsWizardFiles` 过程） |
-| 构建产物名 | `ObjectARX2026Wizards.msi` | 改为 `ObjectARXMultiYearWizards.msi`（见 11.6） |
+| 构建产物名 | `ObjectARX2026Wizards.msi` | 改为 `ObjectARXMultiVersionWizards.msi`（见 11.6） |
 | Add Class 分类目录 | `_Installs\VC\VCAddClass\ObjectARX2026\` —— 该目录**没有 `.vsdir`**，所以目录名本身就是 VS「添加类」里显示的分类名，会显示成 “ObjectARX2026” | `git mv` 改为 `ObjectARX`（历史安装日志显示旧版原名就是 `ObjectARX`，且 MSI 的目标目录本来也叫 `ObjectARX`） |
 | 注释 / 文档文本 | `ObjectARXWizards.wxs` 的 `for ObjectARX 2024/2025/2026`、`CustomAction.cs` 里的旧路径注释、两份 `ReadMe.txt` 里的 `Autodesk.arx-2026.props` 与“installer also provided an ObjectARX 2025.props” | 全部改成中性表述（`<year>` 或 “retired per-year release”） |
 
-**刻意保留**（它们是“多年度”本身，不是版本绑定）：16 个 `YEAR_*` / `ARXINV_*` / `DET_YEAR_*` 属性、年份复选框、默认勾选集 `2020/2024/2026/2027`、Compatible 集、产品名里的 `(2010-2027)`，以及 `_Installs\ObjectARX Props\` 下 HCSoft/ZWSoft 的真实第三方年度属性表。
+**刻意保留**（它们是“多年度”本身，不是版本绑定）：16 个 `YEAR_*` / `ARXINV_*` / `DET_YEAR_*` 属性、年份复选框、默认勾选集 `2020/2024/2026/2027`、Compatible 集、产品名里的 `(2010-2027)`。
+
+> 0.1.4 起 `_Installs\ObjectARX Props\` 下那些 HCSoft/ZWSoft/ObjectARX.Common 之类的属性表**不再是载荷**（见第 17 节）：它们是制作者本机其它项目的实验品，不是这套向导需要的东西。
 
 ### 12.1 验证
 
 - MSI（`candle` + `light`，含全量 ICE）与 Bundle 均编译通过；`dark.exe` 反编译确认 `PatchPropsWizFiles` 出现 **0** 次、`ObjectARX2026` 出现 **0** 次，残留的 `2026` 全部来自年份表与第三方载荷。
-- Inno `.iss` 编译通过（UTF-8 BOM 保持），产物 `ObjectARXMultiYearWizardsSetup-Inno.exe`。
+- Inno `.iss` 编译通过（UTF-8 BOM 保持），产物 `ObjectARXMultiVersionWizardsSetup-Inno.exe`。
 - 三套测试全绿：载荷对齐 **215 = 215**、Inno 沙箱 **40 项全过**、生成器回归全过。
 - **待真机验证**：`ArxAppWiz\Templates\1033\` 不再有属性表模板之后，老 HTML 向导建工程能否仍从属性表目录取到 `Autodesk.arx-<年>.props`（`Templates.inf` 并不引用该文件，`arxCommon.js` 的 `ARX_PROPS_DIR` 才是入口，理论上无碍）。
 
@@ -333,7 +335,7 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 - `test-years-consistency.ps1`：**ALL CHECKS PASSED**。
 - 重编 MSI 后用 `dark` 反编译与改造前的基线**逐行 diff：312 行完全一致**——证明本轮只补了构建属性，没动任何对话框/行为；`PatchPropsWizFiles`、`ObjectARX2026` 仍为 0。
 - 三套既有测试全绿：载荷对齐 **215 = 215**、Inno 沙箱 40 项全过、生成器回归全过。
-- 四产物已重建：`Setup.exe` 1.30 MB（中文）、`ObjectARXMultiYearWizards.msi` 1.10 MB（45/45 Win64）、`...-Inno.exe` 2.43 MB。
+- 四产物已重建：`Setup.exe` 1.30 MB（中文）、`ObjectARXMultiVersionWizards.msi` 1.10 MB（45/45 Win64）、`...-Inno.exe` 2.43 MB。
 
 ## 14. VSIX 向导加载失败（真机测出，已修）
 
@@ -353,7 +355,7 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 ### 14.2 修法与防回归
 
 - 9 个 `.vstemplate` 的 `<Assembly>` 由 `26.2.0.0` 改为 `0.1.2.0`；
-- 重建 VSIX 并刷新仓库根的 `ObjectARXMultiYearWizards.vsix`；
+- 重建 VSIX 并刷新仓库根的 `ObjectARXMultiVersionWizards.vsix`；
 - 新增 `ArxVsixWizard\test-version-consistency.ps1`：断言**四份版本声明**一致，并直接解包**已构建的 VSIX** 复核其中的每个 `.vstemplate` 与 manifest——
 
   | 位置 | 应等于 |
@@ -449,7 +451,7 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 | `ArxVsixWizard.csproj` | `<Version>` → 0.1.3（程序集由此为 0.1.3.0） |
 | `source.extension.vsixmanifest` | `Identity/@Version`、`Asset/@AssemblyName` → 0.1.3 / 0.1.3.0 |
 | `Packaging\**\*.vstemplate`（9 个） | `<Assembly>` → `Version=0.1.3.0` —— **上次 0.1.1 就是漏了这里才导致向导全部加载失败**，这次由 `test-version-consistency.ps1` 兜着 |
-| `ObjectARXMultiYearWizards.iss` | `AppVersion` → 0.1.3 |
+| `ObjectARXMultiVersionWizards.iss` | `AppVersion` → 0.1.3 |
 
 ### 16.3 验证
 
@@ -460,3 +462,127 @@ MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplica
 ### 16.4 升级路径（这次不用先卸载）
 
 0.1.3 换了 ProductCode，所以 Burn/MSI 会把它识别为一次正常升级；VSIX 版本也变了，`VSIXInstaller` 不再跳过。**任意旧版（0.1.1 / 0.1.2，两条线）都能直接装 0.1.3**。
+
+## 17. 0.1.4 / 0.1.5：改名 Multi-Version、去掉实验性属性表、记住上次安装路径、修图标
+
+0.1.4 是前三项；0.1.5 只做图标（见 17.4），顺带把版本号再推一格，好让新 VSIX 能替换掉刚装上去的 0.1.4。
+
+### 17.1 改名
+
+`Multi-Year` → `Multi-Version`，`Multi-Year Wizards (2010-2027)` → `Multi-Version Wizards (2010-2027)`。文件与文案一起改（`.iss`、`.vsix`、`.msi`、`Setup.exe`、`.wixproj` 的 `OutputName`、`make.bat`、`.gitignore`、`Bundle.wxs` 的 `Payload`、`VsixSetup.cs` 的默认文件名、两份 `.vstemplate` 的 `<Name>`、`MsiSetup.cs` 的两个消息框）。
+
+**没改**的是 VSIX 的 `Identity Id="ObjectARX.MultiYear.Wizard"`：它是扩展标识而不是显示名，保持不变才能让新 VSIX 替换掉已装的那一份而不是在 VS 里多出一个扩展。若要一并改，`Identity`、`reinstall-vsix.ps1` 的 `$vsixId` 和 README 里的三处引用要同时改，并且旧扩展必须先手动卸载。
+
+三者一起变、缺一不行：MSI 的 `ProductVersion` + `ProductCode`（`{4E9C1F38-…}`）、`Bundle.wxs` 的 `Version` + `UninstallCommand`、VSIX 的 csproj/manifest/9 个 `.vstemplate`。
+
+### 17.2 属性表载荷清空
+
+`_Installs\ObjectARX Props\` 下除 `Autodesk.arx-*` 外的 23 个 `.props`（HCSoft/ZWSoft/ObjectARX.Common/CLI/CSharp、ObjectDBX、ObjectGRX、ObjectZRX）**全部撤出载荷**：
+
+| 位置 | 改动 |
+|---|---|
+| `directory.wxi` | 删掉 23 个 `FGP_*` File，`C_OBJARX_PROPS_GLOBAL` 改为只 `<CreateFolder Directory="ARXPROPSDIR" />`（Permanent 保留：卸载后目录仍在，下次安装生成的属性表还落在这里） |
+| `ObjectARXMultiVersionWizards.iss` | 删掉 `Source: ...ObjectARX Props\*`，改为 `[Dirs]` 建目录（`uninsneveruninstall`） |
+| `arx-genprops` / `CustomAction.cs` | 删掉 `SharedPropsPatterns` 与 `--include-shared`：**安装器不再拥有那些文件，就一个也不许删**。属性表目录搬迁时只清 `Autodesk.arx-*` 与 `ObjectARX.User.props` |
+
+理由：这些表是制作者本机其它项目的实验品，两个安装器真正安装的向导（`.vsz`/`.vcxproj`/HTML）都只 import `Autodesk.arx-<year>.props`，没有一个引用它们。仓库里的源文件保留，只是不再分发。
+
+### 17.3 记住上次安装路径
+
+两条线都往 `HKLM\SOFTWARE\Autodesk\ObjectARX Wizards` 写 `InstallDir`，安装时优先读它当默认值——所以**跨安装器也记得住**（上次 MSI 装的，这次 Inno 也会带出同一个目录）。
+
+| 线 | 实现 |
+|---|---|
+| MSI | `C_ARXPROPS_REG` 加 `RV_INSTALLDIR`（`[TARGETDIR]`）；`property.wxi` 加 `INSTALLDIR_PROBE`（`RegistrySearch`）+ `CA_TARGETDIR_PREV`，两个序列里排在 `CA_TARGETDIR` 之前，只在 `TARGETDIR="" AND INSTALLDIR_PROBE<>""` 时生效 |
+| Inno | `[Registry]` 写 `InstallDir={app}`；`InitializeSetup` 读回，`InitializeWizard` 里**只在目录框仍是出厂默认值**时才替换（`/DIR=`、Inno 自己记的旧目录都不动） |
+
+注：0.1.3 及更早**没有**写过这个值，所以第一次装 0.1.4 时读不到（仍用出厂默认目录）；从 0.1.4 起（以及两条线互切）才生效。
+
+### 17.4 0.1.5：向导图标
+
+0.1.4 的 VSIX 里 9 个 `.ico` 全是同一个 **60 字节占位文件**（哈希一模一样），所以「添加类」和「新建项目」列表里每一项的图标长得完全一样、毫无区分度；模板自己的 `<Icon>` 是对的，冒烟测试只断言"图标文件存在"，所以没兜住。
+
+改法是把老安装器那套真图标拷回打包目录（`ArxVsixWizard\Packaging`）：
+
+| 模板 | 图标来源（`_Installs\VC`） |
+|---|---|
+| AtlComWrapper / AtlDynProp / CustomObject / Jig / MfcSupport / NetWrapper / Reactors | `VCAddClass\ObjectARX\Arx{Xxx}Wiz{...}.ico`（各 766 B，逐个对应） |
+| ArxApp / OmfApp | `vcprojects\Autodesk\ArxAppWiz.ico` / `ArxAppWizOMF.ico`（181 KB 多尺寸） |
+
+**保持与旧版一致的地方**：CustomObject 与 MfcSupport 共用一张图、两个项目模板共用一张图 —— 旧版就是这样，没有擅自拆分。要区分开的话再说。
+
+冒烟测试加了一条断言（`TemplateSmokeTest\Program.cs`）：图标必须存在且 **> 200 字节**，占位桩会直接判失败。
+
+### 17.5 0.1.6：去掉 Trial 配置
+
+生成出来的 `Autodesk.arx-<年>.props` 里那行 `rxsdk_Releasecfg.props` 的导入条件原本还带着一个 `'$(Configuration)'=='Trial'` —— 那是老 Autodesk 产品线的 "Trial" 配置，这套向导从不产生这种配置，留着只是噪声。
+
+唯一活源头是 **`tools/arx-props/props-template.props`**（MSI 的自定义动作和 `arx-genprops.exe` 都把这份内嵌成资源，`gen-arx-props.ps1` 读的也是它），删掉那一段即可；顺带把 `_Installs\ObjectARX Props\Autodesk.arx-*.props` 那 17 份退役副本也清了，免得以后 grep 又翻出来。
+
+**没动的**是 `_Installs\ObjectARX Props\` 下 HCSoft/ZWSoft 那 7 份——那是别的项目的实验文件，不属于这套产品。
+
+### 17.6 验证
+
+- 四产物重建（0.1.6）：`ObjectARXMultiVersionWizardsSetup.exe` 1.31 MB、`ObjectARXMultiVersionWizards.msi` 1.09 MB、`ObjectARXMultiVersionWizards.vsix` 226 KB、`InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe` 2.45 MB；旧的 `*MultiYear*` 产物已删除。Bundle 内嵌的 MSI 与 VSIX 与仓库根那份**逐字节一致**（哈希比对）。
+- 生成器实测：`arx-genprops generate --years 2026` 产出的 3 份 sheet 里 `Trial` 出现 **0** 次，Release 配置导入条件只剩 `Release/2026/2026B/2026S`。
+- 六套测试全绿：VSIX 版本一致性、年份一致性、模板冒烟（含新增的图标非占位断言）、载荷对齐 215 = 215、生成器回归、Inno 沙箱（新增"没装任何外来属性表""外来属性表在卸载后仍在""不给 `/DIR` 时默认落进注册表记住的目录"三条断言）。
+- `dark.exe` 反编译的 MSI：`InstallDir` 注册表项、`INSTALLDIR_PROBE`、`CA_TARGETDIR_PREV` 均在；File 表里 HCSoft/ZWSoft/ObjectARX.Common 等出现 **0** 次；45/45 组件仍是 `Win64="yes"`。
+- VSIX 里的 9 个图标与 `_Installs\VC` 那套逐字节相同（不再是 60 字节占位桩）。VSIX 因此从 179 KB 长到 226 KB，主要是两张 181 KB 的项目图标（zip 压缩后约 +50 KB）。
+- **未在真机跑过** MSI 的"记住路径"（需要管理员权限装进 HKLM）；MSI/WiX 侧只有静态反编译核对，真机请连续装两次确认目录页预填的是上一次的目录。
+- 图标观感同样只能真机看：装 0.1.5 之后打开「添加类」和「新建项目」确认 7 个类和 2 个项目模板各自有自己的图。
+
+## 18. VS 崩溃分析：0x80040201 / ElementNotAvailable（不是本向导的代码）
+
+### 18.1 现象
+
+在 VS 18 Insiders（18.10.12224.181）里创建项目后，继续创建下一个项目 / 添加项时，VS 直接**进程消失**（不是普通卡死），可复现；打开已有项目再加就没有。
+
+### 18.2 证据（来自本机留下的崩溃转储）
+
+`%LOCALAPPDATA%\CrashDumps` 里有 3 份 devenv 转储（20:59、21:20、21:21，WER bucket 三次完全相同 `1925513046915056743`）。用 `dotnet-dump` 读出：
+
+| 项 | 值 |
+|---|---|
+| 事件 | `CLR20r3`，`Exception code 0xe0434352`（未处理的托管异常），faulting module `PresentationFramework 10.0.108.26451` |
+| 异常 | `System.Reflection.TargetInvocationException` → 内层 **`System.Windows.Automation.ElementNotAvailableException`**，`HResult 0x80040201`，消息 *"Element does not exist or it is virtualized; use VirtualizedItem Pattern if it is supported."* |
+| 抛出点 | `Marshal.ThrowExceptionForHRInternal` ← `Microsoft.VisualStudio.Dialogs.ServiceHelper.GenerateItemName(IVsProject, UInt32, IVsTemplate)` ← `NewProjectDialog.UpdateNameField` ← `ApplyTemplateSelection` ← `TemplateSelectionChangedDelayed` |
+| 触发路径 | 资源管理器右键 → 上下文菜单命令 → `SVsDialogService.InvokeDialog(VSNEWPROJECTDLGINFO)` → `DialogWindow.ShowModal`（即**在已有解决方案里"添加 → 新建项目"**） |
+| 关键否定证据 | 94 个线程的托管栈里 **没有一帧属于 `ArxVsixWizard`**（`clrstack -all` 全表检索） |
+
+### 18.3 结论
+
+0x80040201 是 UIA 的 `UIA_E_ELEMENTNOTAVAILABLE`：VS 的「新建项目」对话框在**为选中的模板生成默认项目名**时，去问已有项目/解决方案要一个不重名的名字，这一步走到了自己的 UI Automation 提供程序，而那个元素已经被虚拟化掉了；异常从 VS 的对话框代码里逃出来，没人接 → 进程直接没了。
+
+**这是 VS 自己的 Bug，不在本扩展的调用路径上**，两条硬证据：① 抛异常的调用链全是 `Microsoft.VisualStudio.Dialogs.*`；② 崩溃瞬间所有托管线程栈里都没有我们的程序集。
+
+对照 VS 自带的 VC 项目模板（`Common7\IDE\ProjectTemplates\VC\MFCATL\*`）：它们同样是 `<DefaultName>` + `<ProvideDefaultName>true</ProvideDefaultName>`，所以这条 `GenerateItemName` 调用**不是我们模板独有的**——但用户当前环境里每次都在我们的模板上触发，所以 0.1.7 先按 18.5 把我们的模板从这条路径上摘出去（能摘掉就说明触点在调用侧而不是模板内容）。
+
+### 18.4 第二轮复现（21:47 转储）追加的事实
+
+用户装完 0.1.6 后再次复现，新增第 4 份转储，结论修正两点：
+
+- 崩溃点与前三份**完全一致**（同一 `UpdateNameField` → `GenerateItemName` → UIA `0x80040201`），外层路径也一致（资源管理器右键 → 上下文菜单命令 → `SVsDialogService.InvokeDialog`）。所以「先建项目再选模板」这条路径每次都崩，换版本号并不影响。
+- `ArxVsixWizard.dll` **已加载**（来自 `18.0_436ebb14` 那个扩展目录），但崩溃瞬间**没有任何一帧在跑我们的代码**，项目目录里也**没有任何项文件**产生 —— 崩在"选中模板 → 自动填名字"这一步，早于向导的 `RunStarted`。
+- 安装是干净的：17.0 与 18.0 两个 VS 实例各只有**一个**扩展目录，dll = 0.1.6.0，9/9 模板 `<Assembly>` = 0.1.6.0，**不存在版本错配**（这条假设可以排除）。
+
+### 18.5 0.1.7 的规避改动
+
+我们改不了 VS，但能改**自己模板的元数据**，让 VS 不去走那条崩掉的调用：
+
+- **项目模板（`ArxApp` / `OmfApp`）**：`<ProvideDefaultName>true</ProvideDefaultName>` 改成 **false**（`<DefaultName>` 保留）。依据：`GenerateItemName` 唯一的用途就是自动填 Name 框，而 `Microsoft.VisualStudio.Dialogs.dll` 里 `ProvideDefaultName` 与 `GenerateItemName` 两个字符串同时存在，说明这段逻辑确实认这个标志；设为 false 后 VS 不应再向项目系统要默认名，也就不会碰那个虚拟化元素。4 份崩溃转储的触发点全在 `NewProjectDialog`（18.2 / 18.4），所以这 2 个模板才是要在意的地方。
+- **项模板（7 个）**：**保持 `true`**。起初一刀切全改成 false，结果 `false` 的语义（微软文档明确写着：Name 框会被填成占位值而非真实名字）让「添加新项」的名称框留空、**「添加」按钮一直是灰的**，用户表现为"选完模板却加不进去"——比崩溃更直接地把功能废掉。项模板不在崩溃路径上，没有理由付这个代价。
+
+代价（仅剩项目模板）：新建项目时 Name 框不再自动预填。**这是规避不是定论**——如果 0.1.7 还崩，说明这条 UIA 调用另有触发点，需要按 18.4 的对照实验定位。
+
+### 18.6 定位用的对照实验（按顺序做，做一步就能少一半可能）
+
+1. **换成 VS 自带的 VC 模板**（如「空项目」「控制台应用」），在同样的"已有解决方案里添加"路径下点选 → 若同样崩，就是 VS 侧的问题（本扩展无关），报 Microsoft / 换 Release 通道。
+2. **换到 VS 2022（17.x）**试同一套操作：本扩展在 `17.0_c051676b` 那个实例里也装了同一份 0.1.6。17.x 不崩、18.x 崩 → 确认是 VS 18 Insiders 的问题，演示时走 17.x。
+3. 资源管理器树**收起来**（减少被虚拟化的节点）后再点选模板，看是否还崩 —— 崩溃消息本身就是"元素被虚拟化"。
+4. 装 0.1.7 复测：Name 框不再预填，若不再崩 → 就是那条 `GenerateItemName` 调用；若照崩 → 触点在别处，把新转储给我继续挖。
+
+### 18.7 其他
+
+- 本扩展侧够不着这条异常：它发生在 WPF 的 dispatcher 里、属于 VS 的对话框，向导拿到控制权**之前**就崩了。
+- 转储文件 4×约 350-360 MB，在 `%LOCALAPPDATA%\CrashDumps\devenv.exe.*.dmp`，确认无用后可删。
+- 读转储的方法：`dotnet tool install dotnet-dump --tool-path <dir>` → `dotnet-dump analyze <dump> -c "pe" -c "printexception <内层异常地址>" -c "clrstack"`（`pe` 拿到内外层异常类型，`printexception` 拿到抛出点的托管栈，`clrstack -all` 可确认某个程序集在不在栈上）。

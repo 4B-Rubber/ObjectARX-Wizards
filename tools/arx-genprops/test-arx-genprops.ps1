@@ -85,23 +85,16 @@ Check 'cleanup --keep 2020 leaves only the 2020 sheets' `
 & $Exe cleanup --props-dir $keep --keep '' | Out-Null
 Check 'cleanup --keep "" removes all generated sheets' ((Get-ChildItem $keep -Filter 'Autodesk.arx-*.props').Count -eq 0)
 
-# ---- 5. remove ----
+# ---- 5. remove: only what this tool generated, whatever else shares the folder ----
 $rm = Join-Path $root 'remove'
 & $Exe generate --props-dir $rm --years 2025,2026 | Out-Null
 Copy-Item (Join-Path $repo '_Installs\ObjectARX Props\ObjectARX.Common.props') $rm
 & $Exe remove --props-dir $rm | Out-Null
 Check 'remove drops generated sheets' ((Get-ChildItem $rm -Filter 'Autodesk.arx-*.props').Count -eq 0)
 Check 'remove drops ObjectARX.User.props' (-not (Test-Path (Join-Path $rm 'ObjectARX.User.props')))
-Check 'remove without --include-shared keeps shared props' (Test-Path (Join-Path $rm 'ObjectARX.Common.props'))
+Check 'remove leaves a foreign props file alone' (Test-Path (Join-Path $rm 'ObjectARX.Common.props'))
 
-# ---- 6. moved props folder: remove --include-shared ----
-$mv = Join-Path $root 'moved'
-& $Exe generate --props-dir $mv --years 2026 | Out-Null
-Copy-Item (Join-Path $repo '_Installs\ObjectARX Props\HCSoft.grx-2026.props') $mv
-& $Exe remove --props-dir $mv --include-shared | Out-Null
-Check 'remove --include-shared also drops shared props' ((Get-ChildItem $mv).Count -eq 0)
-
-# ---- 7. bad command line ----
+# ---- 6. bad command line ----
 $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
 & $Exe nonsense *> $null
 Check 'unknown command exits 2' ($LASTEXITCODE -eq 2)

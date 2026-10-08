@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="ObjectARX.MultiYear.Wizard" Version="0.1.3" Language="en-US" Publisher="ADN-DevTech" />
-    <DisplayName>ObjectARX Multi-Year Wizards (2010-2027)</DisplayName>
+    <Identity Id="ObjectARX.MultiYear.Wizard" Version="0.1.7" Language="en-US" Publisher="ADN-DevTech" />
+    <DisplayName>ObjectARX Multi-Version Wizards (2010-2027)</DisplayName>
     <Description xml:space="preserve">ObjectARX/DBX and OMF project wizards targeting AutoCAD 2010-2027, for Visual Studio 2022 and 2026.</Description>
     <Tags>ObjectARX, AutoCAD, C++</Tags>
   </Metadata>
@@ -24,7 +24,7 @@
     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,19.0)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
   <Assets>
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="ArxVsixWizard.dll" AssemblyName="ArxVsixWizard, Version=0.1.3.0, Culture=neutral, PublicKeyToken=null" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="ArxVsixWizard.dll" AssemblyName="ArxVsixWizard, Version=0.1.7.0, Culture=neutral, PublicKeyToken=null" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="ItemTemplates" />
   </Assets>

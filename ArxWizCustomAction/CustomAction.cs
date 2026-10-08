@@ -359,7 +359,7 @@ namespace ArxWizCustomAction
                     !string.Equals(prevDir.TrimEnd('\\'), dir.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
                 {
                     Log(session, "CreateArxProps: props folder moved, cleaning " + prevDir);
-                    DeleteOurFiles(session, prevDir, "CreateArxProps: removed stale ", includeShared: true);
+                    DeleteOurFiles(session, prevDir, "CreateArxProps: removed stale ");
                 }
 
                 Directory.CreateDirectory(dir);
@@ -435,20 +435,12 @@ namespace ArxWizCustomAction
             }
         }
 
-        /// <summary>Shared props the MSI payload installs alongside the generated ones.</summary>
-        static readonly string[] SharedPropsPatterns =
-        {
-            "ObjectARX.*.props", "ObjectDBX.*.props", "ObjectGRX.*.props",
-            "ObjectZRX.*.props", "HCSoft.*.props", "ZWSoft.*.props"
-        };
-
         /// <summary>
-        /// Removes every file this CA generates from <paramref name="dir"/>. With
-        /// <paramref name="includeShared"/> it also drops the shared payload props, which is what a
-        /// moved props folder needs: they are in a Permanent component, so uninstall would strand
-        /// them at the old location.
+        /// Removes every file this CA generates from <paramref name="dir"/>. Nothing else in that
+        /// folder is ours: the MSI ships no property sheet, so whatever else lives there belongs to
+        /// the machine and is left alone.
         /// </summary>
-        static void DeleteOurFiles(Session session, string dir, string reason, bool includeShared = false)
+        static void DeleteOurFiles(Session session, string dir, string reason)
         {
             if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
             foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
@@ -461,15 +453,6 @@ namespace ArxWizCustomAction
             {
                 try { File.Delete(user); Log(session, reason + user); }
                 catch (Exception ex) { Log(session, reason + "cannot delete " + user + " (" + ex.Message + ")"); }
-            }
-            if (!includeShared) return;
-            foreach (var pattern in SharedPropsPatterns)
-            {
-                foreach (var path in Directory.GetFiles(dir, pattern))
-                {
-                    try { File.Delete(path); Log(session, reason + path); }
-                    catch (Exception ex) { Log(session, reason + "cannot delete " + path + " (" + ex.Message + ")"); }
-                }
             }
         }
 

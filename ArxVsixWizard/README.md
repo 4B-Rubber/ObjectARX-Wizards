@@ -38,7 +38,7 @@ $msb = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current
 安装（实测可同时装到 VS2022 与 VS2026）：
 
 ```powershell
-& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiYearWizards.vsix
+& "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 # 日志：%TEMP%\vsixinstall.log
 # VS2026 每用户扩展目录：%LOCALAPPDATA%\Microsoft\VisualStudio\18.0_436ebb14\Extensions\<随机名>\
 ```
@@ -162,7 +162,7 @@ ArxVsixWizard/
 
 # 安装 VSIX（先关闭所有 VS）
 & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\VSIXInstaller.exe" /quiet `
-  D:\Demo\ObjectARX-Wizards\ObjectARXMultiYearWizards.vsix
+  D:\Demo\ObjectARX-Wizards\ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiYearWizards.vsix](file:///D:/Demo/ObjectARX-Wizards/ObjectARXMultiYearWizards.vsix)（约 175 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix](file:///D:/Demo/ObjectARX-Wizards/ObjectARXMultiVersionWizards.vsix)（约 175 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

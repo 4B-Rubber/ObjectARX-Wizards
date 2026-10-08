@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-  Sandboxed end-to-end test for InnoSetupInstaller\ObjectARXMultiYearWizards.iss.
+  Sandboxed end-to-end test for InnoSetupInstaller\ObjectARXMultiVersionWizards.iss.
 
   The shipped installer needs administrator rights (PrivilegesRequired=admin) and writes to
   HKLM and Program Files, neither of which an unattended run can do. This harness therefore
@@ -21,7 +21,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$sourceIss = Join-Path $repo 'InnoSetupInstaller\ObjectARXMultiYearWizards.iss'
+$sourceIss = Join-Path $repo 'InnoSetupInstaller\ObjectARXMultiVersionWizards.iss'
 $work = Join-Path $env:TEMP ('arx-inno-sandbox-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory -Force $work | Out-Null
 
@@ -39,7 +39,7 @@ $test = $test.Replace('#define RepoRoot ".."', '#define RepoRoot "' + $repo + '"
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
-$test = $test.Replace('OutputBaseFilename=ObjectARXMultiYearWizardsSetup-Inno', 'OutputBaseFilename=InnoSandboxTest')
+$test = $test.Replace('OutputBaseFilename=ObjectARXMultiVersionWizardsSetup-Inno', 'OutputBaseFilename=InnoSandboxTest')
 if ($test -ceq $text) { throw 'no substitution applied - the .iss changed shape' }
 
 $testIss = Join-Path $work 'sandbox.iss'
@@ -170,10 +170,9 @@ Check 'SDK inc folder populated' (
   (Test-Path (Join-Path $arxSdk 'inc\crx.props')) -and
   (Test-Path (Join-Path $arxSdk 'inc\arxEntryPoint.h')))
 
-# ---- shared props ----
-$shared = @(Get-ChildItem (Join-Path $repo '_Installs\ObjectARX Props') -File | Where-Object { $_.Name -notlike 'Autodesk.arx-*' })
-$sharedMissing = @($shared | Where-Object { -not (Test-Path (Join-Path $propsDir $_.Name)) })
-Check ("shared props copied (" + $shared.Count + ")") ($sharedMissing.Count -eq 0) (($sharedMissing | ForEach-Object { $_.Name }) -join ', ')
+# ---- no property sheet ships: the props folder holds the generated ones and nothing else ----
+$foreign = @(Get-ChildItem $propsDir -File | Where-Object { $_.Name -notlike 'Autodesk.arx-*' -and $_.Name -ne 'ObjectARX.User.props' })
+Check 'no foreign props installed' ($foreign.Count -eq 0) (($foreign | ForEach-Object { $_.Name }) -join ', ')
 
 # ---- generated props ----
 $generated = @(Get-ChildItem $propsDir -Filter 'Autodesk.arx-*.props' | ForEach-Object { $_.Name } | Sort-Object)
@@ -229,6 +228,12 @@ Check 'install with the VSIX step enabled still exits 0' ($p.ExitCode -eq 0) ('e
 $alog = Join-Path $env:TEMP 'ObjectARXWizards-Inno.log'
 Check 'VSIX step reports the missing VSIXInstaller' ((Get-Content $alog -Raw) -match 'VSIXInstaller\.exe not found')
 
+# A property sheet the installer did not put there (the machine's own, from another project): the
+# installers no longer ship any .props, so nothing of ours may delete it - not even a props folder
+# that moves, and certainly not the uninstall.
+$foreign = Join-Path $propsDir 'ObjectARX.Common.props'
+Set-Content -Path $foreign -Value '<Project />' -Encoding UTF8
+
 # ---------------------------------------------------------------- uninstall
 $uninst = Join-Path $appDir 'unins000.exe'
 Check 'uninstaller written into the install folder' (Test-Path $uninst)
@@ -240,12 +245,29 @@ Wait-Gone $appDir
 
 Check 'generated props removed on uninstall' ((Get-ChildItem $propsDir -Filter 'Autodesk.arx-*.props' -ErrorAction SilentlyContinue).Count -eq 0)
 Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $propsDir 'ObjectARX.User.props')))
-Check 'shared props survive the uninstall' ((Get-ChildItem $propsDir -File -ErrorAction SilentlyContinue).Count -eq $shared.Count)
+Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
 Check 'SDK inc files survive the uninstall' (Test-Path (Join-Path $arxSdk 'inc\arxEntryPoint.h'))
 Check 'install folder removed' (-not (Test-Path $appDir))
 Check 'VS wizard files removed' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz')))
 $k = Get-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -ErrorAction SilentlyContinue
 Check 'registry key removed on uninstall' ($null -eq $k)
+
+# ---------------------------------------------------------------- remembered install folder
+# The registry value is what makes the folder survive a switch between the two installers: with no
+# Inno install of its own to remember, the shipped Program Files default would win. Simulate exactly
+# that - registry InstallDir pointing at a scratch folder, no /DIR on the command line.
+$remembered = Join-Path $work 'remembered'
+New-Item -ItemType Directory -Force $remembered | Out-Null
+New-Item -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Force | Out-Null
+Set-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Name 'InstallDir' -Value $remembered
+$argsRemembered = ($installArgs -replace ' /DIR="[^"]*"', '') -replace ' /PROPSDIR="[^"]*"', ''
+$p = Start-Process -FilePath $setup -ArgumentList $argsRemembered -NoNewWindow -Wait -PassThru
+Check 'install folder defaults to the remembered folder' `
+      ($p.ExitCode -eq 0 -and (Test-Path (Join-Path $remembered 'rxsdk_common.props'))) ('exit=' + $p.ExitCode)
+Check 'its props folder follows it' (Test-Path (Join-Path $remembered 'Autodesk.arx-2020.props'))
+Start-Process -FilePath (Join-Path $remembered 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
+Wait-Gone $remembered
+Remove-Item -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host ''
 if ($fail -eq 0) { Write-Host ('ALL CHECKS PASSED (' + $work + ')') } else { Write-Host ($fail.ToString() + ' CHECK(S) FAILED (' + $work + ')') }

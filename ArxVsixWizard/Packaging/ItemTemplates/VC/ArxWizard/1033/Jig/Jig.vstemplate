@@ -8,7 +8,7 @@
     <TemplateID>ArxWizard.Item.Jig</TemplateID>
     <TemplateGroupID>VC-Native</TemplateGroupID>
     <DefaultName>MyJig</DefaultName>
-    <ProvideDefaultName>true</ProvideDefaultName>
+    <ProvideDefaultName>false</ProvideDefaultName>
     <LocationField>Disabled</LocationField>
     <ShowByDefault>true</ShowByDefault>
     <SortOrder>210</SortOrder>
@@ -20,7 +20,7 @@
     <ProjectItem ReplaceParameters="true" TargetFileName="$ArxWrap1File$">Wrap1.txt</ProjectItem>
   </TemplateContent>
   <WizardExtension>
-    <Assembly>ArxVsixWizard, Version=0.1.3.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <Assembly>ArxVsixWizard, Version=0.1.7.0, Culture=neutral, PublicKeyToken=null</Assembly>
     <FullClassName>ArxVsixWizard.Items.JigItemWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

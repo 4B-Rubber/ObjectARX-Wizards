@@ -23,7 +23,7 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $jsonPath = Join-Path $repo 'tools\arx-props\arx-props-table.json'
 $propsPath = Join-Path $repo 'ObjectARXWizardsInstaller\property.wxi'
 $uiPath = Join-Path $repo 'ObjectARXWizardsInstaller\UI.wxi'
-$issPath = Join-Path $repo 'InnoSetupInstaller\ObjectARXMultiYearWizards.iss'
+$issPath = Join-Path $repo 'InnoSetupInstaller\ObjectARXMultiVersionWizards.iss'
 
 $fail = 0
 function Check([string]$name, [bool]$ok, [string]$detail = '') {

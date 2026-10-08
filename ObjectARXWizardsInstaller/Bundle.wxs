@@ -10,9 +10,12 @@
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
+    <!-- LocalizationFile is the stdba's own string table; without it the launcher would stay English
+         while the MSI it chains is Chinese. -->
     <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense">
       <bal:WixStandardBootstrapperApplication LicenseUrl="http://www.autodesk.com/developautocad"
-                                              SuppressOptionsUI="yes" />
+                                              SuppressOptionsUI="yes"
+                                              LocalizationFile="Bundle.zh-CN.wxl" />
     </BootstrapperApplicationRef>
 
     <Chain>

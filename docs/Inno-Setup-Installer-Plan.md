@@ -1,6 +1,6 @@
 # ObjectARX 多年度安装器：Inno Setup 方案（分支 dev）
 
-> **状态**：本分支已合入 MSI 线的全部修复（merge `8ecde18`）。MSI 版定版 **0.1.1 / tag `v0.1.1-msi`**；Inno 侧**已按本文落地**（见第 10 节，产物 `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe`，尚未打 `v0.1.1-inno` tag）。
+> **状态**：本分支已合入 MSI 线的全部修复（merge `8ecde18`）。MSI 版定版 **0.1.1 / tag `v0.1.1-msi`**；Inno 侧**已按本文落地**（见第 10 节，产物 `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe`，尚未打 `v0.1.2-inno` tag）。
 > 版本号已从 **0.1.1** 重新起算，旧的 26.x 线作废。**两条线现统一为 0.1.2**（MSI 的 ProductVersion + ProductCode、Burn 的 Version、VSIX 的 Identity/程序集、Inno 的 AppVersion）。
 >
 > **MSI 侧已跟进到 0.1.2**（见第 11 节）：第 10.2 节列出的 UI/行为取舍已同步回 WiX 线，两版现在对齐（除了 Inno 才有的中英双语自动选择）。
@@ -10,7 +10,7 @@
 | 分支 | 方案 | 状态 |
 |---|---|---|
 | `main` | WiX 3.14 MSI + Burn 引导程序 + VSIX | 真机验收通过 -> `v0.1.1-msi`；UI 取舍已跟进到 **0.1.2**（第 11 节，待真机重验） |
-| `dev` | Inno Setup 复刻同一套安装行为 | 已落地（第 10 节），待打 `v0.1.1-inno` |
+| `dev` | Inno Setup 复刻同一套安装行为 | 已落地（第 10 节），待打 `v0.1.2-inno` |
 
 ## 2. 要对齐的行为（按 MSI 实际实现整理）
 
@@ -103,7 +103,7 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 - 新增 **`InnoSetupInstaller/`**：`ObjectARXMultiYearWizards.iss`、payload、图标
 - 产物名 **`ObjectARXMultiYearWizardsSetup-Inno.exe`**，与 MSI/Burn 的 `...Setup.exe` 区分
 - 构建（ISCC 不在 PATH，写全路径）：`& "C:\Program Files\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiYearWizards.iss`
-- 对比：`git diff --stat v0.1.1-msi v0.1.1-inno`，并实测体积 / 耗时 / 静默参数 / 卸载残留（两处 `Autodesk\` 目录 + 注册表三项）/ 企业分发
+- 对比：`git diff --stat v0.1.1-msi v0.1.2-inno`，并实测体积 / 耗时 / 静默参数 / 卸载残留（两处 `Autodesk\` 目录 + 注册表三项）/ 企业分发
 
 ## 8. 未决与风险
 
@@ -120,7 +120,7 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 2. 抽 `arx-genprops.exe`，用 `tools\arx-props\gen-arx-props.ps1` 的零 diff 基线做回归
 3. 写 `.iss` 骨架：装文件 -> 生成 props -> 写注册表 -> 装 VSIX
 4. 补年份页（16 个年份 + 四个预设按钮）、目录选择、路径修补、卸载清理
-5. 打 tag `v0.1.1-inno`，跑第 7 节对比
+5. 打 tag `v0.1.2-inno`，跑第 7 节对比
 
 ## 10. 实现情况（dev 已落地）
 
@@ -194,7 +194,7 @@ Inno 侧这些基本不存在：有真正的 CheckListBox、Pascal 可直接读�
 
 - **界面还没被人眼看过**：上面全是无 GUI 的自动断言。向导的实际观感（中文是否正常显示、控件有没有重叠/截断）**需要手动双击** `InnoSetupInstaller\Output\ObjectARXMultiYearWizardsSetup-Inno.exe` 确认一次。建议带上 `/DIR= /PROPSDIR= /ARXROOT= /ARXSDKPATH= /VSROOT= /SKIPVSIX=1 /SKIPVSCHECK=1` 指向临时目录，这样即使误点安装也不会动到真机。
 - **默认安装位置：已确认**用 64 位 `Program Files`（`{autopf}` 配合 `ArchitecturesInstallIn64BitMode=x64compatible` + `PrivilegesRequired=admin` 解析而来）。理由：插件都是 64 位，不再考虑 32 位。与 MSI 的 `(x86)` 布局不一致是刻意的。
-- 打 `v0.1.1-inno` tag 与第 7 节的实测对比（体积 / 耗时 / 静默参数 / 企业分发）需要管理员真机跑一次。
+- 打 `v0.1.2-inno` tag 与第 7 节的实测对比（体积 / 耗时 / 静默参数 / 企业分发）需要管理员真机跑一次。
 - 代码签名（R4）两版都还没有。
 
 ## 11. MSI 侧同步（0.1.2）
@@ -294,3 +294,43 @@ MSI 升到 0.1.2 之后，另外三处版本号还停在 0.1.1，一并拉齐：
 - Inno `.iss` 编译通过（UTF-8 BOM 保持），产物 `ObjectARXMultiYearWizardsSetup-Inno.exe`。
 - 三套测试全绿：载荷对齐 **215 = 215**、Inno 沙箱 **40 项全过**、生成器回归全过。
 - **待真机验证**：`ArxAppWiz\Templates\1033\` 不再有属性表模板之后，老 HTML 向导建工程能否仍从属性表目录取到 `Autodesk.arx-<年>.props`（`Templates.inf` 并不引用该文件，`arxCommon.js` 的 `ARX_PROPS_DIR` 才是入口，理论上无碍）。
+
+## 13. 第二轮的完善（已提交后追加）
+
+### 13.1 清理死代码与残留
+
+- **删除 `ArxWizPatchFilesCA\`**：第二份自定义动作源码，**不在** `ObjectARXWizard.sln` 里、不参与任何构建，且仍引用已删除的 `session["ACAD"]`。
+- **删除 `ObjectARXWizardsInstaller\testlog.txt`（839 KB）与 `ObjectARXWizard.zip`**（后者是 `.wixproj` 的 `PostBuildEvent` 用 `7z` 打的 zip，`7z` 本机都没有，纯产物），并把 `.gitignore` 补了 `ObjectARXWizard.zip`。
+- `temp\ObjectARXWizards.wixobj` 上一轮已随 `ObjectARXWizards.wixobj` 一起取消跟踪，本轮把目录一并删掉。
+
+### 13.2 载荷组件全部 64 位
+
+MSI 的 `InstallPrivileges=elevated InstallScope=perMachine Platform=x64`、安装目录在 64 位 `Program Files`，但 45 个组件**都没有 `Win64="yes"`**——ICE80 在 WiX 链路里只查包摘要、不逐组件报，所以一直没暴露；后果是组件注册（含 `C_ARXPROPS_REG` 那段注册表）落在 **32 位视图**。
+
+修法不逐组件加标记，而是给构建器加架构：`make.bat` 的 `candle` 加 `-arch x64`，`ObjectARXWizard.wixproj` 加 `<InstallerPlatform>x64</InstallerPlatform>`（否则 MSBuild 路径下它默认取 `$(Platform)`=x86，因为自定义动作必须 32 位）。这样 candle 把全部组件标为 64 位，`dark` 反编译确认 **45/45 带 `Win64="yes"`**。SfxCA 桩的自定义动作仍按 32 位进程跑，与载荷位数无关。
+
+### 13.3 Burn 引导程序中文
+
+MSI 已是中文，但双击入口 `Setup.exe`（`WixStandardBootstrapperApplication`）一直是英文。新增 `ObjectARXWizardsInstaller\Bundle.zh-CN.wxl`（照着 WiX 自带的 `SDK\themes\HyperlinkTheme.wxl` 翻译，保留 `&amp;` 助记符），并：
+
+- `Bundle.wxs` 的 BA 加 `LocalizationFile="Bundle.zh-CN.wxl"`；
+- `ObjectARXWizardsBundle.wixproj` 加 `<Cultures>zh-CN</Cultures>` 并把 `.wxl` 加进 `<WixLocalization>`。
+
+构建时用 `light -cultures:zh-CN`。`dark` 反编译最终产物确认 `thm.wxl` 已是中文（"欢迎"、"安装(&amp;I)" 等）。
+
+### 13.4 年份清单单一真相 + 一致性检查
+
+年份清单共 4 处需要逐字枚举，MSI 又无法循环（`<?include?>` 要求被包含文件以 `<Include>` 为根元素，无法注入逐年的 `<Publish>`；自定义动作改属性又刷不动勾选框），所以选**一致性检查**而不是生成三份：
+
+- `tools\arx-props\arx-props-table.json`（唯一真相）给每年加 `"default"`（默认勾选）与 `"compatible"`（兼容集）标记；
+- `ArxWizCustomAction\CustomAction.cs` 不再硬编码 `DefaultYears = { "2020", ... }`，改为 `DefaultYears()` 从内嵌 JSON 读 `default` 标记；
+- 新增 `tools\arx-props\test-years-consistency.ps1`：断言 JSON 与 `property.wxi`（`YEAR_*`/`ARXINV_*`/`DET_YEAR_*`）、`UI.wxi`（16 个复选框 + All/None/Compatible/Invert 的发布集合）、`.iss`（`CsvYearsLeft/Right/Default/Compatible`）、以及 CA 不再硬编码，**四方全部一致**。
+
+以后增删年份只改 JSON；有站点漏改，这个测试会当场失败。
+
+### 13.5 验证
+
+- `test-years-consistency.ps1`：**ALL CHECKS PASSED**。
+- 重编 MSI 后用 `dark` 反编译与改造前的基线**逐行 diff：312 行完全一致**——证明本轮只补了构建属性，没动任何对话框/行为；`PatchPropsWizFiles`、`ObjectARX2026` 仍为 0。
+- 三套既有测试全绿：载荷对齐 **215 = 215**、Inno 沙箱 40 项全过、生成器回归全过。
+- 四产物已重建：`Setup.exe` 1.30 MB（中文）、`ObjectARXMultiYearWizards.msi` 1.10 MB（45/45 Win64）、`...-Inno.exe` 2.43 MB。

@@ -13,9 +13,13 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <!-- The bundle is Chinese like the MSI it chains; Bundle.zh-CN.wxl is both the bundle's culture
+         and the stdba's string table (WixStandardBootstrapperApplication/@LocalizationFile). -->
+    <Cultures>zh-CN</Cultures>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs" />
+    <WixLocalization Include="Bundle.zh-CN.wxl" />
   </ItemGroup>
   <ItemGroup>
     <WixExtension Include="WixBalExtension">

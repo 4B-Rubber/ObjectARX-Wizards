@@ -179,8 +179,16 @@ namespace ArxWizCustomAction
     {
         const string PropsDirDefault = @"C:\Program Files\Autodesk\ObjectARX Props";
 
-        /// <summary>Years a first install ticks, and the fallback when nothing can be detected.</summary>
-        static readonly string[] DefaultYears = { "2020", "2024", "2026", "2027" };
+        /// <summary>
+        /// Years a first install ticks, and the fallback when nothing can be detected. Read from the
+        /// year table's "default" flags instead of being repeated here, so the JSON stays the one
+        /// place a year is added - tools\arx-props\test-years-consistency.ps1 checks the installer-side
+        /// lists against that same file.
+        /// </summary>
+        static IEnumerable<string> DefaultYears()
+        {
+            return PropsTable.Load().Years.Where(y => y.Default).Select(y => y.Year);
+        }
 
         const string ResTable   = "ArxWizCustomAction.ArxProps.table.json";
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
@@ -210,7 +218,7 @@ namespace ArxWizCustomAction
                     Log(session, "DefaultArxYears: explicit selection, leaving it alone");
                     return ActionResult.Success;
                 }
-                foreach (var year in DefaultYears)
+                foreach (var year in DefaultYears())
                     session["YEAR_" + year] = "1";
                 Log(session, "DefaultArxYears: first install, ticked the default years");
                 return ActionResult.Success;
@@ -246,7 +254,7 @@ namespace ArxWizCustomAction
                     Log(session, "TickDetectedArxYears: ticked the years already on disk");
                     return ActionResult.Success;
                 }
-                foreach (var year in DefaultYears)
+                foreach (var year in DefaultYears())
                     session["YEAR_" + year] = "1";
                 Log(session, "TickDetectedArxYears: nothing detected, ticked the default years");
                 return ActionResult.Success;
@@ -657,6 +665,8 @@ namespace ArxWizCustomAction
             public string NetKind, NetTfVersion, NetTargetFramework, NetForAcad;
             public bool LegacyV35, HasWin32, Win32X86, HasCrx, DebugComments, No32Comment;
             public bool LibPathArxLibIncs, NetTfComment;
+            /// <summary>Ticked on a first install (the JSON's "default" flag).</summary>
+            public bool Default;
         }
 
         /// <summary>Reader for tools\arx-props\arx-props-table.json (embedded verbatim).</summary>
@@ -698,6 +708,7 @@ namespace ArxWizCustomAction
                         No32Comment = Bool(y, "no32Comment"),
                         LibPathArxLibIncs = Bool(y, "libPathArxLibIncs"),
                         NetTfComment = Bool(y, "netTfComment"),
+                        Default = Bool(y, "default"),
                     });
                 }
                 return table;

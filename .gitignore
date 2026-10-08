@@ -128,6 +128,9 @@ _E2EGen/
 # candle output that was checked in upstream; keep it out from now on
 ObjectARXWizardsInstaller/ObjectARXWizards.wixobj
 
+# The .wixproj PostBuildEvent zips the built MSI next to the project; that is a build output too
+ObjectARXWizardsInstaller/ObjectARXWizard.zip
+
 # Installer artifacts rebuilt from source. ObjectARXMultiYearWizards.vsix is committed on purpose
 # so it can be handed to users directly - remember to refresh it after wizard changes.
 /ObjectARXMultiYearWizards.msi

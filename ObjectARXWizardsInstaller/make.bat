@@ -21,8 +21,11 @@ echo =====================================
 echo Building installer for ObjectARX...
 echo =====================================
 
-:: Compile .wxs to .wixobj
-%CANDLE% -I. -ext WixVSExtension %WXS%
+:: Compile .wxs to .wixobj. -arch x64 marks every component 64-bit, which is what the payload is:
+:: it installs under the 64-bit Program Files now, and leaving the components 32-bit would put their
+:: component registration (and any registry they write) in the 32-bit view. The custom action stays
+:: x86 on purpose - it is an SfxCA stub and runs in the 32-bit server, which is unrelated to this.
+%CANDLE% -arch x64 -I. -ext WixVSExtension %WXS%
 if errorlevel 1 (
     echo candle.exe failed. Check for syntax or missing .wxi includes.
     exit /b 1

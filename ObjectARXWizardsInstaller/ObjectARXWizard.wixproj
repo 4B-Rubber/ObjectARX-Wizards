@@ -9,6 +9,10 @@
     <OutputName>ObjectARXWizard</OutputName>
     <OutputType>Package</OutputType>
     <Name>ObjectARXWizard</Name>
+    <!-- InstallerPlatform drives candle's -arch, and it defaults to $(Platform) - which is x86 here
+         because the custom action has to stay 32-bit. The installer itself is 64-bit: the payload
+         lands in the 64-bit Program Files, so its components must be marked 64-bit too. -->
+    <InstallerPlatform>x64</InstallerPlatform>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>

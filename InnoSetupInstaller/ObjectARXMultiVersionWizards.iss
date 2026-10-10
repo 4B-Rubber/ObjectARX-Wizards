@@ -51,7 +51,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.3"
+#define AppVersion "0.2.4"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -188,14 +188,26 @@ Source: "{#RepoRoot}\_Installs\arxEntryPoint.h"; DestDir: "{code:GetArxSdkIncDir
 ; experiments of the authoring machine that no shipped wizard imports. The folder itself is
 ; created below instead.
 
-; ---- Visual Studio 2022 integration. The MSI guards these with
-;      <Condition>VS2022_ROOT_FOLDER &lt;&gt; TARGETDIR</Condition>. ----
-Source: "{#RepoRoot}\_Installs\VC\vcprojects\Autodesk\*"; DestDir: "{code:GetVsVcProjectsDir}"; Flags: ignoreversion; Check: VsAvailable
+; ---- Visual Studio integration: the item wizards behind VS's "Add Class" dialog.
+;      The two classic .vsz *project* wizards (ArxAppWiz / ArxAppWizOMF) are deliberately NOT
+;      installed any more: the VSIX ships the same two project templates, and installing both
+;      put four entries into VS2022's New Project dialog (two classic "multi-year" + two
+;      "Multi-Version") while VS2026 only ever showed the VSIX pair. [InstallDelete] below
+;      removes the copies 0.2.3 and earlier left in the VS project-template folder. ----
 Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAvailable
 
 ; ---- used from [Code] only (extracted with ExtractTemporaryFile when needed) ----
 Source: "{#GenExeSource}"; Flags: dontcopy
 Source: "{#VsixSource}"; Flags: dontcopy
+
+[InstallDelete]
+; Classic project wizards copied into the VS project-template folder by 0.2.3 and earlier.
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsz"
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsdir"
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.ico"
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsz"
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsdir"
+Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.ico"
 
 [Dirs]
 ; The property sheet folder is part of the install even when the user ticks no year at all, and
@@ -913,10 +925,9 @@ begin
   if not VsFound then Exit;
   Vc := TrimTrailingSlash(VsRoot) + VsVcRelPath;
   Target := AddBackslash(AppDir);
-  // Add-project wizards (MSI: _Installs\VC\vcprojects\Autodesk)
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', '[TARGETDIR]', Target);
-  // Add-class / add-object wizards (MSI: _Installs\VC\VCAddClass\ObjectARX)
+  // Add-class / add-object wizards (MSI: _Installs\VC\VCAddClass\ObjectARX).
+  // The two classic project wizards that used to be patched here are no longer installed
+  // (see the [InstallDelete] section), so there is nothing left to patch for them.
   PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
   PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
   PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);

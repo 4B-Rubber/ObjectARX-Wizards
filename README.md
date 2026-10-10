@@ -74,7 +74,7 @@ Any of the three lines installs the same wizard payload and the same VSIX - pick
 
 1. **`ObjectARXMultiVersionWizardsSetup.exe`** (Burn bundle) - a single UAC prompt; installs the MSI and then the VSIX for the current user. Simplest option.
 2. **`ObjectARXMultiVersionWizards.msi`** - run as **Administrator** if you want the MSI on its own (it also installs the classic `.vsz` wizards).
-3. **`<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`).
+3. **`<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`). It installs the VSIX, the SDK/property-sheet payload and the classic *item* wizards behind VS's "Add Class" dialog, but **not** the two classic `.vsz` project wizards: project templates come from the VSIX only, so the New Project dialog shows one consistent set (an upgrade deletes the copies 0.2.3 and earlier left behind).
 
 Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (Visual C++ → *ObjectARX/DBX/CRX Application (Multi-Version)*) and, for the item wizards, in **Add → New Item** under the **ArxWizard** category.
 

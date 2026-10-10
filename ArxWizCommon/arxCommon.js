@@ -437,3 +437,25 @@ function InvokeArxWizardHelp () {
 	myUrl =myUrl.substring (0, myUrl.lastIndexOf ("\\") + 1) ;
 	open ("ms-its:" + myUrl + "ArxWizardHelp.chm::HTML/" + myName + ".htm") ;
 }
+
+//- ---------------------------------------------------------------------------------------------
+//- Diagnostics (classic line). The pages run in their own script scope and so does the engine's
+//- Scripts\<lcid>\default.js; both append to %TEMP%\arxwiz-classic.log, so a scope missing Visual
+//- Studio's framework script (Common.js / Script.js) can be told apart from one missing this file
+//- or a multi-year helper. The log file is capped below - this runs on every page of every wizard.
+//- ---------------------------------------------------------------------------------------------
+try {
+	var oArxLogFso =new ActiveXObject ("Scripting.FileSystemObject") ;
+	var strArxLogFile =oArxLogFso.GetSpecialFolder (2) + "\\arxwiz-classic.log" ;
+	if ( oArxLogFso.FileExists (strArxLogFile) == false
+		|| oArxLogFso.GetFile (strArxLogFile).Size < 262144 ) {
+		var oArxLog =oArxLogFso.OpenTextFile (strArxLogFile, 8, true) ;
+		oArxLog.WriteLine (new Date ().toString () + " [page " + document.location.pathname + "] "
+			+ "framework OnWizFinish=" + (typeof OnWizFinish)
+			+ " SetErrorInfo=" + (typeof SetErrorInfo)
+			+ " CreateSafeName=" + (typeof CreateSafeName)
+			+ " | this file ArxSetupVersionSymbols=" + (typeof ArxSetupVersionSymbols)
+			+ " | SCRIPT_COMMON_PATH=" + window.external.FindSymbol ("SCRIPT_COMMON_PATH")) ;
+		oArxLog.Close () ;
+	}
+} catch (e) { }

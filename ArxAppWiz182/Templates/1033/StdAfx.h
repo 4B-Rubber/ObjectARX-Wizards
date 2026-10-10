@@ -38,7 +38,9 @@
 
     [!endif]
 #pragma pack(push, 8)
-#pragma warning(disable : 4786 4996)
+#pragma warning(disable : 4786 4996 4838)
+    // 4838: ACED_ADSSYMBOL_ENTRY_AUTO in arxEntryPoint.h initialises a UINT with -1, which is
+    // a narrowing conversion; some ObjectARX property sheets turn warnings into errors.
     //#pragma warning(disable: 4098)
 
     [!if STD_COM_SERVER || ATL_COM_SERVER || MFC_EXT_SHARED]

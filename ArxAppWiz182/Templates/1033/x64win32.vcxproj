@@ -61,8 +61,7 @@
       <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <!-- Added to avoid Narrow conversion warnings introduced in VS2015 /Wv:xx[.yy[.zzzzz],  is CL version -->
-      <AdditionalOptions>/Wv:17.00.61030[!output ARX_OMF_ZM] %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>[!output ARX_OMF_ZM] %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

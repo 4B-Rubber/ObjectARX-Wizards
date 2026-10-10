@@ -5,15 +5,73 @@
 // http://msdn.microsoft.com/en-us/library/aa291835(v=VS.71).aspx
 // http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vswizard.vcwizctlclass_members.aspx
 
-function OnFinish(selProj, selObj) {
+//- ---------------------------------------------------------------------------------------------
+//- Diagnostics. This wizard runs inside Visual Studio's own script host, where a failure only
+//- surfaces as a message box with the bare description ("缺少对象" / "Object required" and the
+//- like) - no step, no line, no HRESULT. Every step of OnFinish is therefore appended to
+//- %TEMP%\arxwiz-classic.log, together with what the script scope can actually see: that is what
+//- tells a missing framework include (Common.js / Script.js from the Visual Studio installation)
+//- apart from a missing multi-year helper (ArxWizCommon\arxCommon.js, which the HTML pages load).
+//- ---------------------------------------------------------------------------------------------
+var ARX_WIZARD_NAME = "ArxAppWiz182";
+var ARX_LOG_FILE = "arxwiz-classic.log";
+
+function ArxWizLog(strMsg) {
 	try {
+		var oFso = new ActiveXObject("Scripting.FileSystemObject");
+		var strFile = oFso.GetSpecialFolder(2) + "\\" + ARX_LOG_FILE;
+		var oStream = oFso.OpenTextFile(strFile, 8, true);
+		oStream.WriteLine(new Date().toString() + " [" + ARX_WIZARD_NAME + "] " + strMsg);
+		oStream.Close();
+	} catch (e) { }
+}
+
+//- typeof never throws for an absent identifier, so this reports the whole scope in one line.
+function ArxWizScope() {
+	return ("framework CreateSafeName=" + (typeof CreateSafeName)
+		+ " CreateSafeRCFileName=" + (typeof CreateSafeRCFileName)
+		+ " AddFilesToNewProjectWithInfFile=" + (typeof AddFilesToNewProjectWithInfFile)
+		+ " SetupFilters=" + (typeof SetupFilters)
+		+ " SetCommonPchSettings=" + (typeof SetCommonPchSettings)
+		+ " | multi-year ArxSetupVersionSymbols=" + (typeof ArxSetupVersionSymbols)
+		+ " RenderAddTemplate=" + (typeof RenderAddTemplate)
+		+ " | engine wizard=" + (typeof wizard)
+		+ " dte=" + (typeof dte));
+}
+
+function ArxWizErrorText(e) {
+	var aParts = [];
+	try { aParts.push("description=[" + e.description + "]"); } catch (e1) { aParts.push("description=<none>"); }
+	try { aParts.push("message=[" + e.message + "]"); } catch (e2) { }
+	try { aParts.push("name=[" + e.name + "]"); } catch (e3) { }
+	try {
+		var n = e.number;
+		aParts.push("number=0x" + (n < 0 ? (0x100000000 + n) : n).toString(16));
+	} catch (e4) { }
+	return (aParts.join(" "));
+}
+
+//- SetErrorInfo only reads .description and .number; a local object keeps the report working even
+//- when the engine's own error object has no usable description.
+function ArxWizError(strDescription, nNumber) {
+	this.description = strDescription;
+	this.number = nNumber;
+}
+
+function OnFinish(selProj, selObj) {
+	var strStep = "enter";
+	try {
+		ArxWizLog("OnFinish enter: " + ArxWizScope());
+		strStep = "project symbols";
 		var strProjectPath = wizard.FindSymbol('PROJECT_PATH');
 		var strProjectName = wizard.FindSymbol('PROJECT_NAME');
 		wizard.AddSymbol("UPPER_CASE_PROJECT_NAME", strProjectName.toUpperCase());
 
+		strStep = "safe names (CreateSafeName / CreateSafeRCFileName)";
 		wizard.AddSymbol("SAFE_PROJECT_NAME", CreateSafeName(strProjectName));
 		wizard.AddSymbol("UPPER_CASE_SAFE_PROJECT_NAME", CreateSafeName(strProjectName.toUpperCase()));
 
+		strStep = "MFC / ATL flags";
 		var bMfcExtDll = wizard.FindSymbol("MFC_EXT_SHARED");
 		var bSharedMfc = wizard.FindSymbol("MFC_REG_SHARED") || bMfcExtDll;
 		var bMfcSupport = wizard.FindSymbol("MFC_REG_STATIC") || bSharedMfc;
@@ -27,6 +85,7 @@ function OnFinish(selProj, selObj) {
 		else
 			wizard.AddSymbol("ARX_ATL_SUPPORT", "false");
 
+		strStep = "app type flags";
 		var bArxAppType = wizard.FindSymbol('APP_ARX_TYPE');
 		var bDotNetModule = wizard.FindSymbol('DOTNET_MODULE');
 		if (bDotNetModule)
@@ -46,30 +105,49 @@ function OnFinish(selProj, selObj) {
 
 		//- Multi-year configurations: fills ARX_CONFIG_XML, ARX_YEAR_REGEX,
 		//- ARX_TOOLSET_XML, ARX_CLR_XML (see ArxWizCommon/arxCommon.js).
+		strStep = "multi-year symbols (ArxWizCommon\\arxCommon.js)";
+		if (typeof ArxSetupVersionSymbols == "undefined")
+			throw new Error("ArxWizCommon\\arxCommon.js did not reach the wizard script scope; see %TEMP%\\arxwiz-classic.log");
 		ArxSetupVersionSymbols(wizard, !!bDotNetModule);
 
 		//- Unique project GUIDs (the old templates hardcoded a single GUID)
+		strStep = "project guids";
 		wizard.AddSymbol("PROJECT_GUID", wizard.FormatGuid(wizard.CreateGuid(), 0));
 		wizard.AddSymbol("PROJECT_RES_GUID", wizard.FormatGuid(wizard.CreateGuid(), 0));
 
+		strStep = "render the skeleton to a temporary vcxproj";
 		var strProjTemplate = RenderPrjToTemporaryFile();
+		strStep = "AddFromTemplate";
 		selProj = CreateArxProject(strProjectName, strProjectPath, strProjTemplate);
+		strStep = "SetupFilters";
 		SetupFilters(selProj);
 
+		strStep = "CreateInfFile / AddFilesToCustomProj";
 		var InfFile = CreateInfFile();
 		AddFilesToCustomProj(selProj, strProjectName, strProjectPath, InfFile);
 		InfFile.Delete();
 
+		strStep = "SetCommonPchSettings / save";
 		SetCommonPchSettings(selProj);
 		selProj.Object.Save();
 
-		if (bOmfAppType)
+		if (bOmfAppType) {
+			strStep = "MakeOmfResourceProject";
 			MakeOmfResourceProject(selProj, strProjectPath, strProjectName);
+		}
 
+		ArxWizLog("OnFinish done: project=" + selProj.Name
+			+ " template=" + strProjTemplate
+			+ " years=" + wizard.FindSymbol("ARX_YEARS"));
 	} catch (e) {
-		if (e.description.length != 0)
-			SetErrorInfo(e);
-		return (e.number);
+		var strText = "OnFinish failed at step [" + strStep + "]: " + ArxWizErrorText(e);
+		ArxWizLog(strText);
+		try {
+			SetErrorInfo(new ArxWizError(strText, (e && e.number) ? e.number : -1));
+		} catch (e1) {
+			try { wizard.ReportError(strText); } catch (e2) { }
+		}
+		return ((e && e.number) ? e.number : -1);
 	}
 }
 
@@ -202,4 +280,26 @@ function MakeOmfResourceProject(selProj, strProjectPath, strProjectName) {
 			break;
 		}
 	}
+}
+
+//- ---------------------------------------------------------------------------------------------
+//- The engine's script scope is not the HTML pages' scope: it preloads Visual Studio's own
+//- Common.js / Script.js (SetupFilters, CreateInfFile, RenderAddTemplate, ...) but it does NOT see
+//- ArxWizCommon\arxCommon.js, which the pages include - calling into it from OnFinish fails with a
+//- bare "Object required". Evaluate that file into this scope. The eval call has to sit at file
+//- scope like this: inside a function its definitions would die with the function.
+//- ---------------------------------------------------------------------------------------------
+try {
+	var oArxSharedFso = new ActiveXObject("Scripting.FileSystemObject");
+	var strArxSharedPath = wizard.FindSymbol("ABSOLUTE_PATH");
+	strArxSharedPath = strArxSharedPath.substring(0, strArxSharedPath.lastIndexOf("\\") + 1)
+		+ "ArxWizCommon\\arxCommon.js";
+	var oArxSharedStream = oArxSharedFso.OpenTextFile(strArxSharedPath, 1);
+	var strArxShared = oArxSharedStream.ReadAll();
+	oArxSharedStream.Close();
+	eval(strArxShared);
+	ArxWizLog("ArxWizCommon\\arxCommon.js evaluated into the wizard script scope"
+		+ " (ArxSetupVersionSymbols=" + (typeof ArxSetupVersionSymbols) + ")");
+} catch (e) {
+	ArxWizLog("ArxWizCommon\\arxCommon.js could NOT be evaluated: " + ArxWizErrorText(e));
 }

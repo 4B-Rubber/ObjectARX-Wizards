@@ -96,7 +96,7 @@ Check 'cleanup --keep "" removes all generated sheets' ((Get-ChildItem $keep -Fi
 # ---- 5. remove: only what this tool generated, whatever else shares the folder ----
 $rm = Join-Path $root 'remove'
 & $Exe generate --props-dir $rm --years 2025,2026 | Out-Null; Wait-GenProps
-Copy-Item (Join-Path $repo '_Installs\ObjectARX Props\ObjectARX.Common.props') $rm
+Copy-Item (Join-Path $repo 'tools\arx-genprops\testdata\ObjectARX.Common.props') $rm
 & $Exe remove --props-dir $rm | Out-Null; Wait-GenProps
 Check 'remove drops generated sheets' ((Get-ChildItem $rm -Filter 'Autodesk.arx-*.props').Count -eq 0)
 Check 'remove drops ObjectARX.User.props' (-not (Test-Path (Join-Path $rm 'ObjectARX.User.props')))

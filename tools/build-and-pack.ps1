@@ -93,13 +93,6 @@ if (-not $SkipSync) {
     }
     & robocopy @rcArgs | Out-Null
     if ($LASTEXITCODE -ge 8) { Fail ('robocopy exit code ' + $LASTEXITCODE + ' (>=8 means failure).') }
-# The classic line ships the classic wizards. The VSIX is installed there only because its install is
-# what makes Visual Studio rebuild the list that carries the vcprojects .vsdir entries, so it is built
-# without its own templates: New Project then shows the classic entries and nothing from this line.
-foreach ($rel in @('ArxVsixWizard\Packaging\ProjectTemplates', 'ArxVsixWizard\Packaging\ItemTemplates')) {
-    $trim = Join-Path $srcDir $rel
-    if (Test-Path $trim) { Remove-Item $trim -Recurse -Force; Write-Output ('  VSIX built without ' + $rel) }
-}
 }
 
 Step ('MSBuild: VSIX (' + $Configuration + ')')

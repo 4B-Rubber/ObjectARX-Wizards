@@ -191,8 +191,10 @@ static class VsixSetup
             var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard") { UseShellExecute = false };
             using (var p = Process.Start(psi))
             {
-                p.WaitForExit();
-                Log("  " + ide + " -> VSIXInstaller uninstall exit " + p.ExitCode);
+                // No WaitForExit here, unlike the install: VSIXInstaller launches a chain of copies of
+                // itself and can stay alive in its own UI thread long after the extension is gone. The
+                // Inno uninstaller froze on exactly that; the bundle must not wait for it either.
+                Log("  " + ide + " -> VSIXInstaller uninstall started (not waited for)");
             }
         }
 

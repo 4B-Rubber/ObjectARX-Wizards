@@ -1119,8 +1119,12 @@ begin
     // administrator uninstalling its own copy is the same profile VSIXInstaller has to look at, which
     // is the case here. Run as a standard user it would look at the elevating account instead, and
     // the log line below is what tells the two apart.
-    if Exec(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewWaitUntilTerminated, Code) then
-      Alog('uninstall: VSIXInstaller for ' + IntToStr(Major) + ' exited with ' + IntToStr(Code));
+    // VSIXInstaller starts a chain of copies of itself and can sit in its own UI thread long after it
+    // has done the work; waiting for it froze the whole uninstaller (a hang on 2026-10-10, cleared by
+    // killing the processes). Start it and carry on - by the time Visual Studio is opened again the
+    // extension is gone, and the log records that it was asked to go.
+    if Exec(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewNoWait, Code) then
+      Alog('uninstall: VSIXInstaller for ' + IntToStr(Major) + ' started (not waited for)');
   end;
 end;procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin

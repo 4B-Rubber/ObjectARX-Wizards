@@ -84,7 +84,9 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=Output
-OutputBaseFilename=ObjectARXMultiVersionWizardsSetup-Inno
+; One name for the three lines: ObjectARXMultiVersionWizards-<branch>. The branch suffix is what tells
+; the packages apart, so a dev build and a classic build can sit next to each other in the same folder.
+OutputBaseFilename=ObjectARXMultiVersionWizards-dev
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern

@@ -193,6 +193,12 @@ Source: "{#RepoRoot}\_Installs\arxEntryPoint.h"; DestDir: "{code:GetArxSdkIncDir
 Source: "{#RepoRoot}\_Installs\VC\vcprojects\Autodesk\*"; DestDir: "{code:GetVsVcProjectsDir}"; Flags: ignoreversion; Check: VsAvailable
 Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAvailable
 
+; The second Visual Studio (2026 when the primary is 2022, and the other way round): the classic
+; .vsz wizards are installed into both. They are engine-version-stamped (VsWizard.VsWizardEngine.17.0
+; on VS2022, 18.0 on VS2026), so the patch step below rewrites the engine id per target VS.
+Source: "{#RepoRoot}\_Installs\VC\vcprojects\Autodesk\*"; DestDir: "{code:GetVsAltVcProjectsDir}"; Flags: ignoreversion; Check: VsAltAvailable
+Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsAltVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAltAvailable
+
 ; ---- used from [Code] only (extracted with ExtractTemporaryFile when needed) ----
 Source: "{#GenExeSource}"; Flags: dontcopy
 Source: "{#VsixSource}"; Flags: dontcopy
@@ -237,6 +243,10 @@ var
 
   VsRoot: string;
   VsFound: Boolean;
+  /// <summary>The second Visual Studio on this machine (VS2026 when the primary is VS2022 and the
+  /// other way round). The classic .vsz wizards are installed into both.</summary>
+  VsAltRoot: string;
+  VsAltFound: Boolean;
   PrevPropsDir: string;
   PrevInstallDir: string;
   UninstallPropsDir: string;
@@ -437,6 +447,24 @@ begin
   Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojects\Autodesk';
 end;
 
+/// <summary>The same two folders for the second Visual Studio on this machine. The classic .vsz
+/// wizards go into both VSs now: their engine id is version-stamped per VS release, which the
+/// patch step (PatchVsFilesForRoot) fixes per installation target.</summary>
+function GetVsAltVcProjectsDir(Param: string): string;
+begin
+  Result := TrimTrailingSlash(VsAltRoot) + VsVcRelPath + '\vcprojects\Autodesk';
+end;
+
+function GetVsAltVcProjectItemsDir(Param: string): string;
+begin
+  Result := TrimTrailingSlash(VsAltRoot) + VsVcRelPath + '\vcprojectitems\ObjectARX';
+end;
+
+function VsAltAvailable(): Boolean;
+begin
+  Result := VsAltFound;
+end;
+
 function GetVsVcProjectItemsDir(Param: string): string;
 begin
   Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojectitems\ObjectARX';
@@ -634,6 +662,14 @@ begin
   VsRoot := ExpandConstant('{param:VSROOT|}');
   if VsRoot = '' then VsRoot := FindVs2022Root();
   VsFound := (VsRoot <> '') and DirExists(VsRoot);
+// The second Visual Studio, when the machine has both: the classic .vsz wizards go into every VS
+// (their engine id is rewritten per VS by PatchVsFilesForRoot). The folder name tells them apart:
+// VS2022 lives under ...\Microsoft Visual Studio\2022\, VS2026 under ...\18\.
+VsAltRoot := '';
+if VsFound and (Pos('\2022\', VsRoot) > 0) then VsAltRoot := FindVsRootByMajor(18);
+if VsFound and (Pos('\18\', VsRoot) > 0) then VsAltRoot := FindVsRootByMajor(17);
+VsAltFound := (VsAltRoot <> '') and DirExists(VsAltRoot) and (CompareText(VsAltRoot, VsRoot) <> 0);
+Alog('second Visual Studio root: ' + VsAltRoot + ' (found=' + OnOff(VsAltFound) + ')');
   Alog('Visual Studio root: ' + VsRoot + ' (found=' + OnOff(VsFound) + ')');
 
   if not VsFound then begin
@@ -926,6 +962,44 @@ begin
   PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', '[TARGETDIR]', Target);
 end;
 
+/// <summary>The same two placeholders for one given Visual Studio root, plus the engine ProgID.
+/// The payload ships VsWizard.VsWizardEngine.17.0 (VS2022); VS2026 needs 18.0, and the id is taken
+/// from that VS's own devenv.exe so a future release only has to change this one place.</summary>
+procedure PatchVsFilesForRoot(const VsRootArg, AppDir: string);
+var
+  Vc, Target, DevEnv, Ver, EngineId: string;
+  Dot: Integer;
+begin
+  if not DirExists(VsRootArg) then Exit;
+  Vc := TrimTrailingSlash(VsRootArg) + VsVcRelPath;
+  Target := AddBackslash(AppDir);
+  EngineId := '17.0';
+  DevEnv := TrimTrailingSlash(VsRootArg) + '\Common7\IDE\devenv.exe';
+  if GetVersionNumbersString(DevEnv, Ver) then begin
+    Dot := Pos('.', Ver);
+    if Dot > 1 then EngineId := Copy(Ver, 1, Dot - 1) + '.0';
+  end;
+  Alog('patching ' + Vc + ' (engine ' + EngineId + ')');
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', 'VsWizard.VsWizardEngine.17.0', 'VsWizard.VsWizardEngine.' + EngineId);
+end;
+
 /// <summary>CA_PatchHTMLWizFiles: ADSK -> the chosen RDS, in the AppWiz HTML pages only.</summary>
 procedure PatchHtmlWizardFiles(const AppDir: string);
 var
@@ -1026,6 +1100,9 @@ begin
   RunGen('cleanup --props-dir ' + QuoteArg(Props) + ' --keep ' + Selected);
 
   PatchVsFiles(AppDir);
+  // Same for every VS the classic wizards went into, including the engine ProgID per VS version.
+  PatchVsFilesForRoot(VsRoot, AppDir);
+  if VsAltFound then PatchVsFilesForRoot(VsAltRoot, AppDir);
   PatchHtmlWizardFiles(AppDir);
   PatchArxCommonJs(AppDir, Props);
 

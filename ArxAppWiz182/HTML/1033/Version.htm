@@ -246,9 +246,25 @@
 									</TD>
 									<TD VALIGN="top" COLSPAN="3">
 										<SPAN CLASS="itemText"><B><U>Target AutoCAD releases:</U></B></SPAN>
-										<table border="0" cellpadding="0" cellspacing="0" id="VERSIONLIST">
+										<TABLE border="0" cellpadding="0" cellspacing="0"><TR>
+<TD valign="top"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLISTL">
 											<tr><td colspan="2">&nbsp;</td></tr>
-										</table>
+										</table></TD>
+<TD width="10"><IMG height="1" alt="" src="../../Images/spacer.gif" width="10"></TD>
+<TD valign="top"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLISTR"></table></TD>
+</TR></TABLE>
+<TABLE border="0" cellpadding="0" cellspacing="2" style="margin-top:4px;">
+											<TR>
+												<TD><BUTTON class="BUTTONS" id="AllYearsBtn" type="button"
+													style="width:76px;" onclick="OnYearsPreset('all');">All</BUTTON></TD>
+												<TD><BUTTON class="BUTTONS" id="NoYearsBtn" type="button"
+													style="width:76px;" onclick="OnYearsPreset('none');">None</BUTTON></TD>
+												<TD><BUTTON class="BUTTONS" id="InvertYearsBtn" type="button"
+													style="width:76px;" onclick="OnYearsPreset('invert');">Invert</BUTTON></TD>
+												<TD><BUTTON class="BUTTONS" id="CompatYearsBtn" type="button"
+													style="width:88px;" onclick="OnYearsPreset('compat');">Compatible</BUTTON></TD>
+											</TR>
+										</TABLE>
 									</TD>
 									<TD VALIGN="top" WIDTH="12">
 										&nbsp;
@@ -257,11 +273,11 @@
 								<TR>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
 									<TD VALIGN="top" COLSPAN="3">
-										<SMALL>The output module name is suffixed with the year
-											(e.g. asdkMyOmfApp2026.arx). Building older releases requires the matching
-											Visual Studio C++ build tools (v90/v100/v110/v140/v141/v142). The global
-											ObjectARX property sheets must be installed in
-											"C:\Program Files\Autodesk\ObjectARX Props".</SMALL>
+										<SMALL>Each ticked year adds a pair of build configurations (<I>2026</I> and <I>2026d</I>) and
+											appends the year to the output module name (e.g. <I>MyApp2026.arx</I>).
+											Building an older release needs that year's Visual Studio C++ toolset
+											(v90 / v100 / v110 / v140 / v141 / v142 / v143); the library paths and
+											toolsets come from the ObjectARX property sheets the installer generates.</SMALL>
 									</TD>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
 								</TR>
@@ -373,16 +389,18 @@
 		//- The version list is generated from the shared table in arxCommon.js
 		//- (newest first). Symbols TGT_YYYY defaults are declared in default.htm.
 		function BuildVersionList() {
-			var tbl = document.getElementById("VERSIONLIST");
+			var tblL = document.getElementById("VERSIONLISTL");
+			var tblR = document.getElementById("VERSIONLISTR");
 			for (var i = g_ArxVersions.length - 1; i >= 0; i--) {
 				var info = g_ArxVersions[i];
+				var tbl = (i >= (g_ArxVersions.length / 2)) ? tblL : tblR;
 				var tr = tbl.insertRow();
 				var td1 = tr.insertCell();
 				var cb = document.createElement("INPUT");
 				cb.type = "checkbox";
 				cb.className = "Checkbox";
 				cb.id = "TGT_" + info.year;
-				cb.title = "";
+				cb.title = "ObjectARX " + info.sdk + " - " + info.toolset + (info.x64Only ? " - x64" : " - Win32/x64");
 				try {
 					cb.checked = (window.external.FindSymbol("TGT_" + info.year) == true);
 				} catch (e) {
@@ -402,6 +420,29 @@
 			}
 		}
 
+				//- All / None / Invert / Compatible, the same four presets the other lines' version pages
+		//- offer. The compatible set is the one the installer's year table marks compatible.
+		function OnYearsPreset(strPreset) {
+			for (var i = 0; i < g_ArxVersions.length; i++) {
+				var strYear = g_ArxVersions[i].year;
+				var cb = document.getElementById("TGT_" + strYear);
+				if (!cb)
+					continue;
+				var bNew;
+				if (strPreset == "all")
+					bNew = true;
+				else if (strPreset == "none")
+					bNew = false;
+				else if (strPreset == "invert")
+					bNew = !cb.checked;
+				else
+					bNew = (g_ArxCompatibleYears[strYear] == 1);
+				cb.checked = bNew;
+				try {
+					window.external.AddSymbol("TGT_" + strYear, bNew);
+				} catch (e) { }
+			}
+		}
 		function InitControls() {
 		}
 

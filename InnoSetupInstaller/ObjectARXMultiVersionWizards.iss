@@ -60,9 +60,10 @@
 #define RepoRoot ".."
 #define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"
 #define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"
-; This branch ships the classic mechanism only: the .vsz project and item wizards plus the props do
-; the work, so the setup neither carries nor installs the VSIX (dev and main ship the VSIX instead).
-#define InstallVsix 0
+; The item wizards work the classic way, but the .vsz project entries in vcprojects\Autodesk are not
+; surfacing as New Project entries in the current IDE, so the branch ships the VSIX as well: it is
+; what makes creating a project possible. Set this to 0 to test the classic only shape again.
+#define InstallVsix 1
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]

@@ -6,7 +6,9 @@
     <ProductVersion>3.10</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4b3f0f2c-93aa-4d8e-9a2f-1c6f5b7e2d41}</ProjectGuid>
-    <OutputName>ObjectARXMultiVersionWizardsSetup</OutputName>
+    <!-- One name for the three lines: ObjectARXMultiVersionWizards-<branch>. The bundle is the file
+         users run; the MSI it chains keeps its own name because the bundle payload references it. -->
+    <OutputName>ObjectARXMultiVersionWizards-main</OutputName>
     <OutputType>Bundle</OutputType>
     <Name>ObjectARXMultiVersionWizardsSetup</Name>
   </PropertyGroup>

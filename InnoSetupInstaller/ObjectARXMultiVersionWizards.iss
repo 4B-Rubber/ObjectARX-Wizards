@@ -919,7 +919,28 @@ begin
 end;
 
 /// <summary>CA_PatchVSFiles: the [TARGETDIR] placeholder in the nine project wizards.</summary>
-procedure PatchVsFiles(const AppDir: string);
+/// <summary>
+/// Visual Studio builds its wizard and project list once and caches it: copying the .vsz/.vsdir files
+/// into vcprojects is not enough. That is why the classic project entries only showed up after a VSIX
+/// install had made the IDE rebuild the cache. Ask every Visual Studio to rebuild it here, so the
+/// classic line works without the VSIX.
+/// </summary>
+procedure RefreshVsCache();
+var
+  Major, Code: Integer;
+  Root, DevEnv: string;
+begin
+  for Major := 17 to 18 do begin
+    Root := FindVsRootByMajor(Major);
+    if Root = '' then Continue;
+    DevEnv := TrimTrailingSlash(Root) + '\Common7\IDE\devenv.exe';
+    if not FileExists(DevEnv) then Continue;
+    if Exec(DevEnv, '/updateconfiguration', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Alog('refresh: devenv /updateconfiguration (' + IntToStr(Major) + ') exited with ' + IntToStr(Code))
+    else
+      Alog('refresh: could not run devenv for ' + IntToStr(Major));
+  end;
+end;procedure PatchVsFiles(const AppDir: string);
 var
   Vc: string;
   Target: string;

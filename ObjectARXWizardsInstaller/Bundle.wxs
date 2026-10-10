@@ -2,10 +2,13 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
 
-  <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
-       installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
-       The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process
-       and the PerMachine="no" on that package below. -->
+  <!-- One double-click launcher: the MSI is applied by its own launcher, ArxWizardsMsiSetup.exe, which
+       raises the elevation prompt and then calls msiexec; the VSIX is installed for the current user by
+       ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
+       Both packages are per-user EXE packages on purpose: the bundle itself stays unelevated so that
+       the VSIX launcher inherits an unelevated token. The MSI's elevation has to come from its
+       launcher rather than from Windows Installer - see the note on the ArxWizardsMsi package below
+       and MsiSetup.cs. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
           Version="0.2.4"
           Manufacturer="Autodesk"
@@ -45,7 +48,14 @@
            ArxQuiet=1 turns the MSI UI off.
            The uninstall command's ProductCode is the one defined in ObjectARXWizards.wxs; it has
            to be repeated here because the bundle project cannot see that file's defines. It must
-           be changed whenever that define moves. -->
+           be changed whenever that define moves.
+           PerMachine stays at its default (no) on purpose. Declaring this package per-machine would
+           make Burn elevate the whole bundle, and the VSIX launcher below would inherit an elevated
+           token and install the extension per-machine. The MSI's elevation comes from its launcher
+           instead, and it has to: when Windows Installer elevates the MSI by itself, an immediate
+           custom action in the execute sequence still runs impersonated with the client's unelevated
+           token, and the DTF stub cannot create its extraction directory under %WINDIR%\Installer
+           with that token - every managed action fails and the install rolls back with 1603. -->
       <ExePackage Id="ArxWizardsMsi"
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
                   DetectCondition="false"

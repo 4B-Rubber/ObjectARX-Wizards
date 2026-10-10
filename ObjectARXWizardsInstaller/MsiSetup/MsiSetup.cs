@@ -155,13 +155,50 @@ static class MsiSetup
 
         string msiexec = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "msiexec.exe");
         Console.WriteLine("[arx] msiexec " + arguments);
-        var psi = new ProcessStartInfo(msiexec, arguments) { UseShellExecute = false };
-        using (var p = Process.Start(psi))
+
+        // The UAC prompt has to belong to this process, not to the MSI. Letting Windows Installer
+        // elevate itself (what happens when a per-machine MSI is started from an unelevated process)
+        // elevates the server only: an immediate custom action scheduled in the execute sequence still
+        // runs in an impersonated server, i.e. with the client's *unelevated* token. The WiX DTF stub
+        // then cannot create the temporary directory it extracts itself into, beside the CA DLL in
+        // %WINDIR%\Installer, and every managed action dies with "SFXCA: Failed to create temp
+        // directory. Error code 5" - the install rolls back with 1603. Starting msiexec elevated makes
+        // those actions run as the elevated user, exactly as they do when the MSI is started from an
+        // elevated shell. Measured 2026-10-11; the MSI log that shows it is %TEMP%\ObjectARXWizards-msi.log.
+        bool elevated = IsElevated();
+        var psi = new ProcessStartInfo(msiexec, arguments) { UseShellExecute = !elevated };
+        if (!elevated) psi.Verb = "runas";
+
+        try
         {
-            p.WaitForExit();
-            Console.WriteLine("[arx] msiexec exited with " + p.ExitCode);
-            return p.ExitCode;
+            using (var p = Process.Start(psi))
+            {
+                p.WaitForExit();
+                Console.WriteLine("[arx] msiexec exited with " + p.ExitCode);
+                return p.ExitCode;
+            }
         }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            // 1223: the elevation prompt was declined. Report that the way msiexec reports a cancelled
+            // install, so the bundle says "cancelled" instead of "failed".
+            int code = ex.NativeErrorCode == 1223 ? ErrorUserExit : ErrorInstallFailure;
+            Console.WriteLine("[arx] msiexec could not be started: " + ex.Message + " -> " + code);
+            return code;
+        }
+    }
+
+    /// <summary>True when this process already has the administrator token, so msiexec needs no prompt
+    /// and its output can be captured the old way.</summary>
+    static bool IsElevated()
+    {
+        try
+        {
+            using (var id = System.Security.Principal.WindowsIdentity.GetCurrent())
+                return new System.Security.Principal.WindowsPrincipal(id)
+                    .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+        }
+        catch { return false; }
     }
 
     /// <summary>Returns the display name of the first blocking process that is running, else null.</summary>

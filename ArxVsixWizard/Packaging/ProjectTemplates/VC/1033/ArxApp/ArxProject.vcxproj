@@ -56,11 +56,6 @@ $ArxToolsetXml$  </PropertyGroup>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <!-- ObjectARX 2021 and later ship the OMT geometry library separately and the property
-           sheets do not link it, so the SDK's own support libraries fail to resolve without
-           it. Keyed on the file itself: the older SDKs do not have it and must not link it,
-           and a single project covers every year from 2010 to 2027. -->
-      <AdditionalDependencies Condition="Exists('$(ArxSdkLibs)\acgeoment.lib')">acgeoment.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <!-- The .rc references $(RDS)$(ProjectName).tlb from $(IntDir); keep the year suffix off the tlb name -->

@@ -13,7 +13,9 @@
     * Packaging\**\*.vstemplate             <Assembly> identity         = "<v>.0"
 
   When the built ..\ObjectARXMultiVersionWizards.vsix is present it is checked too, since that is the file
-  that actually gets installed.
+  that actually gets installed. This line ships the classic wizards, so the packaged VSIX is asserted to
+  carry *no* .vstemplate (it is only there to make Visual Studio rebuild its wizard list): the artifact
+  checks below are the mirror image of the dev/main ones.
 #>
 [CmdletBinding()]
 param()
@@ -71,18 +73,18 @@ if (Test-Path $vsixPath) {
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $zip = [System.IO.Compression.ZipFile]::OpenRead($vsixPath)
   try {
+    # The classic line's VSIX must register nothing: no .vstemplate means no template entry in
+    # New Project / Add Class. The source tree still carries all nine (checked above), they are
+    # just kept out of the container (Content Exclude in ArxVsixWizard.csproj).
     $entries = @($zip.Entries | Where-Object { $_.FullName -like '*.vstemplate' })
-    Check 'the built VSIX carries templates' ($entries.Count -gt 0) ($entries.Count.ToString())
+    Check 'the built VSIX carries no template definition' ($entries.Count -eq 0) ($entries.Count.ToString())
 
-    $stale = @()
-    foreach ($e in $entries) {
-      $sr = New-Object System.IO.StreamReader($e.Open())
-      $text = $sr.ReadToEnd(); $sr.Close()
-      if ($text -notmatch [regex]::Escape('ArxVsixWizard, Version=' + $assembly + ',')) {
-        $stale += $e.FullName
-      }
+    # Their folders do stay, because the manifest declares ProjectTemplates / ItemTemplates assets
+    # and those paths have to exist inside the package.
+    foreach ($folder in @('ProjectTemplates/', 'ItemTemplates/')) {
+      $inFolder = @($zip.Entries | Where-Object { $_.FullName.StartsWith($folder) }).Count
+      Check ('the built VSIX still carries ' + $folder + ' (manifest asset path)') ($inFolder -gt 0) ($inFolder.ToString())
     }
-    Check 'the built VSIX templates name the current assembly' ($stale.Count -eq 0) ($stale -join ' ; ')
 
     $manifestEntry = $zip.Entries | Where-Object { $_.FullName -eq 'extension.vsixmanifest' }
     if ($manifestEntry) {

@@ -1,9 +1,12 @@
-// The command is declared DefaultInvisible with DynamicVisibility so it can be limited to
-// ObjectARX projects by BeforeQueryStatus. That needs the package to be *loaded*: an invisible
-// command cannot be clicked, and a package is only loaded when one of its commands runs, so
-// without an auto-load context the package would never load and the command would never appear
-// (measured on VS 18.10: zero "PackageInit" lines in %TEMP%\ArxVsixWizard\wizard.log while the
-// extension was installed and the IDE had restarted). Hence the auto-load below.
+// The package. This line ships the classic wizards: the project entries come from the installer's
+// vcprojects\Autodesk (.vsz/.vsdir) and the item entries from vcprojectitems\ObjectARX, so the
+// package carries no command of its own. It stays registered because the extension is what makes
+// Visual Studio rebuild the wizard list those entries live in, and the log line below is the proof
+// of life for that install (%TEMP%\ArxVsixWizard\wizard.log -> "PackageInit enter/done"). The
+// auto-load context is kept for the same reason: with no command to click, the package would
+// otherwise never load and the log would stay empty, which is exactly how the 0.2.0 command bug
+// went unnoticed (measured on VS 18.10: zero "PackageInit" lines while the extension was installed
+// and the IDE had restarted).
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -23,13 +26,12 @@ namespace ArxVsixWizard.Commands
         protected override async Task InitializeAsync(CancellationToken cancellationToken,
             IProgress<ServiceProgressData> progress)
         {
-            // The previous attempt at this command failed silently because the package never
-            // loaded; this line is the first proof of life in %TEMP%\ArxVsixWizard\wizard.log.
+            // First proof of life in %TEMP%\ArxVsixWizard\wizard.log: an extension that never logs
+            // this line is not being loaded at all.
             WizardDiagnostics.Log("PackageInit", "enter");
             try
             {
                 await base.InitializeAsync(cancellationToken, progress);
-                await AddArxItemCommand.InitializeAsync(this);
                 WizardDiagnostics.Log("PackageInit", "done");
             }
             catch (Exception ex)

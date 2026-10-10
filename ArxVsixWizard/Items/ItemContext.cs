@@ -36,9 +36,10 @@ namespace ArxVsixWizard.Items
 
         /// <summary>
         /// Names of the project items the last item-wizard run generated. Visual Studio reports them
-        /// through ProjectItemFinishedGenerating; the "Add ObjectARX Class..." command uses them to
-        /// check that the add really reached the project, because the template engine can fail in its
-        /// own tail (after the files exist) - see AddArxItemCommand.
+        /// through ProjectItemFinishedGenerating; the VSIX line's "Add ObjectARX Class..." command
+        /// checks the add against this list (the template engine can fail in its own tail, after the
+        /// files exist). The classic line keeps collecting them - they are the only record of what a
+        /// run produced.
         /// </summary>
         static readonly List<string> GeneratedNames = new List<string>();
 

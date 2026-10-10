@@ -73,12 +73,20 @@
 
   <ItemGroup>
     <Content Include="source.extension.vsixmanifest" />
-    <!-- Templates must live under a folder named ProjectTemplates in the VSIX; VS only
-         registers project templates discovered there. Layout: ProjectTemplates\VC\1033\<name>. -->
-    <Content Include="Packaging\ProjectTemplates\**\*" Link="ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The classic line ships the classic wizards: the .vsz/.vsdir entries the installer copies into
+         vcprojects\Autodesk are what New Project lists, and the VCAddClass item wizards are what
+         Add Class lists. The VSIX is installed on this line only because that install is what makes
+         Visual Studio rebuild its wizard list (see InnoSetupInstaller\ObjectARXMultiVersionWizards.iss),
+         so no template *definition* goes into the container: VS registers a template from its
+         .vstemplate, and without one there is nothing to list. Everything else stays, so the manifest
+         asset paths keep pointing at folders that exist in the package, and
+         Packaging\ProjectTemplates\**\*.vcxproj stays available as the embedded skeleton above.
+         Templates must live under a folder named ProjectTemplates in the VSIX; VS only registers
+         project templates discovered there. Layout: ProjectTemplates\VC\1033\<name>. -->
+    <Content Include="Packaging\ProjectTemplates\**\*" Exclude="Packaging\ProjectTemplates\**\*.vstemplate" Link="ProjectTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Same rule for item templates: VS only registers them when they live under
          a folder named ItemTemplates in the VSIX. Layout: ItemTemplates\VC\<category>\1033\<name>. -->
-    <Content Include="Packaging\ItemTemplates\**\*" Link="ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="Packaging\ItemTemplates\**\*" Exclude="Packaging\ItemTemplates\**\*.vstemplate" Link="ItemTemplates\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 # AGENTS.md — 本仓库的修改规范
 
 本文件面向所有在本仓库里工作的 AI agent（也供人类贡献者参考）。**动代码或文档前先读这份**。
-这里只放"规矩"；具体方案与背景见仓库内 `docs/`，以及本机（不上传）的 `.trae/documents/`。
+这里只放"规矩"；具体方案与背景见仓库内 `docs/`。
 
 > 本机专用补充约定见 `AGENTS.local.md`（若存在；只在本机、不随仓库上传）。
 
@@ -40,7 +40,7 @@
 
 ## 4. 语言与文风
 
-- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/`、`.trae/documents/`（本机）为中文。
+- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/`为中文。
 - **改哪个文件就沿用该文件的语言**；代码注释同理。
 
 ## 5. 提交前

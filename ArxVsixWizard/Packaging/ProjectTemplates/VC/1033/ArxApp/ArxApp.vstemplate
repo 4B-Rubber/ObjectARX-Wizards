@@ -16,7 +16,7 @@
     <Project File="ArxProject.vcxproj" TargetFileName="$projectname$.vcxproj" ReplaceParameters="true" />
   </TemplateContent>
   <WizardExtension>
-    <Assembly>ArxVsixWizard, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null</Assembly>
+    <Assembly>ArxVsixWizard, Version=0.2.4.0, Culture=neutral, PublicKeyToken=null</Assembly>
     <FullClassName>ArxVsixWizard.ArxProjectWizard</FullClassName>
   </WizardExtension>
 </VSTemplate>

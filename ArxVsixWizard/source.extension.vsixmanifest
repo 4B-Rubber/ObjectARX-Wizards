@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="ObjectARX.MultiYear.Wizard" Version="0.3.0" Language="en-US" Publisher="ADN-DevTech" />
+    <Identity Id="ObjectARX.MultiYear.Wizard" Version="0.2.4" Language="en-US" Publisher="ADN-DevTech" />
     <DisplayName>ObjectARX Multi-Version Wizards (2010-2027)</DisplayName>
     <Description xml:space="preserve">ObjectARX/DBX and OMF project wizards targeting AutoCAD 2010-2027, for Visual Studio 2022 and 2026.</Description>
     <Tags>ObjectARX, AutoCAD, C++</Tags>
@@ -27,7 +27,7 @@
     <!-- The VsPackage asset is what makes Visual Studio register and load the package
          (the "Add ObjectARX Class..." command); without it the pkgdef is ignored. -->
     <Asset Type="Microsoft.VisualStudio.VsPackage" Path="%CurrentProject%.pkgdef" />
-    <Asset Type="Microsoft.VisualStudio.Assembly" Path="ArxVsixWizard.dll" AssemblyName="ArxVsixWizard, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" Path="ArxVsixWizard.dll" AssemblyName="ArxVsixWizard, Version=0.2.4.0, Culture=neutral, PublicKeyToken=null" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" Path="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" Path="ItemTemplates" />
   </Assets>

@@ -29,7 +29,6 @@
     <Content Include="directory.wxi" />
     <Content Include="feature.wxi" />
     <Content Include="property.wxi" />
-    <Content Include="readMe.md" />
     <Content Include="UI.wxi" />
   </ItemGroup>
   <ItemGroup>
@@ -47,9 +46,10 @@
     <Error Text="The WiX Toolset v3.11 (or newer) build tools must be installed to build this project. To download the WiX Toolset, see http://wixtoolset.org/releases/" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>if exist $(SolutionDir)$(SolutionName).zip del /F $(SolutionDir)$(SolutionName).zip
-7z a -tzip  $(SolutionDir)$(SolutionName).zip $(TargetDir)$(SolutionName).msi
-7z l  $(SolutionDir)$(SolutionName).zip</PostBuildEvent>
+    <PostBuildEvent>if exist "$(ProjectDir)$(ProjectName).zip" del /F "$(ProjectDir)$(ProjectName).zip"
+if exist "%ProgramFiles%\7-Zip\7z.exe" "%ProgramFiles%\7-Zip\7z.exe" a -tzip "$(ProjectDir)$(ProjectName).zip" "$(TargetPath)"
+if exist "%ProgramFiles%\7-Zip\7z.exe" "%ProgramFiles%\7-Zip\7z.exe" l "$(ProjectDir)$(ProjectName).zip"
+exit /b 0</PostBuildEvent>
   </PropertyGroup>
   <!--
 	To modify your build process, add your task inside one of the targets below and uncomment it.

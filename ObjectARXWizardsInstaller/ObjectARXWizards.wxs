@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.1.7"?>
+	<?define ProductVersion = "0.2.4"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
 	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
@@ -36,7 +36,10 @@
       rejected by msiexec with error 1638 ("another version of this product is already installed"), and
       reusing it with the same version can only ever be a repair of the package that is already there -
       it would show the maintenance page instead of upgrading.-->
-  <?define ProductCode= "{E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}"?>
+  <!--<?define ProductCode= "{E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}"?>-->
+<!--ProductCode for 0.2.4, which drops the two classic .vsz project wizards from this line (the VSIX
+	ships those project templates) and follows the Inno line's payload.-->
+<?define ProductCode= "{7C4E9A31-58D2-4F60-9B7E-6A3D1F8C2B45}"?>
   
 
   <Product

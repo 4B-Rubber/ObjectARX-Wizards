@@ -474,20 +474,7 @@
 			<Directory Id ="D_VS2022COMMON7FOLDER" Name="Common7">
 				<Directory Id="D_VS22022IDEFOLDER" Name="IDE">
 					<Directory Id ="D_VS2022VCFOLDER" Name="VC">
-						<Directory Id="D__0AD8EEEF2AC34C67985E09326A0FA549" Name="vcprojects">
-							<Directory Id="D__4173148965BA43B0A49BC46FD0A82CAD" Name="Autodesk">
-								<Component Id="C__48D1BDED57B84CD1B42306D18579E7DG" Guid="{3CEC802F-F867-4AB2-99E1-2D369ED5942E}" KeyPath="yes">
-									<Condition><![CDATA[VS2022_ROOT_FOLDER <> TARGETDIR]]></Condition>
-									<File Id="_48D1BDED57B84CD1B42306D18579E7DG" Name="ArxAppWiz.ico" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWiz.ico" />
-									<File Id="_BC568206D9E547D78106769B06E4EBBD" Name="ArxAppWiz.vsz" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWiz.vsz" />
-									<File Id="_545328F7922842DDACE90A1E6F18B6CD" Name="ArxAppWiz.vsdir" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWiz.vsdir" />
-									<File Id="_48D1BDED78B84CD1B89406D18579E7DF" Name="ArxAppWizOMF.ico" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWizOMF.ico" />
-									<File Id="_BC568243D9E547D78105999B06E4EBBD" Name="ArxAppWizOMF.vsz" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWizOMF.vsz" />
-									<File Id="_54532547922842756BE80A1E6F18B6CD" Name="ArxAppWizOMF.vsdir" Vital="yes" DiskId="1" Source="..\_Installs\VC\VCProjects\Autodesk\ArxAppWizOMF.vsdir" />
-								</Component>
-							</Directory>
-						</Directory>
-						<!--Two Directories One For ArxProject and other for adding custom wrappers and classes-->
+												<!--Two Directories One For ArxProject and other for adding custom wrappers and classes-->
 						<Directory Id="D__62854D5D598C4882A86D57B876DA57CD" Name="vcprojectitems">
 							<Directory Id="D__1DAFA0EE56B8404F846FB8EEB0EE9335" Name="ObjectARX">
 								<Component Id="C__126D0E77114A47DB8812539796A8FFFC" Guid="{76E4CB97-74BA-4041-B231-F94973D91D4A}" KeyPath="yes">

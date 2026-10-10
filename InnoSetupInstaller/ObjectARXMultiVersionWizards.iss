@@ -63,11 +63,11 @@
 ; The item wizards work the classic way, but the .vsz project entries in vcprojects\Autodesk are not
 ; surfacing as New Project entries in the current IDE, so the branch ships the VSIX as well: it is
 ; what makes creating a project possible. Set this to 0 to test the classic only shape again.
-; Measured: with the classic .vsz/.vsdir files in place and devenv /updateconfiguration run, the IDE
-; still lists no New Project entry for them, while the VSIX project templates do show. Creating a
-; project has to stay possible, so the classic line carries the VSIX; the wizard files and the cache
-; refresh are kept as well. Set this to 0 and run a build to retest the classic only shape.
-#define InstallVsix 1
+; The classic line ships the classic mechanism only: the .vsz/.vsdir project wizards and the
+; VCAddClass item wizards, plus the props. No VSIX, so nothing from the other line leaks in.
+; The setup asks every Visual Studio to rebuild its wizard list (RefreshVsCache) because the
+; .vsdir entries do not appear from the copied files alone.
+#define InstallVsix 0
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]

@@ -22,13 +22,17 @@
     <!-- Unattended switches, all optional and settable on the command line, for example
            ObjectARXMultiVersionWizardsSetup.exe ArxQuiet=1 ArxSkipVsix=1 ArxRds=ACME ArxRoot=D:\Autodesk
          They are declared without a default on purpose: Burn only lets the command line set
-         variables that have no value of their own, and an empty value means "behave as before". -->
+         variables that have no value of their own, and an empty value means "behave as before".
+         They mirror the Inno line's /RDS=, /ARXROOT=, /ARXSDKPATH=, /PROPSDIR=, /YEARS=, /SKIPVSIX=1
+         and /SKIPVSCHECK=1 one for one (that line's /DIR= is Burn's own InstallFolder). -->
     <Variable Name="ArxQuiet" />        <!-- 1: hand msiexec /qn, no MSI UI -->
     <Variable Name="ArxSkipVsix" />     <!-- 1: do not install the extension at all -->
     <Variable Name="ArxSkipVsCheck" />  <!-- 1: install even while Visual Studio is running -->
     <Variable Name="ArxRds" />          <!-- registered developer symbol; empty keeps ADSK -->
     <Variable Name="ArxRoot" />         <!-- Autodesk root folder -->
     <Variable Name="ArxSdkPath" />      <!-- ObjectARX SDK path (its inc folder is populated) -->
+    <Variable Name="ArxPropsDir" />     <!-- property sheet folder; empty follows the install folder -->
+    <Variable Name="ArxYears" />        <!-- e.g. 2020,2024,2026,2027: the year selection to start from -->
 
     <Chain>
       <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
@@ -47,7 +51,7 @@
                   DetectCondition="false"
                   Vital="yes"
                   Permanent="no"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]"'
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
                   UninstallCommand='/uninstall {7C4E9A31-58D2-4F60-9B7E-6A3D1F8C2B45}'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>

@@ -88,9 +88,10 @@
       <RegistrySearch Id="RS_PREV_PROPSDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="PropsDir" Type="raw" Win64="yes" />
     </Property>
 
-    <!-- All 16 year flags are authored secure but without a value. DefaultArxYears fills in the
-         2018-2027 default on a first install only, so an upgrade keeps exactly the previous
-         selection instead of unioning it with the default. -->
+    <!-- All 16 year flags are authored secure but without a value. DefaultArxYears fills in the year
+         table's own default flags (2020, 2024, 2026, 2027 - see tools\arx-props\arx-props-table.json,
+         which the Inno line's CsvDefaultYears mirrors) on a first install only, so an upgrade keeps
+         exactly the previous selection instead of unioning it with the default. -->
     <Property Id="YEAR_2010" Secure="yes" />
     <Property Id="YEAR_2012" Secure="yes" />
     <Property Id="YEAR_2013" Secure="yes" />

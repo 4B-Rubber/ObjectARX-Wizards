@@ -17,6 +17,9 @@
 //   --arxroot=DIR    Autodesk root folder           -> MSI property ARXROOT
 //   --arxsdk=DIR     ObjectARX SDK folder           -> MSI property ARXPATH
 //   --propsdir=DIR   property sheet folder          -> MSI property ARXPROPSDIR
+//   --years=CSV      target years, e.g. 2020,2024   -> MSI properties YEAR_<year>
+// The switches mirror the Inno line's /RDS=, /ARXROOT=, /ARXSDKPATH=, /PROPSDIR=, /YEARS=,
+// /SKIPVSIX=1 (bundle level) and /SKIPVSCHECK=1 one for one.
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -109,7 +112,27 @@ static class MsiSetup
         AppendProperty(sb, "ARXROOT", Option(args, "--arxroot"));
         AppendProperty(sb, "ARXPATH", Option(args, "--arxsdk"));
         AppendProperty(sb, "ARXPROPSDIR", Option(args, "--propsdir"));
+        AppendYears(sb, Option(args, "--years"));
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// --years=2020,2024,2026,2027 starts the wizard with exactly those years ticked, the way the Inno
+    /// line's /YEARS= does: DefaultArxYears leaves the selection alone as soon as any YEAR_* is set, so
+    /// the default set is never unioned in. Only four-digit entries are forwarded - anything else would
+    /// set a property nobody reads.
+    /// </summary>
+    static void AppendYears(StringBuilder sb, string years)
+    {
+        if (string.IsNullOrEmpty(years)) return;
+        foreach (string part in years.Split(','))
+        {
+            string year = part.Trim();
+            if (year.Length != 4) continue;
+            int value;
+            if (!int.TryParse(year, out value)) continue;
+            sb.Append(" YEAR_").Append(year).Append("=1");
+        }
     }
 
     static void AppendProperty(StringBuilder sb, string name, string value)

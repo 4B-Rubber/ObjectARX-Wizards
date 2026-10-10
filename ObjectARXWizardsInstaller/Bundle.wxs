@@ -5,7 +5,7 @@
   <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
        installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
        The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process. -->
-  <Bundle Name="ObjectARX Multi-Version Wizards (2010-2027)"
+  <Bundle Name="ObjectARX Multi-Version Wizards"
           Version="0.1.7"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">

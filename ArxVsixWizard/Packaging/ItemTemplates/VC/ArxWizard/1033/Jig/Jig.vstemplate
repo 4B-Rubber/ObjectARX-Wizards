@@ -8,7 +8,7 @@
     <TemplateID>ArxWizard.Item.Jig</TemplateID>
     <TemplateGroupID>VC-Native</TemplateGroupID>
     <DefaultName>MyJig</DefaultName>
-    <ProvideDefaultName>false</ProvideDefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
     <LocationField>Disabled</LocationField>
     <ShowByDefault>true</ShowByDefault>
     <SortOrder>210</SortOrder>

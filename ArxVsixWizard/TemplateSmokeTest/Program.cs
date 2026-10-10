@@ -302,14 +302,16 @@ class Program
             Check(ref failures, Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:TemplateGroupID").Length > 0,
                 tag + " -> TemplateGroupID");
 
-            // ProvideDefaultName must stay false. With true, VS asks the project system for a default
-            // name (Microsoft.VisualStudio.Dialogs.DialogsServiceHelper.GenerateItemName) as soon as a
-            // template is selected, and on VS 18 that call throws a UI Automation
-            // ElementNotAvailableException (0x80040201) out of the dialog and kills devenv. The cost of
-            // false is that the Name box is not prefilled, so the user types the class name; that is
-            // deliberate, see docs\Inno-Setup-Installer-Plan.md section 18.
-            Check(ref failures, Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:ProvideDefaultName") == "false",
-                tag + " -> ProvideDefaultName=false (avoids the VS 18 GenerateItemName crash)");
+            // Item templates must ask for a prefilled name: the wizard's preset (<DefaultName>) is
+            // what the user should see in the Name box. The price is that selecting a template makes
+            // Visual Studio call Microsoft.VisualStudio.Dialogs.ServiceHelper.GenerateItemName, and
+            // that call fails while a freshly created project is still being parsed (UIA
+            // ElementNotAvailable on 18.10, E_FAIL on 17.14 - identical stack). With Visual Assist
+            // installed it becomes a devenv crash, without it the dialog closes silently.
+            // Practical rule: after creating a project, wait for the status bar to show "Ready"
+            // (「就绪」) before adding an item. See docs\VS-AddNewItem-Crash.md.
+            Check(ref failures, Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:ProvideDefaultName") == "true",
+                tag + " -> ProvideDefaultName=true (the wizard's preset name is pre-filled)");
 
             string id = Attr(doc, ns, "/v:VSTemplate/v:TemplateData/v:TemplateID");
             Check(ref failures, id.Length > 0 && seenIds.Add(id), tag + " -> unique TemplateID (" + id + ")");

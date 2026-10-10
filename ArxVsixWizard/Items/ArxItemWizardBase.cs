@@ -41,6 +41,8 @@ namespace ArxVsixWizard.Items
             {
                 string suggested = ItemContext.ReadReplacement(replacementsDictionary,
                     "$fileinputname$", "$itemname$", "$safeitemname$", "$rootname$");
+                WizardDiagnostics.Log("ItemRunStarted", "wizard=" + GetType().Name
+                    + " suggested=" + suggested + " runKind=" + runKind + " " + WizardDiagnostics.WindowState());
                 Model = CreateModel(Names.SafeName(Path.GetFileNameWithoutExtension(suggested)));
 
                 // Capture the target project right away: the callbacks that would normally report
@@ -53,16 +55,40 @@ namespace ArxVsixWizard.Items
                 Model.SetProjectName(projectName);
                 Context.CaptureProject(target);
 
-                var dialog = new ItemDialog(Model);
-                try
+                WizardDiagnostics.LogRunContext("RunStarted");
+                if (WizardDiagnostics.NoUi)
                 {
-                    var hwnd = NativeMethods.GetForegroundWindow();
-                    if (hwnd != IntPtr.Zero) new WindowInteropHelper(dialog).Owner = hwnd;
+                    // The page normally fills the derived fields (file names); without it the model
+                    // has to do that itself before the files are injected.
+                    Model.ApplyDerivations();
                 }
-                catch { /* owner is optional */ }
+                else
+                {
+                    var dialog = new ItemDialog(Model);
+                    IntPtr owner = IntPtr.Zero;
+                    try
+                    {
+                        // Visual Studio's main window, not the foreground window - see
+                        // WizardDiagnostics.PreferredOwner.
+                        owner = WizardDiagnostics.PreferredOwner();
+                        if (owner != IntPtr.Zero)
+                        {
+                            WizardDiagnostics.Log("ItemDialog", "owner " + WizardDiagnostics.DescribeWindow(owner));
+                            new WindowInteropHelper(dialog).Owner = owner;
+                        }
+                    }
+                    catch (Exception ex) { WizardDiagnostics.Log("ItemDialog", "owner failed: " + ex.Message); }
 
-                if (dialog.ShowDialog() != true)
-                    throw new WizardCancelledException();
+                    WizardDiagnostics.Log("ItemDialog", "showing " + WizardDiagnostics.WindowState());
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    bool? accepted = dialog.ShowDialog();
+                    clock.Stop();
+                    WizardDiagnostics.Log("ItemDialog", "closed result=" + accepted + " ms=" + clock.ElapsedMilliseconds
+                        + " owner=" + (owner == IntPtr.Zero ? "none" : WizardDiagnostics.DescribeWindow(owner))
+                        + " " + WizardDiagnostics.WindowState());
+                    if (accepted != true)
+                        throw new WizardCancelledException();
+                }
 
                 InjectFiles(replacementsDictionary);
             }
@@ -83,6 +109,15 @@ namespace ArxVsixWizard.Items
             // Models that derive symbols from the selected values recompute them here, so the
             // rendered text is correct even when the dialog was never shown (offline smoke test).
             Model.OnFieldsChanged();
+
+            var files = new StringBuilder();
+            for (int i = 0; i < Model.Files.Count; i++)
+            {
+                if (i > 0) files.Append('|');
+                files.Append(Model.FileNameOf(Model.Files[i]));
+                if (!Model.ShouldGenerate(Model.Files[i])) files.Append("(skip)");
+            }
+            WizardDiagnostics.Log("InjectFiles", "count=" + Model.Files.Count + " " + files);
 
             for (int i = 0; i < Model.Files.Count; i++)
             {
@@ -105,7 +140,13 @@ namespace ArxVsixWizard.Items
 
         public void ProjectItemFinishedGenerating(ProjectItem projectItem)
         {
-            try { Context.CaptureProject(projectItem?.ContainingProject); }
+            try
+            {
+                WizardDiagnostics.Log("ItemFinished", "item=" + (projectItem == null ? "?" : projectItem.Name)
+                    + " project=" + (projectItem == null || projectItem.ContainingProject == null
+                        ? "?" : projectItem.ContainingProject.Name));
+                Context.CaptureProject(projectItem?.ContainingProject);
+            }
             catch (Exception ex) { ItemContext.Log("ProjectItemFinishedGenerating", ex); }
         }
 
@@ -115,8 +156,12 @@ namespace ArxVsixWizard.Items
 
         public void RunFinished()
         {
+            WizardDiagnostics.Log("ItemRunFinished", "wizard=" + GetType().Name + " " + WizardDiagnostics.WindowState());
             try { RunPostActions(); }
             catch (Exception ex) { ItemContext.Log("RunFinished", ex); }
+            // Keep the sampler alive for a few minutes after an item was added as well, so a crash
+            // following this run is bracketed in the log.
+            WizardDiagnostics.StartWatch("itemDone");
         }
 
         /// <summary>

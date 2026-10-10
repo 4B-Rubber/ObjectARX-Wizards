@@ -8,7 +8,7 @@
     <TemplateID>ArxWizard.Item.AtlComWrapper</TemplateID>
     <TemplateGroupID>VC-Native</TemplateGroupID>
     <DefaultName>MyComObject</DefaultName>
-    <ProvideDefaultName>false</ProvideDefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
     <LocationField>Disabled</LocationField>
     <ShowByDefault>true</ShowByDefault>
     <SortOrder>240</SortOrder>

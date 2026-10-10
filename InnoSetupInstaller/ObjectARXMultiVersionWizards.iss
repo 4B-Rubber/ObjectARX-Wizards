@@ -9,8 +9,7 @@
 ;    * the same four post-install file patches as the MSI custom actions,
 ;    * a silent VSIX install for the current user.
 ;
-;  Where it deliberately differs from the MSI (all of it is a UI simplification, see
-;  docs\Inno-Setup-Installer-Plan.md):
+;  Where it deliberately differs from the MSI (all of it is a UI simplification):
 ;    * the install folder is user-selectable, and the property sheet folder follows it by
 ;      default (the MSI's TARGETDIR was fixed and its props folder was a separate fixed one);
 ;    * one "Autodesk root" field instead of the MSI's four SDK/AutoCAD path fields. This is a
@@ -18,7 +17,9 @@
 ;      (<root>ObjectARX 2026\, <root>AutoCAD 2026\) - nothing here appends a year itself;
 ;    * the UI is Chinese-first with English as fallback.
 ;
-;  See docs\Inno-Setup-Installer-Plan.md for the behaviour matrix and the MSI quirks this avoids.
+;  The behaviour matrix and the MSI quirks this avoids were documented in the (now deleted)
+;  docs\Inno-Setup-Installer-Plan.md; it stays available in git history
+;  (`git show HEAD:docs/Inno-Setup-Installer-Plan.md`).
 ;
 ;  BUILD (both tools are installed outside PATH on the authoring machine):
 ;     msbuild tools\arx-genprops\arx-genprops.csproj -restore -p:Configuration=Release
@@ -42,12 +43,14 @@
 ;     /ARXROOT=<dir>          Autodesk root: the prefix the generated sheets use for the SDK and
 ;                             AutoCAD, and the value patched into the shipped 2026 template
 ;     /ARXSDKPATH=<dir>       ObjectARX SDK location (its inc folder is populated)
-;     /VSROOT=<dir>           override the detected Visual Studio 2022 root
+;     /VSROOT=<dir>           override the detected Visual Studio root (2022 or 2026)
 ;     /SKIPVSIX=1             do not install the VSIX
 ;     /SKIPVSCHECK=1          install even while Visual Studio is running
 ; ============================================================================================
 
-#define AppName "ObjectARX Multi-Version Wizards (2010-2027)"
+; No year range in the product name: it shows up in "Apps & features" and in the default install
+; folder, and the wizard covers whatever years the props generator ships.
+#define AppName "ObjectARX Multi-Version Wizards"
 #define AppVersion "0.1.7"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
@@ -87,8 +90,9 @@ SolidCompression=yes
 WizardStyle=modern
 SetupIconFile={#AppIconSource}
 UninstallDisplayIcon={uninstallexe}
-; The bundle launcher refuses to start while Visual Studio is open; here it is checked in
-; InitializeSetup instead, so nothing is touched before the check fails.
+; The bundle launcher refuses to start while Visual Studio is open; here the same check runs in
+; PrepareToInstall (through arx-genprops, so no console window appears), and it still runs before
+; anything is written.
 CloseApplications=no
 RestartApplications=no
 
@@ -123,8 +127,9 @@ chinese.ReadySdk=ObjectARX SDK 位置：
 chinese.ReadyProps=属性表目录：
 chinese.ReadyYears=目标 AutoCAD 版本：
 chinese.NoneSelected=无。不生成任何属性表，并且会把以前生成的清掉。
-chinese.VsMissing=本机必须安装 Microsoft Visual Studio Professional/Enterprise/Community 2022。
+chinese.VsMissing=本机必须安装 Microsoft Visual Studio 2022 或 2026（Professional/Enterprise/Community）。
 chinese.VsRunning=请先关闭 Visual Studio 再安装。%n%n当前正在运行：%1%n%n本安装包要把 ObjectARX 向导装进 Visual Studio，Visual Studio 开着时这一步无法完成。目前还没有写入任何东西——关掉 Visual Studio 后重新运行即可。
+chinese.VsixFailed=扩展（VSIX）没有装完：VSIXInstaller 返回 %1。最常见的原因是 Visual Studio 或 Visual Studio Installer 正在运行——关掉它们后重新运行本安装包即可（重跑是安全的，已经复制的文件不受影响）。也可以用 /SKIPVSIX=1 跳过扩展安装。
 english.RdsCaption=Registered Developer Symbol (RDS)
 english.RdsDesc=Please specify the symbol used as the default RDS prefix when creating new projects. This is optional; leave it empty to keep the placeholder as it is.
 english.RdsSubCaption=Find more information about RDS symbols at http://www.autodesk.com/objectarx -> ''Symbols Registration''.
@@ -149,8 +154,9 @@ english.ReadySdk=ObjectARX SDK location:
 english.ReadyProps=Property sheet folder:
 english.ReadyYears=Target AutoCAD versions:
 english.NoneSelected=None. No property sheet is generated, and any generated earlier is removed.
-english.VsMissing=Microsoft Visual Studio Professional/Enterprise/Community 2022 must be present on the target machine.
+english.VsMissing=Microsoft Visual Studio 2022 or 2026 (Professional/Enterprise/Community) must be present on the target machine.
 english.VsRunning=Please close Visual Studio before installing.%n%nRunning now: %1%n%nThe installer adds the ObjectARX wizards to Visual Studio, and that step cannot run while Visual Studio is open. Nothing has been installed yet - close Visual Studio and start the setup again.
+english.VsixFailed=The extension was not installed: VSIXInstaller returned %1. The usual cause is Visual Studio or the Visual Studio Installer running - close them and run this setup again (a re-run is safe; the files already copied are left as they are). /SKIPVSIX=1 skips the extension step.
 
 [Files]
 ; ---- install folder root (MSI component C__2C63244EA9004D42B1A8ED79330F5B73) ----
@@ -442,46 +448,124 @@ begin
 end;
 
 // ---------------------------------------------------------------------------------------------
-// Visual Studio 2022
+// Visual Studio 2022 / 18 (2026)
 // ---------------------------------------------------------------------------------------------
 
-function RunAndCapture(const CmdLine, OutFile: string): string;
+/// <summary>
+/// Reads one string value out of a JSON document (the VS instance registry's state.json). Only what
+/// this script needs: the first "Key" followed by a quoted value, with the JSON escape for a
+/// backslash undone again.
+/// </summary>
+function JsonString(const Json, Key: string): string;
 var
-  Code: Integer;
+  P, Q: Integer;
   S: string;
 begin
   Result := '';
-  DeleteFile(OutFile);
-  if not Exec(ExpandConstant('{cmd}'), '/c ' + CmdLine + ' > "' + OutFile + '" 2>nul', '',
-              SW_HIDE, ewWaitUntilTerminated, Code) then Exit;
-  if ReadTextFile(OutFile, S) then Result := Chomp(S);
-  DeleteFile(OutFile);
+  P := Pos('"' + Key + '"', Json);
+  if P <= 0 then Exit;
+  P := PosFrom(':', Json, P + Length(Key) + 2);
+  if P <= 0 then Exit;
+  P := PosFrom('"', Json, P + 1);
+  if P <= 0 then Exit;
+  Q := PosFrom('"', Json, P + 1);
+  if Q <= 0 then Exit;
+  S := Copy(Json, P + 1, Q - P - 1);
+  StringChangeEx(S, '\\', '\', True);
+  Result := Trim(S);
 end;
 
-/// <summary>vswhere is the supported locator; the standard edition folders are the fallback.</summary>
-function FindVs2022Root(): string;
+/// <summary>"18.10.12224.181" -> 18; -1 when the value is not a version.</summary>
+function MajorPart(const Version: string): Integer;
 var
-  Vswhere: string;
+  P: Integer;
+begin
+  P := Pos('.', Version);
+  if P > 0 then Result := StrToIntDef(Copy(Version, 1, P - 1), -1)
+  else Result := StrToIntDef(Version, -1);
+end;
+
+/// <summary>"18.10.12224.181" -> 10; -1 when there is no second segment.</summary>
+function MinorPart(const Version: string): Integer;
+var
+  P, Q: Integer;
+begin
+  Result := -1;
+  P := Pos('.', Version);
+  if P <= 0 then Exit;
+  Q := PosFrom('.', Version, P + 1);
+  if Q > 0 then Result := StrToIntDef(Copy(Version, P + 1, Q - P - 1), -1)
+  else Result := StrToIntDef(Copy(Version, P + 1, Length(Version) - P), -1);
+end;
+
+/// <summary>
+/// The root of the newest Visual Studio instance of one major version (17 = 2022, 18 = 2026).
+/// vswhere reports the same thing, but it is a console program, and a console window cannot be kept
+/// hidden here: when the default terminal application is Windows Terminal (the Windows 11 default)
+/// the SW_HIDE that Exec passes is ignored and the window shows up during the install. The instance
+/// registry under ProgramData carries both the path and the exact version, so it is read directly.
+/// </summary>
+function FindVsRootByMajor(const Major: Integer): string;
+var
+  Base, StateFile, Json, Ver, InstPath: string;
+  Rec: TFindRec;
+  BestMinor: Integer;
 begin
   Result := '';
-  Vswhere := ExpandConstant('{pf32}') + '\Microsoft Visual Studio\Installer\vswhere.exe';
-  if FileExists(Vswhere) then
-    Result := RunAndCapture('""' + Vswhere + '" -latest -prerelease -products * -version "[17.0,18.0)" -property installationPath',
-                            ExpandConstant('{%TEMP}') + '\arx-vswhere.txt');
-  if (Result <> '') and DirExists(Result) then Exit;
+  BestMinor := -1;
+  Base := ExpandConstant('{commonappdata}') + '\Microsoft\VisualStudio\Packages\_Instances';
+  if not FindFirst(Base + '\*', Rec) then Exit;
+  try
+    repeat
+      StateFile := Base + '\' + Rec.Name + '\state.json';
+      if FileExists(StateFile) and ReadTextFile(StateFile, Json) then begin
+        Ver := JsonString(Json, 'installationVersion');
+        if MajorPart(Ver) = Major then begin
+          InstPath := JsonString(Json, 'installationPath');
+          // A machine can carry several instances of one major (2022 Enterprise + BuildTools).
+          // vswhere used to pick the highest version, so keep doing that.
+          if (InstPath <> '') and (MinorPart(Ver) > BestMinor) then begin
+            BestMinor := MinorPart(Ver);
+            Result := InstPath;
+          end;
+        end;
+      end;
+    until not FindNext(Rec);
+  finally
+    FindClose(Rec);
+  end;
+end;
 
-  if DirExists(ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Enterprise') then
-    Result := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Enterprise'
-  else if DirExists(ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Professional') then
-    Result := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Professional'
-  else if DirExists(ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Community') then
-    Result := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Community'
-  else if DirExists(ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\BuildTools') then
-    Result := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\BuildTools'
-  else if DirExists(ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Preview') then
-    Result := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\2022\Preview'
-  else
-    Result := '';
+/// <summary>The shipped default locations, for instances the registry does not list.</summary>
+function FindVsInStandardDirs(): string;
+var
+  Root: string;
+begin
+  Root := ExpandConstant('{pf64}') + '\Microsoft Visual Studio\';
+  if DirExists(Root + '2022\Enterprise') then Result := Root + '2022\Enterprise'
+  else if DirExists(Root + '2022\Professional') then Result := Root + '2022\Professional'
+  else if DirExists(Root + '2022\Community') then Result := Root + '2022\Community'
+  else if DirExists(Root + '2022\BuildTools') then Result := Root + '2022\BuildTools'
+  else if DirExists(Root + '2022\Preview') then Result := Root + '2022\Preview'
+  else if DirExists(Root + '18\Enterprise') then Result := Root + '18\Enterprise'
+  else if DirExists(Root + '18\Professional') then Result := Root + '18\Professional'
+  else if DirExists(Root + '18\Community') then Result := Root + '18\Community'
+  else if DirExists(Root + '18\BuildTools') then Result := Root + '18\BuildTools'
+  else if DirExists(Root + '18\Preview') then Result := Root + '18\Preview'
+  else Result := '';
+end;
+
+/// <summary>
+/// VS 2022 first - that is the line this installer has always targeted - then VS 18 (2026), which
+/// the same payload serves as well. /VSROOT= still overrides everything.
+/// </summary>
+function FindVs2022Root(): string;
+begin
+  Result := FindVsRootByMajor(17);
+  if DirExists(Result) then Exit;
+  Result := FindVsRootByMajor(18);
+  if DirExists(Result) then Exit;
+  Result := FindVsInStandardDirs();
 end;
 
 function OnOff(const B: Boolean): string;
@@ -489,19 +573,31 @@ begin
   if B then Result := 'yes' else Result := 'no';
 end;
 
-/// <summary>The two processes VSIXInstaller refuses to work through. Mirrors MsiSetup.exe.</summary>
+/// <summary>
+/// The two processes VSIXInstaller refuses to work through. Mirrors MsiSetup.exe. The question is
+/// answered by arx-genprops instead of by tasklist: tasklist is a console program and would flash a
+/// console window (see FindVsRootByMajor). The probe writes the name it found to --out and creates
+/// no file at all when nothing is running, which is how the answer is read back.
+/// </summary>
 function FindRunningVs(): string;
 var
-  Captured: string;
+  OutFile: string;
+  Code: Integer;
 begin
   Result := '';
-  Captured := RunAndCapture('tasklist /FI "IMAGENAME eq devenv.exe" /NH',
-                            ExpandConstant('{%TEMP}') + '\arx-tasklist1.txt');
-  if Pos('devenv.exe', Captured) > 0 then Result := 'devenv.exe';
-  if Result <> '' then Exit;
-  Captured := RunAndCapture('tasklist /FI "IMAGENAME eq DevHub.exe" /NH',
-                            ExpandConstant('{%TEMP}') + '\arx-tasklist2.txt');
-  if Pos('DevHub.exe', Captured) > 0 then Result := 'DevHub.exe';
+  OutFile := ExpandConstant('{%TEMP}') + '\arx-vsprobe.txt';
+  DeleteFile(OutFile);
+  ExtractTemporaryFile(GenExeName);
+  if not Exec(ExpandConstant('{tmp}\' + GenExeName),
+              'probe --out ' + QuoteArg(OutFile) + ' --log ' + QuoteArg(LogFile),
+              '', SW_HIDE, ewWaitUntilTerminated, Code) then begin
+    Alog('VS running check could not start; continuing');
+    Exit;
+  end;
+  // No file means "nothing running": the probe only writes when it found something.
+  if ReadTextFile(OutFile, Result) then Result := Chomp(Result);
+  DeleteFile(OutFile);
+  Alog('VS running check: ' + Result);
 end;
 
 // ---------------------------------------------------------------------------------------------
@@ -509,8 +605,6 @@ end;
 // ---------------------------------------------------------------------------------------------
 
 function InitializeSetup(): Boolean;
-var
-  Blocker: string;
 begin
   Result := True;
   LogFile := ExpandConstant('{%TEMP}') + '\ObjectARXWizards-Inno.log';
@@ -540,21 +634,28 @@ begin
   VsRoot := ExpandConstant('{param:VSROOT|}');
   if VsRoot = '' then VsRoot := FindVs2022Root();
   VsFound := (VsRoot <> '') and DirExists(VsRoot);
-  Alog('VS 2022 root: ' + VsRoot + ' (found=' + OnOff(VsFound) + ')');
+  Alog('Visual Studio root: ' + VsRoot + ' (found=' + OnOff(VsFound) + ')');
 
   if not VsFound then begin
     MsgBox(Cm('VsMissing'), mbCriticalError, MB_OK);
     Result := False;
     Exit;
   end;
+end;
 
-  if ExpandConstant('{param:SKIPVSCHECK|}') <> '1' then begin
-    Blocker := FindRunningVs();
-    if Blocker <> '' then begin
-      MsgBox(FmtMessage(Cm('VsRunning'), [Blocker]), mbCriticalError, MB_OK);
-      Result := False;
-    end;
-  end;
+/// <summary>
+/// The "close Visual Studio first" check. It runs here, not in InitializeSetup, because the answer
+/// comes from arx-genprops, which has to be extracted from the setup first - and this is still
+/// before anything has been written, so returning the message aborts the install untouched.
+/// </summary>
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Blocker: string;
+begin
+  Result := '';
+  if ExpandConstant('{param:SKIPVSCHECK|}') = '1' then Exit;
+  Blocker := FindRunningVs();
+  if Blocker <> '' then Result := FmtMessage(Cm('VsRunning'), [Blocker]);
 end;
 
 function InitializeUninstall(): Boolean;
@@ -888,12 +989,16 @@ begin
     Alog('VSIXInstaller.exe not found under ' + VsRoot + '; install the extension by hand: ' + Vsix);
     Exit;
   end;
-  if ExecAsOriginalUser(Installer, '/quiet "' + Vsix + '"', '', SW_SHOW, ewWaitUntilTerminated, Code) then
+  if ExecAsOriginalUser(Installer, '/quiet "' + Vsix + '"', '', SW_SHOW, ewWaitUntilTerminated, Code) then begin
     // 1001 is VSIXInstaller's AlreadyInstalledException: the extension is already there (the
     // previous install put it in place), which is not a failure.
-    Alog('VSIXInstaller (' + OnOff(Code = 0) + ' as success, 1001 = already installed) exited with ' + IntToStr(Code))
-  else
-    Alog('VSIXInstaller could not be started');
+    Alog('VSIXInstaller (' + OnOff(Code = 0) + ' as success, 1001 = already installed) exited with ' + IntToStr(Code));
+    // PrepareToInstall catches a running Visual Studio before anything is written, but
+    // VSIXInstaller can still refuse for other reasons - say so instead of failing silently.
+    if (Code <> 0) and (Code <> 1001) then
+      MsgBox(FmtMessage(Cm('VsixFailed'), [IntToStr(Code)]), mbInformation, MB_OK);
+  end else
+    MsgBox(FmtMessage(Cm('VsixFailed'), ['?']), mbInformation, MB_OK);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

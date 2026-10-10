@@ -8,7 +8,7 @@
     <TemplateID>ArxWizard.Item.NetWrapper</TemplateID>
     <TemplateGroupID>VC-Native</TemplateGroupID>
     <DefaultName>MyWrapper</DefaultName>
-    <ProvideDefaultName>false</ProvideDefaultName>
+    <ProvideDefaultName>true</ProvideDefaultName>
     <LocationField>Disabled</LocationField>
     <ShowByDefault>true</ShowByDefault>
     <SortOrder>200</SortOrder>

@@ -25,9 +25,11 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 The same wizards are also shipped as a modern **VSIX** (`ArxVsixWizard`) that installs into Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md).
 
 > **Status (0.1.7).** The VSIX, the MSI/Burn bundle and the Inno single-file installer are all built
-> from this tree. Known open issue: on VS 2026 (18.x) selecting our *project* template can take
-> `devenv` down with a UI-Automation `ElementNotAvailableException`; the analysis, dumps and repro
-> steps are in [docs/Inno-Setup-Installer-Plan.md](docs/Inno-Setup-Installer-Plan.md) section 18.
+> from this tree. Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
+> that pre-fills the name can take `devenv` down while a freshly created project is still being
+> parsed (UI-Automation `ElementNotAvailableException`, `0x80040201`). Analysis, measurements and the
+> practical rule - wait for the status bar to show **Ready** / 「就绪」 before adding an item - are in
+> [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
 
 ---
 
@@ -54,11 +56,13 @@ There are three buildable lines. All of them ship version **0.1.7** today.
 
 | Line | Command | Output |
 |---|---|---|
-| VSIX (project + item wizards) | `msbuild ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release` | `ObjectARXMultiVersionWizards.vsix` |
+| VSIX (project + item wizards) | `msbuild ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release` | `ArxVsixWizard\bin\Release\ArxVsixWizard.vsix` |
 | MSI + Burn bundle | `ObjectARXWizardsInstaller\make.bat`, then `msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` | `ObjectARXMultiVersionWizards.msi`, `ObjectARXMultiVersionWizardsSetup.exe` |
-| Inno Setup (single file) | `& "${env:ProgramFiles}\Inno Setup 7\ISCC.exe" InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` | `InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe` |
+| Inno Setup (single file) | `tools\build-and-pack.ps1 -BuildRoot <build root>` | `<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe` |
 
-Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX, [StepsToBuild.md](ObjectARXWizardsInstaller/StepsToBuild.md) for the WiX/MSI project, and [docs/Inno-Setup-Installer-Plan.md](docs/Inno-Setup-Installer-Plan.md) for the Inno line plus the full behaviour matrix.
+Build into a **separate build directory**, never into the checkout: mirror the tree, build the copy, keep the source tree read-only. The local convention (build root, exclusions, per-line commands) is in `AGENTS.local.md`; `tools\build-and-pack.ps1` does the whole Inno line in one go - mirror, VSIX, props generator, ISCC.
+
+Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX, [StepsToBuild.md](ObjectARXWizardsInstaller/StepsToBuild.md) for the WiX/MSI project, and `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` for the Inno line (its original plan document was removed; the crash analysis summary is in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md)).
 
 Each line carries its own consistency test: `ArxVsixWizard\test-version-consistency.ps1`, `tools\arx-props\test-years-consistency.ps1`, `tools\arx-genprops\test-arx-genprops.ps1`, `InnoSetupInstaller\test-payload-parity.ps1` and `InnoSetupInstaller\test-inno-sandbox.ps1`.
 
@@ -68,11 +72,11 @@ Any of the three lines installs the same wizard payload and the same VSIX - pick
 
 1. **`ObjectARXMultiVersionWizardsSetup.exe`** (Burn bundle) - a single UAC prompt; installs the MSI and then the VSIX for the current user. Simplest option.
 2. **`ObjectARXMultiVersionWizards.msi`** - run as **Administrator** if you want the MSI on its own (it also installs the classic `.vsz` wizards).
-3. **`InnoSetupInstaller\Output\ObjectARXMultiVersionWizardsSetup-Inno.exe`** - single file, Chinese-first UI, user-selectable install folder.
+3. **`<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`).
 
 Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (Visual C++ → *ObjectARX/DBX/CRX Application (Multi-Version)*) and, for the item wizards, in **Add → New Item** under the **ArxWizard** category.
 
-Note: the item templates deliberately set `ProvideDefaultName=false`, so VS leaves the **Name** box empty; type the class name and **Add** becomes enabled. Why it is pinned that way is in [docs/Inno-Setup-Installer-Plan.md](docs/Inno-Setup-Installer-Plan.md) section 18.
+Note: the item templates pre-fill the **Name** box (`ProvideDefaultName=true`). After a project has just been created, wait for the status bar to show **Ready** / 「就绪」 before adding an item - the underlying VS-side defect and the full analysis are in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
 
 ---
 

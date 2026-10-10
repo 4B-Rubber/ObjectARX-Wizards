@@ -5,7 +5,12 @@
        tools\arx-props, embedded verbatim so there is one source of truth. .NET Framework 4.8 is
        the smallest runtime that is guaranteed present on every supported Windows. -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe, not Exe: the Inno setup runs this file a handful of times and a console-subsystem
+         binary would flash a console window on every call (SW_HIDE does not suppress it when the
+         default terminal application is Windows Terminal, which is the Windows 11 default). All
+         output goes to the log file given by the log switch and to the exit code, so nothing is
+         lost. -->
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
     <AssemblyName>arx-genprops</AssemblyName>
     <RootNamespace>ArxGenProps</RootNamespace>

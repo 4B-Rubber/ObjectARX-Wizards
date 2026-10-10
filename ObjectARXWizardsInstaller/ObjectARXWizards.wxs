@@ -44,7 +44,7 @@
 		Codepage="936" 
 		Language="2052" 
 		Manufacturer="Autodesk" 
-		Name="ObjectARX Multi-Version Wizards (2010-2027)" 
+		Name="ObjectARX Multi-Version Wizards" 
 		UpgradeCode="$(var.UpgradeCode)" 
 		Version="$(var.ProductVersion)"
 	>

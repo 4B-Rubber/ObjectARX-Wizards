@@ -23,6 +23,13 @@ namespace ArxVsixWizard
         ProjectModel _model;
         static readonly AnsiHolder Ansi = new AnsiHolder();
 
+        // Phase timings for the CreationSummary line: when the run started, how long the option page
+        // was up, and when the options were known (the template engine works between that moment and
+        // ProjectFinishedGenerating).
+        DateTime _runStartedAt = DateTime.UtcNow;
+        DateTime _optionsReadyAt = DateTime.UtcNow;
+        long _dialogMs;
+
         public ArxProjectWizard() : this(WizardKind.ArxApp) { }
 
         protected ArxProjectWizard(WizardKind kind) { _kind = kind; }
@@ -32,24 +39,24 @@ namespace ArxVsixWizard
         {
             try
             {
+                _runStartedAt = DateTime.UtcNow;
                 // $projectname$ is the raw name; root.* files are renamed using it.
                 string rawName;
                 if (!replacementsDictionary.TryGetValue("$projectname$", out rawName) || string.IsNullOrWhiteSpace(rawName))
                     rawName = replacementsDictionary["$safeprojectname$"];
 
-                var dialog = new WizardDialog(_kind);
-                try
-                {
-                    var hwnd = NativeMethods.GetForegroundWindow();
-                    if (hwnd != IntPtr.Zero) new WindowInteropHelper(dialog).Owner = hwnd;
-                }
-                catch { /* owner is optional */ }
+                WizardDiagnostics.LogRunContext("RunStarted");
+                WizardDiagnostics.Log("RunStarted", "project=" + rawName + " runKind=" + runKind
+                    + " kind=" + _kind + " automation=" + (automationObject == null ? "null" : automationObject.GetType().FullName));
 
-                bool? ok = dialog.ShowDialog();
-                if (ok != true)
-                    throw new WizardCancelledException();
-
-                _model = ProjectModel.Build(dialog.Options, rawName);
+                WizardOptions options = AskOptions();
+                _optionsReadyAt = DateTime.UtcNow;
+                _model = ProjectModel.Build(options, rawName);
+                WizardDiagnostics.Log("ModelBuilt", "name=" + _model.ProjectName
+                    + " files=" + _model.Files.Count
+                    + " rds=" + options.Rds
+                    + " years=" + string.Join(",", new List<string>(options.SelectedYears).ToArray())
+                    + " mfc=" + options.AcadMfcExtension + " atl=" + options.AcadAtlExtension);
 
                 // Custom parameters for the vcxproj skeleton. The keys must carry the
                 // surrounding '$' delimiters: the template engine replaces the literal
@@ -69,6 +76,70 @@ namespace ArxVsixWizard
             }
         }
 
+        /// <summary>
+        /// The option page (WizardDialog) or, with %TEMP%\ArxVsixWizard\no-ui.flag present, the same
+        /// defaults without any WPF window; the offline smoke test drives the wizards that way.
+        /// </summary>
+        WizardOptions AskOptions()
+        {
+            var defaults = new WizardOptions
+            {
+                Kind = _kind,
+                Rds = _kind == WizardKind.OmfApp ? "asdk" : "ADSK",
+                // The page clears both AutoCAD extension flags while MFC/COM stand at "none",
+                // which is the state it opens in.
+                AcadMfcExtension = false,
+                AcadAtlExtension = false,
+            };
+
+            if (WizardDiagnostics.NoUi)
+            {
+                // Keep only the years that are really installed, like the check boxes on the page do.
+                var installed = new List<string>();
+                foreach (var year in defaults.SelectedYears)
+                    if (ArxVersionTable.IsInstalled(year)) installed.Add(year);
+                if (installed.Count > 0)
+                {
+                    defaults.SelectedYears.Clear();
+                    foreach (var year in installed) defaults.SelectedYears.Add(year);
+                }
+                return defaults;
+            }
+
+            var dialog = new WizardDialog(_kind);
+            IntPtr owner = IntPtr.Zero;
+            try
+            {
+                // Visual Studio's own main window - never GetForegroundWindow() alone, which
+                // handed back another application's window whenever VS was not in the foreground.
+                owner = WizardDiagnostics.PreferredOwner();
+                if (owner != IntPtr.Zero)
+                {
+                    WizardDiagnostics.Log("WizardDialog", "owner " + WizardDiagnostics.DescribeWindow(owner));
+                    new WindowInteropHelper(dialog).Owner = owner;
+                }
+            }
+            catch (Exception ex) { WizardDiagnostics.Log("WizardDialog", "owner failed: " + ex.Message); }
+
+            WizardDiagnostics.Log("WizardDialog", "showing " + WizardDiagnostics.WindowState());
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            bool? accepted = dialog.ShowDialog();
+            clock.Stop();
+            _dialogMs = clock.ElapsedMilliseconds;
+            WizardDiagnostics.Log("WizardDialog", "closed result=" + accepted + " ms=" + clock.ElapsedMilliseconds
+                + " owner=" + (owner == IntPtr.Zero ? "none" : WizardDiagnostics.DescribeWindow(owner))
+                + " " + WizardDiagnostics.WindowState());
+
+            if (accepted != true)
+                throw new WizardCancelledException();
+
+            WizardOptions chosen = dialog.Options;
+            WizardDiagnostics.Log("WizardDialog", "options kind=" + chosen.Kind + " rds=" + chosen.Rds
+                + " years=" + string.Join(",", new List<string>(chosen.SelectedYears).ToArray())
+                + " mfc=" + chosen.AcadMfcExtension + " atl=" + chosen.AcadAtlExtension);
+            return chosen;
+        }
+
         // The vstemplate carries no <ProjectItem>; the generated vcxproj already declares every
         // source file (see ProjectModel.BuildItemsXml), so nothing is copied by VS. These two
         // callbacks are therefore never invoked for source files; files are written in
@@ -83,39 +154,76 @@ namespace ArxVsixWizard
             {
                 string projPath = project.FullName;
                 string dir = Path.GetDirectoryName(projPath);
+                // The template engine is done at this point: everything before it was our dialog.
+                DateTime projectReadyAt = DateTime.UtcNow;
+                WizardDiagnostics.Log("ProjectFinished", "project=" + projPath + " " + WizardDiagnostics.WindowState());
 
-                // Render every planned source file into the project folder. The vcxproj skeleton
-                // already lists them as ClCompile/ClInclude/ResourceCompile/Midl items (including
-                // StdAfx.cpp Create-PCH and AssemblyInfo.cpp NotUsing-PCH metadata), so no
-                // AddFile call is needed - adding would duplicate the existing items.
-                foreach (var entry in _model.Files)
-                {
-                    try
-                    {
-                        string target = Path.Combine(dir, entry.TargetName);
-                        string text = TemplateRenderer.Render(ReadResource(entry.ResourceName), _model.Symbols);
-                        File.WriteAllText(target, text, EntryEncoding(entry.TargetName));
-                    }
-                    catch (Exception ex) { LogError("write " + entry.TargetName, ex); }
-                }
-
-                // Filters file (written next to the project, picked up on next solution load)
-                try
-                {
-                    string filtersPath = projPath + ".filters";
-                    File.WriteAllText(filtersPath, _model.BuildFiltersXml(), new UTF8Encoding(false));
-                }
-                catch (Exception ex) { LogError("filters", ex); }
+                long writeMs = WriteGeneratedFiles(dir, projPath);
 
                 if (_kind == WizardKind.OmfApp && _model.Options.OmfApp)
                     CreateOmfResourceProject(project, dir);
 
+                var save = System.Diagnostics.Stopwatch.StartNew();
                 project.Save();
+                save.Stop();
+                long saveMs = save.ElapsedMilliseconds;
+                WizardDiagnostics.Log("CreationDone", "files=" + _model.Files.Count
+                    + " writeMs=" + writeMs + " saveMs=" + saveMs
+                    + " " + WizardDiagnostics.WindowState());
+                // "How long does a successful creation take, and when was it" in one line, with the
+                // same phases the rest of the log records separately.
+                WizardDiagnostics.NoteCreationDone();
+                WizardDiagnostics.LogCreationSummary(Path.GetFileNameWithoutExtension(projPath),
+                    _model.Files.Count, _dialogMs,
+                    (long)(projectReadyAt - _optionsReadyAt).TotalMilliseconds,
+                    writeMs, saveMs,
+                    (long)(DateTime.UtcNow - _runStartedAt).TotalMilliseconds);
+                // From here on the user is on their own in Visual Studio's dialogs, so the sampler
+                // takes over until a few minutes after the last creation run.
+                WizardDiagnostics.StartWatch("created");
             }
             catch (Exception ex)
             {
                 LogError("ProjectFinishedGenerating", ex);
             }
+        }
+
+        /// <summary>
+        /// Renders every planned source file into the project folder and writes the filters file next
+        /// to the project. The vcxproj skeleton already lists the files as ClCompile/ClInclude/
+        /// ResourceCompile/Midl items (including StdAfx.cpp Create-PCH and AssemblyInfo.cpp
+        /// NotUsing-PCH metadata), so no AddFile call is needed - adding would duplicate the existing
+        /// items. Returns the milliseconds spent writing.
+        /// </summary>
+        long WriteGeneratedFiles(string dir, string projectPath)
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var entry in _model.Files)
+            {
+                try
+                {
+                    string target = Path.Combine(dir, entry.TargetName);
+                    string text = TemplateRenderer.Render(ReadResource(entry.ResourceName), _model.Symbols);
+                    File.WriteAllText(target, text, EntryEncoding(entry.TargetName));
+                    // Per-file timing: with the late order these writes are what keeps the project
+                    // system busy right after the wizard returns, which is when the user opens
+                    // "Add New Item".
+                    WizardDiagnostics.Log("WriteFile", entry.TargetName + " bytes=" + text.Length
+                        + " t=" + clock.ElapsedMilliseconds + "ms");
+                }
+                catch (Exception ex) { LogError("write " + entry.TargetName, ex); }
+            }
+
+            if (!string.IsNullOrEmpty(projectPath))
+            {
+                try
+                {
+                    string filtersPath = projectPath + ".filters";
+                    File.WriteAllText(filtersPath, _model.BuildFiltersXml(), new UTF8Encoding(false));
+                }
+                catch (Exception ex) { LogError("filters", ex); }
+            }
+            return clock.ElapsedMilliseconds;
         }
 
         /// <summary>OMF: resource-only DLL sub-project under Enu\ plus a solution build dependency.</summary>
@@ -178,18 +286,16 @@ namespace ArxVsixWizard
         }
 
         public void BeforeOpeningFile(ProjectItem projectItem) { }
-        public void RunFinished() { }
+        public void RunFinished()
+        {
+            WizardDiagnostics.Log("RunFinished", "project=" + (_model == null ? "?" : _model.ProjectName)
+                + " " + WizardDiagnostics.WindowState());
+            WizardDiagnostics.StartWatch("projectDone");
+        }
 
         static void LogError(string stage, Exception ex)
         {
-            try
-            {
-                string dir = Path.Combine(Path.GetTempPath(), "ArxVsixWizard");
-                Directory.CreateDirectory(dir);
-                File.AppendAllText(Path.Combine(dir, "wizard.log"),
-                    DateTime.Now.ToString("s") + " [" + stage + "] " + ex + "\r\n");
-            }
-            catch { }
+            WizardDiagnostics.Log("ERROR/" + stage, ex.ToString());
         }
 
         // Lazily obtain the Windows-1252 encoding (registered via CodePagesEncodingProvider on .NET Core;

@@ -22,7 +22,16 @@
   - `Microsoft.VisualStudio.SDK` 17.14.40265
   - `Microsoft.VisualStudio.TemplateWizardInterface` 17.10.40170
   - `Microsoft.VSSDK.BuildTools` **18.9.820**（含 VS18 的 manifest schema；必须设 `<VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>` 自动导入 VsSDK.targets）
-- 用 VS2022 的 MSBuild 即可构建出 VSIX：
+- 构建**不要落在源码树里**：按本机约定把源码同步到构建目录，再在副本里构建（见 `AGENTS.local.md`）。一条命令同时出 VSIX 与 Inno 安装包：
+
+```powershell
+# $buildRoot = 构建根目录（本机约定见 AGENTS.local.md）
+& "tools\build-and-pack.ps1" -BuildRoot $buildRoot   # 同步 -> VSIX -> arx-genprops -> ISCC
+# 产物：<BuildRoot>\vsix\ObjectARXMultiVersionWizards.vsix
+#       <BuildRoot>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe
+```
+
+- 只想要 VSIX 时，在构建目录的副本里直接构建：
 
 ```powershell
 # $vs = 你的 VS 安装根；按版本号与版本调整（Enterprise / Professional / Community）
@@ -106,16 +115,19 @@ ArxVsixWizard/
 
 ## 6. 已知问题与待修复（按优先级）
 
-### 未解决 — VS2026(18.x) 选中我们的项目模板时 IDE 直接结束进程（`0x80040201`）
+### VS 侧缺陷（本扩展内无法修复）— 「添加新建项」选中预填模板时 devenv 直接结束进程（`0x80040201`）
 
-在 VS 18（18.10.12224.181）里选中我们的**项目模板**时 VS 弹异常并直接消失（项模板在 `ProvideDefaultName=false` 下不崩）。转储（`%LOCALAPPDATA%\CrashDumps\devenv.exe.*.dmp`）里抛异常的调用链是：
+在 VS 2022（17.14）与 VS 2026（18.10）上：**刚用本扩展的项目模板建完工程时（预热窗口内，约 0–30 秒）**，
+在「添加新建项」里选中**任何会预填名称的模板（包括微软自带模板）**都会触发 VS 自己的缺陷：
 
 ```
 NewProjectDialog.TemplateSelectionChangedDelayed → ApplyTemplateSelection
   → UpdateNameField → ServiceHelper.GenerateItemName      (UIA ElementNotAvailableException, 0x80040201)
 ```
 
-栈上没有一帧属于本扩展——崩在向导拿到控制权之前，属 VS 对话框自己的代码。已实测确认：`ProvideDefaultName=false` **挡不住**这条调用（9 个模板全 `false` 时"创建我们的项目"照样崩）；用 VS 自带的 C++ 项目、以及用我们的项模板添加项，都不崩。**目前仍未解决**：完整转储分析、对照实验结果与复现步骤见 `docs\Inno-Setup-Installer-Plan.md` 第 18 节。
+栈上没有一帧属于本扩展；装了 Visual Assist 时它会升级为进程级未处理异常（VS 直接消失），没装时对话框静默关闭。
+`ProvideDefaultName=false` 不触发这条调用，但会失去名称预填（Name 框为空、需手打名字）。**规避规则**：建完工程后
+等状态栏回到「就绪」再加项。结论、证据与量化见 `docs\VS-AddNewItem-Crash.md`（文末附完整过程记录）。
 
 ### ~~P0（真正的阻断点）— 模板未放在 `ProjectTemplates` 下，VS 根本不识别~~（已修复）
 原来 `Packaging\ArxApp\**` 被 `Link="ArxApp\..."` 打进去，安装后落盘为 `Extensions\<id>\ArxApp\ArxApp.vstemplate`；**VS 只把扩展里的 `ProjectTemplates` 目录当作项目模板扫描根**（对照微软官方模板扩展：`ProjectTemplates\VC\1033\<名>\<名>.vstemplate`，asset 为 `Path="ProjectTemplates"`）。因此模板从来不会出现在"新建项目"里——这才是"向导不能用"的主因，P0b 的源文件问题是它下游的。

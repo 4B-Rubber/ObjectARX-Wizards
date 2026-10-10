@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -20,8 +21,9 @@ namespace ArxGenProps
     ///                         [--years 2020,2024,...] [--log &lt;file&gt;]
     ///   arx-genprops cleanup  --props-dir &lt;dir&gt; [--keep 2020,...] [--log &lt;file&gt;]
     ///   arx-genprops remove   --props-dir &lt;dir&gt; [--log &lt;file&gt;]
+    ///   arx-genprops probe    --out &lt;file&gt; [--names devenv.exe,DevHub.exe] [--log &lt;file&gt;]
     ///
-    /// Exit codes: 0 success, 1 fatal error, 2 bad command line.
+    /// Exit codes: 0 success, 1 fatal error, 2 bad command line, 3 probe: a blocker is running.
     /// </summary>
     public static class Program
     {
@@ -53,6 +55,7 @@ namespace ArxGenProps
                     case "generate": return Generate(opt);
                     case "cleanup": return Cleanup(opt);
                     case "remove": return Remove(opt);
+                    case "probe": return Probe(opt);
                     default:
                         Log("unknown command: " + args[0]);
                         Usage();
@@ -71,9 +74,50 @@ namespace ArxGenProps
             Console.Error.WriteLine("usage: arx-genprops generate --props-dir <dir> [--sdk-root <dir>] [--acad-root <dir>] [--years y1,y2,...] [--log <file>]");
             Console.Error.WriteLine("       arx-genprops cleanup  --props-dir <dir> [--keep y1,y2,...] [--log <file>]");
             Console.Error.WriteLine("       arx-genprops remove   --props-dir <dir> [--log <file>]");
+            Console.Error.WriteLine("       arx-genprops probe    --out <file> [--names devenv.exe,DevHub.exe] [--log <file>]");
         }
 
         // ---- commands ----
+
+        /// <summary>
+        /// Answers "is one of the processes that block the VSIX install running?" for the Inno
+        /// setup. tasklist would answer the same, but it is a console program, and a console window
+        /// cannot be kept hidden when the default terminal application is Windows Terminal - so the
+        /// question is answered here, in a GUI-subsystem binary (see the csproj), and the answer is
+        /// written to --out. The file is only created when something is running, which is how the
+        /// setup tells "nothing found" from "not answered at all".
+        /// </summary>
+        static int Probe(Dictionary<string, string> opt)
+        {
+            string outFile = Get(opt, "out", null);
+            if (string.IsNullOrEmpty(outFile))
+            {
+                Log("probe: --out is required");
+                return 2;
+            }
+
+            // Both spellings work; the .exe is kept because that is what the message shows the user.
+            string names = Get(opt, "names", "devenv.exe,DevHub.exe");
+            foreach (string entry in names.Split(','))
+            {
+                // GetProcessesByName wants the bare name, while the setup wants a name it can put
+                // in a message, so "devenv.exe" is accepted (and reported) as well.
+                string name = entry.Trim();
+                if (name.Length == 0) continue;
+                string bare = name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    ? name.Substring(0, name.Length - 4)
+                    : name;
+
+                if (Process.GetProcessesByName(bare).Length == 0) continue;
+
+                File.WriteAllText(outFile, name + Environment.NewLine);
+                Log("probe: " + name + " is running");
+                return 3;
+            }
+
+            Log("probe: none of " + names + " is running");
+            return 0;
+        }
 
         static int Generate(Dictionary<string, string> opt)
         {

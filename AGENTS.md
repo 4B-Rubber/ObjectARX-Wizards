@@ -12,7 +12,6 @@
 - **禁止**在文档/注释里写个人本机绝对路径（例如 `D:\<你的目录>\...`、`C:\Users\<某人>\...`）。
 - 仓库内文件引用一律用**相对路径 / 相对链接**（GitHub 可点、别人 clone 后有效）：
   - 同目录：`[ArxVersion.cs](Models/ArxVersion.cs)`
-  - 跨目录：`[directory.wxi](../ObjectARXWizardsInstaller/directory.wxi#L528-L593)`
   - **不要**再用 `file:///D:/...` 形式——那种链接只有作者本机能打开。
 - 构建 / 工具命令里的路径用**变量或环境变量**，不要写死：
   - VS 工具：先设 `$vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"`，再用 `"$vs\MSBuild\Current\Bin\MSBuild.exe"`；并就近注明"按你的版本号/版本调整"。
@@ -28,8 +27,6 @@
 - 构建产物**不要提交**（`.gitignore` 已覆盖）：`bin/`、`obj/`、`*.wixobj`、`*.wixpdb`、`*.binlog`、`_E2EGen/`、`.tools/`、`InnoSetupInstaller/Output/`、根目录的 `*.msi` 与 `...Setup.exe`、`.trae/`。
 - 以下二进制是**有意提交**的，别当垃圾删掉、也别改了不还原（它们被安装器 `.wxs` 当输入引用）：
   - 根 `ObjectARXMultiVersionWizards.vsix` is NOT in this list any more: it is a build output, written into the build root by tools\build-and-pack.ps1.
-  - `ObjectARXWizardsInstaller/Bundle/ArxWizardsMsiSetup.exe`、`ArxWizardsVsixSetup.exe`
-  - `ObjectARXWizardsInstaller/Binary/ArxWizCustomAction.dll`、`ArxWizCustomAction.CA.dll`
 
 ## 3. 改完必须自检
 

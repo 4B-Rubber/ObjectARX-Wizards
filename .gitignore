@@ -3,9 +3,6 @@
 [Oo]bj/
 
 
-ObjectARXWizardsInstaller/temp/*
-ObjectARXWizardsInstaller/Binary/Microsoft.Deployment.WindowsInstaller.dll
-ObjectARXWizardsInstaller/Binary/Microsoft.Deployment.WindowsInstaller.xml
 
 .vs/
 
@@ -114,7 +111,6 @@ Generated_Code #added for RIA/Silverlight projects
 _UpgradeReport_Files/
 Backup*/
 UpgradeLog*.XML
-/ObjectARXWizardsInstaller/.vs
 /ArxWizMFCSupport/.vs
 
 # --- Multi-year wizard work: tooling, scratch and build outputs ---
@@ -133,7 +129,6 @@ _E2EGen/
 *.binlog
 
 # The .wixproj PostBuildEvent zips the built MSI next to the project; that is a build output too
-ObjectARXWizardsInstaller/ObjectARXWizard.zip
 
 # Installer artifacts rebuilt from source. ObjectARXMultiVersionWizards.vsix is a build output now: it is written into the build root
 # and the copies handed to users live there too. Nothing in this block is committed any more.
@@ -141,9 +136,7 @@ ObjectARXWizardsInstaller/ObjectARXWizard.zip
 /ObjectARXMultiVersionWizardsSetup.exe
 /ObjectARXMultiVersionWizards.vsix
 /ObjectARXMultiVersionWizards-*.exe
-# ObjectARXWizardsInstaller\make.bat links its own MSI beside the sources. The name is deliberately
 # year-neutral - this is a multi-year product, so no artifact may be tied to a single release.
-/ObjectARXWizardsInstaller/ObjectARXMultiVersionWizards.msi
 # Inno Setup line: built by InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
 /InnoSetupInstaller/Output/
 

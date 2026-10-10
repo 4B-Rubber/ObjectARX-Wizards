@@ -1114,7 +1114,12 @@ begin
     if Root = '' then Continue;
     Installer := TrimTrailingSlash(Root) + '\Common7\IDE\VSIXInstaller.exe';
     if not FileExists(Installer) then Continue;
-    if ExecAsOriginalUser(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    // ExecAsOriginalUser is installation only - Inno raises a runtime error if the uninstaller calls
+    // it, which aborted the whole uninstall. Exec runs with the uninstaller's own token; an
+    // administrator uninstalling its own copy is the same profile VSIXInstaller has to look at, which
+    // is the case here. Run as a standard user it would look at the elevating account instead, and
+    // the log line below is what tells the two apart.
+    if Exec(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewWaitUntilTerminated, Code) then
       Alog('uninstall: VSIXInstaller for ' + IntToStr(Major) + ' exited with ' + IntToStr(Code));
   end;
 end;procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

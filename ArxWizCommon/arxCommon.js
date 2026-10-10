@@ -75,7 +75,13 @@ var g_ArxVersions =[
 ] ;
 
 //- Years checked by default on the wizard version page
-var g_ArxDefaultYears ={ "2014":1, "2016":1, "2018":1, "2020":1, "2024":1, "2026":1, "2027":1 } ;
+//- The four the year table marks "default" as well: the C++17 ones. The compatible set (2014 ...
+//- 2027) stays one button press away, but it is no longer what a fresh page starts with.
+var g_ArxDefaultYears ={ "2020":1, "2024":1, "2026":1, "2027":1 } ;
+
+//- Years covered by every SDK in the range, i.e. what "Compatible" ticks on the version page.
+//- Same set the installer's year table marks compatible.
+var g_ArxCompatibleYears ={ "2014":1, "2016":1, "2018":1, "2020":1, "2024":1, "2026":1, "2027":1 } ;
 
 function ArxIsDefaultYear (strYear) {
 	return (g_ArxDefaultYears[strYear] == 1) ;
@@ -436,4 +442,195 @@ function InvokeArxWizardHelp () {
 	var myName =window.external.FindSymbol("WIZARD_NAME") ;
 	myUrl =myUrl.substring (0, myUrl.lastIndexOf ("\\") + 1) ;
 	open ("ms-its:" + myUrl + "ArxWizardHelp.chm::HTML/" + myName + ".htm") ;
+}
+
+//- ---------------------------------------------------------------------------------------------
+//- Diagnostics (classic line). The pages run in their own script scope and so does the engine's
+//- Scripts\<lcid>\default.js; both append to %TEMP%\arxwiz-classic.log, so a scope missing Visual
+//- Studio's framework script (Common.js / Script.js) can be told apart from one missing this file
+//- or a multi-year helper. The log file is capped below - this runs on every page of every wizard.
+//- ---------------------------------------------------------------------------------------------
+try {
+	var oArxLogFso =new ActiveXObject ("Scripting.FileSystemObject") ;
+	var strArxLogFile =oArxLogFso.GetSpecialFolder (2) + "\\arxwiz-classic.log" ;
+	if ( oArxLogFso.FileExists (strArxLogFile) == false
+		|| oArxLogFso.GetFile (strArxLogFile).Size < 262144 ) {
+		var oArxLog =oArxLogFso.OpenTextFile (strArxLogFile, 8, true) ;
+		oArxLog.WriteLine (new Date ().toString () + " [page " + document.location.pathname + "] "
+			+ "framework OnWizFinish=" + (typeof OnWizFinish)
+			+ " SetErrorInfo=" + (typeof SetErrorInfo)
+			+ " CreateSafeName=" + (typeof CreateSafeName)
+			+ " | this file ArxSetupVersionSymbols=" + (typeof ArxSetupVersionSymbols)
+			+ " | SCRIPT_COMMON_PATH=" + window.external.FindSymbol ("SCRIPT_COMMON_PATH")) ;
+		oArxLog.Close () ;
+	}
+} catch (e) { }
+
+//- ---------------------------------------------------------------------------------------------
+//- Engine-scope logging helpers (classic line). The engine's script scope (Scripts\<lcid>\default.js)
+//- does not see the pages' variables; the wizard scripts evaluate this file into their scope (see
+//- the project and item wizard scripts), which is where these come from. They are only defined when
+//- the file doing the evaluating does not bring its own, so the project wizard keeps its longer
+//- scope dump. The format matches the page-side line above, one file for the whole line.
+//- ---------------------------------------------------------------------------------------------
+var ARX_LOG_FILE ="arxwiz-classic.log" ;
+
+if ( typeof ArxWizLog == "undefined" ) {
+	function ArxWizLog (strMsg) {
+		try {
+			var oArxWizLogFso =new ActiveXObject ("Scripting.FileSystemObject") ;
+			var strArxWizLogFile =oArxWizLogFso.GetSpecialFolder (2) + "\\" + ARX_LOG_FILE ;
+			var oArxWizLog =oArxWizLogFso.OpenTextFile (strArxWizLogFile, 8, true) ;
+			oArxWizLog.WriteLine (new Date ().toString () + " ["
+				+ (typeof ARX_WIZARD_NAME == "undefined" ? "arxCommon" : ARX_WIZARD_NAME) + "] " + strMsg) ;
+			oArxWizLog.Close () ;
+		} catch (e) { }
+	}
+}
+
+if ( typeof ArxWizErrorText == "undefined" ) {
+	//- The engine's error object often has no description at all ("缺少对象" is all the wizard host
+	//- ever shows); this reports every field it does have.
+	function ArxWizErrorText (e) {
+		var aArxWizParts =[] ;
+		try { aArxWizParts.push ("description=[" + e.description + "]") ; } catch (e1) { aArxWizParts.push ("description=<none>") ; }
+		try { aArxWizParts.push ("message=[" + e.message + "]") ; } catch (e2) { }
+		try { aArxWizParts.push ("name=[" + e.name + "]") ; } catch (e3) { }
+		try {
+			var nArxWizNumber =e.number ;
+			aArxWizParts.push ("number=0x" + (nArxWizNumber < 0 ? (0x100000000 + nArxWizNumber) : nArxWizNumber).toString (16)) ;
+		} catch (e4) { }
+		return (aArxWizParts.join (" ")) ;
+	}
+}
+
+if ( typeof ArxWizScope == "undefined" ) {
+	//- typeof never throws for an absent identifier, so this reports the scope in one line.
+	function ArxWizScope () {
+		return ("framework CreateSafeName=" + (typeof CreateSafeName)
+			+ " SetupFilters=" + (typeof SetupFilters)
+			+ " RenderAddTemplate=" + (typeof RenderAddTemplate)
+			+ " SetErrorInfo=" + (typeof SetErrorInfo)
+			+ " | multi-year ArxSetupVersionSymbols=" + (typeof ArxSetupVersionSymbols)
+			+ " | engine wizard=" + (typeof wizard)) ;
+	}
+}
+
+if ( typeof ArxWizSymbol == "undefined" ) {
+	//- A symbol that was never set is the usual reason an item wizard dies on "缺少对象": the engine
+	//- reads it back and passes undefined to RenderAddTemplate.
+	function ArxWizSymbol (strName) {
+		try {
+			var vSymbol =wizard.FindSymbol (strName) ;
+			return (vSymbol == null ? "<null>" : String (vSymbol)) ;
+		} catch (e) {
+			return ("<error>") ;
+		}
+	}
+}
+
+//- ---------------------------------------------------------------------------------------------
+//- Tooltips (classic line). The pages carry their help text in TITLE="..." attributes, and the host
+//- that draws the native tooltip renders an empty black box for them on this machine - every page,
+//- every control (reported 2026-10-11). Move that text out of the host's hands and show it in a
+//- layer of our own: light background, dark text, next to the cursor. Every page gets this for free
+//- because they all include this file. The engine scope has no document, hence the guard, and the
+//- handlers are attached with attachEvent so a page's own document.onmouseover is left alone.
+//- ---------------------------------------------------------------------------------------------
+if ( typeof document != "undefined" && document != null ) {
+	var gArxTipNode =null ;
+	var gArxTipOrigin =null ;
+
+	function ArxTipCreate () {
+		if ( gArxTipNode )
+			return (gArxTipNode) ;
+		var oArxTip =document.createElement ("DIV") ;
+		oArxTip.style.position ="absolute" ;
+		oArxTip.style.display ="none" ;
+		oArxTip.style.zIndex ="32767" ;
+		oArxTip.style.maxWidth ="420px" ;
+		oArxTip.style.padding ="4px 7px" ;
+		oArxTip.style.backgroundColor ="#FFFFE1" ;
+		oArxTip.style.color ="#000000" ;
+		oArxTip.style.border ="1px solid #808080" ;
+		oArxTip.style.fontFamily ="Tahoma, MS Sans Serif, sans-serif" ;
+		oArxTip.style.fontSize ="11px" ;
+		oArxTip.style.lineHeight ="14px" ;
+		document.body.appendChild (oArxTip) ;
+		gArxTipNode =oArxTip ;
+		return (oArxTip) ;
+	}
+
+	//- The TITLE sits on the SPAN that wraps a control as often as on the control itself. An *empty*
+	//- TITLE counts too: the host draws its black box for those as well, so it has to be taken away
+	//- (the pages set title="" on the year checkboxes), only the text is skipped when showing.
+	function ArxTipElement (oFrom) {
+		for ( var oNode =oFrom ; oNode != null && oNode != document.body ; oNode =oNode.parentElement ) {
+			if ( oNode.__arxTip || (oNode.getAttribute && oNode.getAttribute ("title") != null) )
+				return (oNode) ;
+		}
+		return (null) ;
+	}
+
+	function ArxTipHide () {
+		gArxTipOrigin =null ;
+		if ( gArxTipNode )
+			gArxTipNode.style.display ="none" ;
+	}
+
+	function ArxTipPlace (oEvent) {
+		if ( gArxTipNode == null || gArxTipNode.style.display == "none" )
+			return ;
+		var nLeft =oEvent.clientX + 16 ;
+		var nTop =oEvent.clientY + 22 ;
+		var nMaxLeft =document.body.clientWidth + document.body.scrollLeft - gArxTipNode.offsetWidth - 8 ;
+		if ( nLeft > nMaxLeft )
+			nLeft =nMaxLeft ;
+		gArxTipNode.style.left =(nLeft + document.body.scrollLeft) + "px" ;
+		gArxTipNode.style.top =(nTop + document.body.scrollTop) + "px" ;
+	}
+
+	function ArxTipOnMouseOver (oEvent) {
+		var oNode =ArxTipElement (oEvent.srcElement ? oEvent.srcElement : oEvent.target) ;
+		if ( oNode == null ) {
+			ArxTipHide () ;
+			return ;
+		}
+		if ( oNode == gArxTipOrigin ) {
+			ArxTipPlace (oEvent) ;
+			return ;
+		}
+		var strText =oNode.__arxTip ? oNode.__arxTip : oNode.getAttribute ("title") ;
+		//- Take the attribute away - an empty one too, the host draws its black box for those as
+		//- well - and only then decide whether there is anything to show.
+		if ( oNode.getAttribute && oNode.getAttribute ("title") != null ) {
+			oNode.__arxTip =strText == null ? "" : strText ;
+			oNode.removeAttribute ("title") ;
+		}
+		if ( !strText ) {
+			ArxTipHide () ;
+			return ;
+		}
+		var oTip =ArxTipCreate () ;
+		oTip.innerHTML =strText ;
+		oTip.style.display ="block" ;
+		gArxTipOrigin =oNode ;
+		ArxTipPlace (oEvent) ;
+	}
+
+	function ArxTipInstall () {
+		if ( document.attachEvent ) {
+			document.attachEvent ("onmouseover", ArxTipOnMouseOver) ;
+			document.attachEvent ("onmousemove", ArxTipPlace) ;
+			document.attachEvent ("onmouseout", ArxTipHide) ;
+			document.attachEvent ("onclick", ArxTipHide) ;
+		} else if ( document.addEventListener ) {
+			document.addEventListener ("mouseover", ArxTipOnMouseOver, false) ;
+			document.addEventListener ("mousemove", ArxTipPlace, false) ;
+			document.addEventListener ("mouseout", ArxTipHide, false) ;
+			document.addEventListener ("click", ArxTipHide, false) ;
+		}
+	}
+
+	ArxTipInstall () ;
 }

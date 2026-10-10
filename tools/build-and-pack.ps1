@@ -130,7 +130,9 @@ try {
     if ($LASTEXITCODE -ne 0) { Fail 'ISCC failed.' }
 } finally { Pop-Location }
 
-$setup = Join-Path $innoDir 'ObjectARXMultiVersionWizardsSetup-Inno.exe'
+# The setup name carries the branch suffix (InnoSetupInstaller\ObjectARXMultiVersionWizards.iss),
+# so report whatever the compile actually wrote rather than a hardcoded name.
+$setup = (Get-ChildItem $innoDir -Filter '*.exe' | Sort-Object LastWriteTime | Select-Object -Last 1).FullName
 if (-not (Test-Path $setup)) { Fail ('Installer not found: ' + $setup) }
 Step ('Setup: ' + $setup)
 Step ('       ' + (Get-Item $setup).Length + ' bytes  ' + (Get-Item $setup).LastWriteTime)

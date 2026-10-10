@@ -40,7 +40,7 @@
 
 ## 4. 语言与文风
 
-- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/`为中文。
+- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/ `\u4E3A中文。
 - **改哪个文件就沿用该文件的语言**；代码注释同理。
 
 ## 5. 提交前

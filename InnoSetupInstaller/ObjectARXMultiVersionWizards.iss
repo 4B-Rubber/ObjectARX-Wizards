@@ -63,7 +63,7 @@
 ; The item wizards work the classic way, but the .vsz project entries in vcprojects\Autodesk are not
 ; surfacing as New Project entries in the current IDE, so the branch ships the VSIX as well: it is
 ; what makes creating a project possible. Set this to 0 to test the classic only shape again.
-#define InstallVsix 1
+#define InstallVsix 0
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]
@@ -973,7 +973,28 @@ end;
 /// <summary>The same two placeholders for one given Visual Studio root, plus the engine ProgID.
 /// The payload ships VsWizard.VsWizardEngine.17.0 (VS2022); VS2026 needs 18.0, and the id is taken
 /// from that VS's own devenv.exe so a future release only has to change this one place.</summary>
-procedure PatchVsFilesForRoot(const VsRootArg, AppDir: string);
+/// <summary>
+/// Visual Studio builds its wizard and project list once and caches it: copying the .vsz/.vsdir files
+/// into vcprojects is not enough. That is why the classic project entries only showed up after a VSIX
+/// install had made the IDE rebuild the cache. Ask every Visual Studio to rebuild it here, so the
+/// classic line works without the VSIX.
+/// </summary>
+procedure RefreshVsCache();
+var
+  Major, Code: Integer;
+  Root, DevEnv: string;
+begin
+  for Major := 17 to 18 do begin
+    Root := FindVsRootByMajor(Major);
+    if Root = '' then Continue;
+    DevEnv := TrimTrailingSlash(Root) + '\Common7\IDE\devenv.exe';
+    if not FileExists(DevEnv) then Continue;
+    if Exec(DevEnv, '/updateconfiguration', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Alog('refresh: devenv /updateconfiguration (' + IntToStr(Major) + ') exited with ' + IntToStr(Code))
+    else
+      Alog('refresh: could not run devenv for ' + IntToStr(Major));
+  end;
+end;procedure PatchVsFilesForRoot(const VsRootArg, AppDir: string);
 var
   Vc, Target, DevEnv, Ver, EngineId: string;
   Dot: Integer;

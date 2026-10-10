@@ -1074,8 +1074,53 @@ begin
   Alog('uninstall: removed ' + IntToStr(Removed) + ' generated property sheet(s) from ' + Dir);
 end;
 
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+/// <summary>
+/// The uninstaller takes away what the setup copied, but the .vsz files in the Visual Studio folders
+/// were rewritten in place afterwards (the wizard root and the engine id), so they look modified and
+/// are left behind - and with them the IDE keeps offering the ObjectARX wizards. Delete them for
+/// every Visual Studio by major version, whether it is the one this setup targeted or the other.
+/// </summary>
+procedure RemoveVsRegistrations();
+var
+  Vc: string;
+  Major: Integer;
+begin
+  for Major := 17 to 18 do begin
+    Vc := FindVsRootByMajor(Major);
+    if Vc = '' then Continue;
+    Vc := TrimTrailingSlash(Vc) + '\Common7\IDE\VC';
+    if DirExists(Vc + '\vcprojectitems\ObjectARX') then begin
+      DelTree(Vc + '\vcprojectitems\ObjectARX', True, True, True);
+      Alog('uninstall: removed ' + Vc + '\vcprojectitems\ObjectARX');
+    end;
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz');
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsdir');
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.ico');
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz');
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsdir');
+    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.ico');
+  end;
+end;/// <summary>
+/// The extension is per user and was installed by a separate process, so the uninstaller has to ask
+/// VSIXInstaller to take it away again - as the original user, or it would look in the wrong profile.
+/// </summary>
+procedure RemoveVsix();
+var
+  Root, Installer: string;
+  Major, Code: Integer;
+begin
+  for Major := 17 to 18 do begin
+    Root := FindVsRootByMajor(Major);
+    if Root = '' then Continue;
+    Installer := TrimTrailingSlash(Root) + '\Common7\IDE\VSIXInstaller.exe';
+    if not FileExists(Installer) then Continue;
+    if ExecAsOriginalUser(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Alog('uninstall: VSIXInstaller for ' + IntToStr(Major) + ' exited with ' + IntToStr(Code));
+  end;
+end;procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep <> usUninstall then Exit;
+  RemoveVsRegistrations();
+  RemoveVsix();
   DeleteGeneratedProps(UninstallPropsDir);
 end;

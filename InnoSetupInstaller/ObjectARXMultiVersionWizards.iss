@@ -1151,6 +1151,7 @@ end;procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep <> usUninstall then Exit;
   RemoveVsRegistrations();
+  RefreshVsCache();
   RemoveVsix();
   DeleteGeneratedProps(UninstallPropsDir);
 end;

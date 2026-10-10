@@ -88,7 +88,7 @@ if ($iscc) { Step ('ISCC       : ' + $iscc) }
 if (-not $SkipSync) {
     Step ('Mirroring the repository to ' + $srcDir + ' (source tree stays read-only)')
     $rcArgs = @($repo, $srcDir, '/MIR', '/NFL', '/NDL', '/NJH', '/NJS', '/NP', '/R:2', '/W:1')
-    foreach ($x in @('.git', '.vs', 'bin', 'obj', '_E2EGen', '.tools', '.trae', 'Output', 'node_modules')) {
+    foreach ($x in @('.git', '.vs', 'bin', 'obj', '_E2EGen', '.tools', 'Output', 'node_modules')) {
         $rcArgs += @('/XD', $x)
     }
     & robocopy @rcArgs | Out-Null

@@ -140,6 +140,9 @@ _E2EGen/
 # Inno Setup line: built by InnoSetupInstaller\ObjectARXMultiVersionWizards.iss
 /InnoSetupInstaller/Output/
 
+# In-repo copies of the built installers (hand-out only, never uploaded)
+/dist/
+
 # Agent workspace state
 .trae/
 # Local-only agent supplement: readable by any agent on this machine, but not uploaded

@@ -66,7 +66,6 @@ Build into a **separate build directory**, never into the checkout: mirror the t
 
 Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX, [StepsToBuild.md](ObjectARXWizardsInstaller/StepsToBuild.md) for the WiX/MSI project, and `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` for the Inno line (its original plan document was removed; the crash analysis summary is in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md)).
 
-Each line carries its own consistency test: `ArxVsixWizard\test-version-consistency.ps1`, `tools\arx-props\test-years-consistency.ps1`, `tools\arx-genprops\test-arx-genprops.ps1`, `InnoSetupInstaller\test-payload-parity.ps1` and `InnoSetupInstaller\test-inno-sandbox.ps1`.
 
 ### 💾 Installation
 

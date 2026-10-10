@@ -33,11 +33,10 @@
 - **版本号一致性**：改动任何版本号来源（`ArxVsixWizard.csproj` 的 `<Version>`、`source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName`、`Packaging\**\*.vstemplate` 的 `<Assembly>`）后，必须跑
   `ArxVsixWizard\test-version-consistency.ps1`（断言四处 + 已构建的 VSIX）。
 - **模板回归**：改渲染器 / 模板后跑 `TemplateSmokeTest`，要求零 diff 通过。
-- 各线自带一致性测试：`tools\arx-props\test-years-consistency.ps1`、`tools\arx-genprops\test-arx-genprops.ps1`、`InnoSetupInstaller\test-payload-parity.ps1`、`InnoSetupInstaller\test-inno-sandbox.ps1`。
 
 ## 4. 语言与文风
 
-- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/`为中文。
+- 根 `README.md` 为英文；`ArxVsixWizard/README.md`、`docs/ `\u4E3A中文。
 - **改哪个文件就沿用该文件的语言**；代码注释同理。
 
 ## 5. 提交前

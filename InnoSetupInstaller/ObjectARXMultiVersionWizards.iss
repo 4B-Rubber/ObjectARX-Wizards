@@ -67,7 +67,7 @@
 ; VCAddClass item wizards, plus the props. No VSIX, so nothing from the other line leaks in.
 ; The setup asks every Visual Studio to rebuild its wizard list (RefreshVsCache) because the
 ; .vsdir entries do not appear from the copied files alone.
-#define InstallVsix 0
+#define InstallVsix 1
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]
@@ -997,6 +997,12 @@ begin
       Alog('refresh: devenv /updateconfiguration (' + IntToStr(Major) + ') exited with ' + IntToStr(Code))
     else
       Alog('refresh: could not run devenv for ' + IntToStr(Major));
+    // /updateconfiguration on its own did not make the vcprojects .vsdir entries appear, so the older
+    // template catalogue rebuild is attempted as well. Unsupported switches just log an error code.
+    if Exec(DevEnv, '/setup', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Alog('refresh: devenv /setup (' + IntToStr(Major) + ') exited with ' + IntToStr(Code))
+    else
+      Alog('refresh: devenv /setup could not run for ' + IntToStr(Major));
   end;
 end;procedure PatchVsFilesForRoot(const VsRootArg, AppDir: string);
 var

@@ -56,7 +56,7 @@
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
 ; MSI's UpgradeCode / ProductCode.
-#define AppId "{{8B1E4C2A-5F37-4D9B-A6C1-0E7D3A9F5B24}"
+#define AppId "{{2D7F9B41-6C58-4E0A-9B3D-5A1C8E7F24B6}}"
 #define RepoRoot ".."
 #define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"
 #define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"
@@ -86,7 +86,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=Output
 ; One name for the three lines: ObjectARXMultiVersionWizards-<branch>. The branch suffix is what tells
 ; the packages apart, so a dev build and a classic build can sit next to each other in the same folder.
-OutputBaseFilename=ObjectARXMultiVersionWizards-classic-wizards
+OutputBaseFilename=ObjectARXMultiVersionWizards-classic
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern

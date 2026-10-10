@@ -62,6 +62,7 @@
                   PerMachine="no"
                   SourceFile="Bundle\ArxWizardsVsixSetup.exe"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
+      UninstallCommand='"[WixBundleExecutePackageCacheFolder]ArxWizardsVsixSetup.exe" --uninstall'
                   InstallCondition='ArxSkipVsix &lt;&gt; "1"'
                   DetectCondition="false">
         <Payload SourceFile="..\ObjectARXMultiVersionWizards.vsix" Compressed="yes" />

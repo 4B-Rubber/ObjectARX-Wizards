@@ -28,6 +28,11 @@ static class VsixSetup
 
     static int Main(string[] args)
     {
+        // The bundle's uninstall runs this launcher again, with --uninstall: the extension is per user
+        // and only this process knows how it was put in, so it takes it out the same way.
+        foreach (string arg in args)
+            if (string.Equals(arg, "--uninstall", StringComparison.OrdinalIgnoreCase)) return UninstallAll();
+
         string vsix = args.Length > 0 ? args[0] : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DefaultVsixName);
         Log("VSIX setup start; vsix=" + vsix);
         Log("elevated=" + IsElevated() + " (the extension has to land in the invoking user's profile)");
@@ -156,6 +161,44 @@ static class VsixSetup
 
         result.Sort(StringComparer.OrdinalIgnoreCase);
         return result;
+    }
+
+    /// <summary>
+    /// Removes the extension from every Visual Studio on the machine. Called by the bundle's
+    /// uninstall: the MSI takes the machine payload away and the extension - installed per user by
+    /// this launcher - has to follow, or the IDE keeps offering the ObjectARX project wizards.
+    /// </summary>
+    static int UninstallAll()
+    {
+        Log("VSIX uninstall start");
+        Log("elevated=" + IsElevated() + " (the extension lives in the invoking user's profile)");
+
+        var instances = FindVsInstalls();
+        if (instances.Count == 0)
+        {
+            Log("no Visual Studio found; nothing to remove");
+            return 0;
+        }
+
+        foreach (string ide in instances)
+        {
+            string installer = Path.Combine(ide, @"Common7\IDE\VSIXInstaller.exe");
+            if (!File.Exists(installer))
+            {
+                Log("VSIXInstaller.exe not found under " + ide);
+                continue;
+            }
+            var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard") { UseShellExecute = false };
+            using (var p = Process.Start(psi))
+            {
+                p.WaitForExit();
+                Log("  " + ide + " -> VSIXInstaller uninstall exit " + p.ExitCode);
+            }
+        }
+
+        // A leftover extension must never stop the bundle from uninstalling; the log says what happened.
+        Log("done");
+        return 0;
     }
 
     static void Log(string message)

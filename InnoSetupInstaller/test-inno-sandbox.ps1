@@ -39,7 +39,7 @@ $test = $test.Replace('#define RepoRoot ".."', '#define RepoRoot "' + $repo + '"
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
-$test = $test.Replace('OutputBaseFilename=ObjectARXMultiVersionWizardsSetup-Inno', 'OutputBaseFilename=InnoSandboxTest')
+$test = $test.Replace('OutputBaseFilename=ObjectARXMultiVersionWizards-dev', 'OutputBaseFilename=InnoSandboxTest')
 if ($test -ceq $text) { throw 'no substitution applied - the .iss changed shape' }
 
 $testIss = Join-Path $work 'sandbox.iss'

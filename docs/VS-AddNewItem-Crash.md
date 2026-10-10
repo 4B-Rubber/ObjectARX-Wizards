@@ -94,7 +94,7 @@ VS 这段实现走到了自己的 **UI Automation 层**（解决方案资源管�
 `ProjectItems.AddFromTemplate(<.vstemplate>, <默认名>)`，复用现有 7 个向导与后处理）。
 另注：项目模板侧有同型风险——建完一个工程后 30 秒内在同一解决方案里再建第二个，会走同一条路径。
 
-## 解决：「Add ObjectARX Class...」命令（0.2.0 引入，0.2.2 起可用，当前 0.2.3）
+## 解决：「Add ObjectARX Class...」命令（0.2.0 引入，0.2.2 起可用，当前 0.2.4）
 
 按上面的思路把唯一稳妥解法落地了：解决方案资源管理器里**右键 ObjectARX 工程 →
 "Add ObjectARX Class..."**。它在预热窗口内同样安全——整条链路不经过 `NewProjectDialog`：

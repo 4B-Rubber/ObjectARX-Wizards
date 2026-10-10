@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <!-- One command on the Solution Explorer project-node context menu. It is invisible
+       unless BeforeQueryStatus finds an ObjectARX VC++ project, so other project types
+       never see it. -->
+  <Commands package="guidArxWizardPackage">
+    <Groups>
+      <Group guid="guidArxWizardCmdSet" id="grpAddArxItem" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+      </Group>
+    </Groups>
+    <Buttons>
+      <Button guid="guidArxWizardCmdSet" id="cmdidAddArxItem" priority="0x0100" type="Button">
+        <Parent guid="guidArxWizardCmdSet" id="grpAddArxItem"/>
+        <Strings>
+          <ButtonText>Add ObjectARX Class...</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidArxWizardPackage" value="{9E4F2C71-3B5A-4D68-8F1C-2A7B6D0E5F93}"/>
+    <GuidSymbol name="guidArxWizardCmdSet" value="{A1B7C4D2-6E8F-4A3B-9C5D-1E2F8A7B4C60}">
+      <IDSymbol name="grpAddArxItem" value="0x1020"/>
+      <IDSymbol name="cmdidAddArxItem" value="0x0100"/>
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

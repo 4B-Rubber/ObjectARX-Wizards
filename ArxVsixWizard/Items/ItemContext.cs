@@ -34,6 +34,30 @@ namespace ArxVsixWizard.Items
             catch { /* DTE can throw while the project is being created */ }
         }
 
+        /// <summary>
+        /// Names of the project items the last item-wizard run generated. Visual Studio reports them
+        /// through ProjectItemFinishedGenerating; the "Add ObjectARX Class..." command uses them to
+        /// check that the add really reached the project, because the template engine can fail in its
+        /// own tail (after the files exist) - see AddArxItemCommand.
+        /// </summary>
+        static readonly List<string> GeneratedNames = new List<string>();
+
+        public static void ResetGeneratedItems()
+        {
+            lock (GeneratedNames) GeneratedNames.Clear();
+        }
+
+        public static void NoteGeneratedItem(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            lock (GeneratedNames) GeneratedNames.Add(name);
+        }
+
+        public static string[] GeneratedItemsSnapshot()
+        {
+            lock (GeneratedNames) return GeneratedNames.ToArray();
+        }
+
         public static void Log(string stage, Exception ex)
         {
             try

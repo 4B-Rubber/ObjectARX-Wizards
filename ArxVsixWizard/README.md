@@ -1,7 +1,7 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.1.7 已提交（`c8b93b0`）；仓库已迁到本机工作副本（路径随机器而异）。VSIX 可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见，项模板"添加"可用（`ProvideDefaultName=false`，名称框需手动输入类名）。唯一未解决项：VS 18 选中模板时 IDE 崩溃，见第 6 节首条。**
-> 最后更新：2026-10-09
+> 状态：**0.2.3。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 最后更新：2026-10-10
 
 ---
 
@@ -73,6 +73,14 @@ ArxVsixWizard/
 │   └── ProjectModel.cs                # 符号表构建 + 文件生成计划 + vcxproj ItemGroup/Filters XML
 ├── UI/
 │   ├── WizardDialog.xaml(.cs)         # 单页 WPF 选项窗口（RDS/类型/年份/MFC/COM/.NET/OMF）
+│   ├── ItemDialog.xaml(.cs)           # 项向导的通用选项窗口（按 ItemModel.Fields 动态生成）
+│   ├── AddItemDialog.xaml(.cs)        # "Add ObjectARX Class..." 的模板/名称选择器
+├── Commands/
+│   ├── ArxWizardPackage.cs            # AsyncPackage（仅为此命令存在；InitializeAsync 首行写日志）
+│   ├── AddArxItemCommand.cs           # 右键命令：识别 ARX 工程、AddFromTemplate 绕过 VS 对话框
+│   ├── ArxItemTemplateCatalog.cs      # 从扩展安装目录扫描项模板元数据（名称/描述/图标）
+│   ├── ArxWizardCommands.vsct         # 命令表：IDM_VS_CTXT_PROJNODE 上一个动态可见按钮
+│   ├── PackageGuids.cs                # 包/命令集 GUID 与命令 ID（与 vsct 符号保持一致）
 ├── Templates/
 │   ├── ArxApp/*                       # 嵌入资源：老 ArxAppWiz 的 12 个源模板（原样复制）
 │   └── OmfApp/*                       # 嵌入资源：老 ArxAppWiz182 的 18 个模板（含 OmfEnuRes.*）
@@ -115,7 +123,7 @@ ArxVsixWizard/
 
 ## 6. 已知问题与待修复（按优先级）
 
-### VS 侧缺陷（本扩展内无法修复）— 「添加新建项」选中预填模板时 devenv 直接结束进程（`0x80040201`）
+### VS 侧缺陷（0.2.0 已提供绕过入口）— 「添加新建项」选中预填模板时 devenv 直接结束进程（`0x80040201`）
 
 在 VS 2022（17.14）与 VS 2026（18.10）上：**刚用本扩展的项目模板建完工程时（预热窗口内，约 0–30 秒）**，
 在「添加新建项」里选中**任何会预填名称的模板（包括微软自带模板）**都会触发 VS 自己的缺陷：
@@ -126,8 +134,17 @@ NewProjectDialog.TemplateSelectionChangedDelayed → ApplyTemplateSelection
 ```
 
 栈上没有一帧属于本扩展；装了 Visual Assist 时它会升级为进程级未处理异常（VS 直接消失），没装时对话框静默关闭。
-`ProvideDefaultName=false` 不触发这条调用，但会失去名称预填（Name 框为空、需手打名字）。**规避规则**：建完工程后
-等状态栏回到「就绪」再加项。结论、证据与量化见 `docs\VS-AddNewItem-Crash.md`（文末附完整过程记录）。
+`ProvideDefaultName=false` 不触发这条调用，但会失去名称预填（Name 框为空、需手打名字）。
+
+**解法（0.2.0 引入，0.2.2 起可用）**：右键工程 → **"Add ObjectARX Class..."**（`Commands\` 里的 `ArxWizardPackage` +
+`AddArxItemCommand`）。选择器由扩展自绘、默认名由扩展自造，确认后走
+`ProjectItems.AddFromTemplate(<.vstemplate>, <名字>)` 驱动原 7 个向导——不经 VS 模板对话框，
+预热窗口内也安全。VS 自带对话框仍可用（等「就绪」后）。结论、证据与量化见
+`docs\VS-AddNewItem-Crash.md`（文末附完整过程记录）。
+
+包加载排查备忘（0.2.0 已踩过；0.2.1 补一条：`DefaultInvisible + DynamicVisibility` 的命令必须配 `ProvideAutoLoad`，否则命令不可见 → 点不到 → 包永不加载）：`GeneratePkgDefFile` 必须为 `true` 且清单必须含
+`Microsoft.VisualStudio.VsPackage` 资产，否则包不注册、命令不出现；`InitializeAsync` 第一行已写
+`wizard.log`（`PackageInit enter/done`），包不加载先看那里。
 
 ### ~~P0（真正的阻断点）— 模板未放在 `ProjectTemplates` 下，VS 根本不识别~~（已修复）
 原来 `Packaging\ArxApp\**` 被 `Link="ArxApp\..."` 打进去，安装后落盘为 `Extensions\<id>\ArxApp\ArxApp.vstemplate`；**VS 只把扩展里的 `ProjectTemplates` 目录当作项目模板扫描根**（对照微软官方模板扩展：`ProjectTemplates\VC\1033\<名>\<名>.vstemplate`，asset 为 `Path="ProjectTemplates"`）。因此模板从来不会出现在"新建项目"里——这才是"向导不能用"的主因，P0b 的源文件问题是它下游的。
@@ -192,4 +209,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix](../ObjectARXMultiVersionWizards.vsix)（0.1.7，约 226 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix](../ObjectARXMultiVersionWizards.vsix)（0.2.3，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

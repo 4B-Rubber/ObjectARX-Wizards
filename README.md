@@ -24,12 +24,14 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 
 The same wizards are also shipped as a modern **VSIX** (`ArxVsixWizard`) that installs into Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md).
 
-> **Status (0.1.7).** The VSIX, the MSI/Burn bundle and the Inno single-file installer are all built
+> **Status (0.2.3).** The VSIX, the MSI/Burn bundle and the Inno single-file installer are all built
 > from this tree. Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
 > that pre-fills the name can take `devenv` down while a freshly created project is still being
-> parsed (UI-Automation `ElementNotAvailableException`, `0x80040201`). Analysis, measurements and the
-> practical rule - wait for the status bar to show **Ready** / 「就绪」 before adding an item - are in
-> [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
+> parsed (UI-Automation `ElementNotAvailableException`, `0x80040201`). The VSIX ships
+> **Add ObjectARX Class...** on the Solution Explorer project context menu, which bypasses the
+> defective dialog entirely (introduced in 0.2.0, usable since 0.2.2). The classic rule - wait for
+> the status bar to show **Ready** / 「就绪」 before using Add → New Item - still applies. Analysis
+> and measurements: [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
 
 ---
 
@@ -52,7 +54,7 @@ cd ObjectARX-Wizards
 
 ### 🔨 Build Instructions
 
-There are three buildable lines. All of them ship version **0.1.7** today.
+There are three buildable lines. The VSIX and Inno lines ship version **0.2.3**; the MSI/Burn bundle remains **0.1.7**.
 
 | Line | Command | Output |
 |---|---|---|
@@ -76,7 +78,7 @@ Any of the three lines installs the same wizard payload and the same VSIX - pick
 
 Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (Visual C++ → *ObjectARX/DBX/CRX Application (Multi-Version)*) and, for the item wizards, in **Add → New Item** under the **ArxWizard** category.
 
-Note: the item templates pre-fill the **Name** box (`ProvideDefaultName=true`). After a project has just been created, wait for the status bar to show **Ready** / 「就绪」 before adding an item - the underlying VS-side defect and the full analysis are in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
+Note: the item templates pre-fill the **Name** box (`ProvideDefaultName=true`). After a project has just been created, either add classes through the project context menu's **Add ObjectARX Class...** (safe at any time - it does not use Visual Studio's template dialog) or wait for the status bar to show **Ready** / 「就绪」 before using Add → New Item. The underlying VS-side defect and the full analysis are in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
 
 ---
 

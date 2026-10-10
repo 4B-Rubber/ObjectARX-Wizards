@@ -47,6 +47,38 @@
   （是后台负载，不是界面卡死）。属性表与模板元数据已逐文件排查，**没有问题**。
 - 触发面（E8，2026-10-10 实测）：用本扩展项目模板建的工程里，**点微软自带的预填模板同样崩溃**；
   反之，VS 自带模板建的工程里点本扩展的项模板不崩。
+- 第 10 份转储（2026-10-10 15:13 复现，`devenv.exe.14908.dmp`）：日志时间线为 ArxApp8 建完 +5.3 s
+  主窗口被模态对话框禁用、下一拍之前进程死亡；转储内层异常同为 `ElementNotAvailableException`
+  （`0x80040201`），抛出栈与上表逐帧一致。
+
+## 根因：为什么 `ProvideDefaultName=false` 就不崩
+
+选中任何模板走的都是同一条路：`TemplateSelectionChangedDelayed → ApplyTemplateSelection →
+UpdateNameField(模板)`。差别在 `UpdateNameField` **内部**：
+
+- 模板声明 `ProvideDefaultName=true`（Name 框要预填）→ 它才去调
+  `ServiceHelper.GenerateItemName(IVsProject, …)`，问工程系统"造一个不重名的默认名"；
+- 声明 `false` → **这次调用整体跳过**，Name 框留空。不崩不是对话框变健康了，而是唯一会抛异常的
+  那行代码根本没被执行——全部转储的栈都终止在 `GenerateItemName`，没有第二嫌疑人。
+
+`GenerateItemName` 造的名字必须在工程内不重名（MyJig、MyJig1……），所以要枚举工程现有的项；
+VS 这段实现走到了自己的 **UI Automation 层**（解决方案资源管理器的自动化树）取这些信息。刚建完的
+工程还在后台建 C++ 代码模型，对应的 UIA 元素处于"已虚拟化"状态，UIA 对虚拟化元素的回答就是
+`0x80040201`（*Element does not exist or it is virtualized…*）；COM 把这个 HResult 返回给托管包装，
+`Marshal.ThrowExceptionForHRInternal` 将它抛成 `ElementNotAvailableException`。
+
+证据边界：
+
+- **实测钉死**：`false` 后同一对话框、同一模板、同一窗口期不崩，唯一变量就是那次调用没发生
+  （0.1.7 的 A/B）；`true` 时微软内置模板同样崩——扳机是"预填"这个动作，与模板内容无关；
+  `Microsoft.VisualStudio.Dialogs.dll` 内 `ProvideDefaultName` 与 `GenerateItemName` 两个符号
+  同时存在，与"标志门控调用"的行为吻合。
+- **推断**（与所有观测一致，但只有微软源码能证实）：`GenerateItemName` 内部为何走 UIA 而不是
+  直接问 `IVsProject` 接口。
+
+**推论**：在 VS 自己的对话框里，"预填"与"不崩"互斥——预填的唯一入口就是那个标志，而那个标志
+就是扳机；向导也帮不上（`RunStarted` 在用户点"添加"后才跑，崩溃发生在选中模板那一刻）。两者
+兼得只能绕开这个对话框，由扩展自造默认名（见下「Add ObjectARX Class...」一节）。
 
 ## 已知规避（当前出货建议）
 
@@ -62,11 +94,49 @@
 `ProjectItems.AddFromTemplate(<.vstemplate>, <默认名>)`，复用现有 7 个向导与后处理）。
 另注：项目模板侧有同型风险——建完一个工程后 30 秒内在同一解决方案里再建第二个，会走同一条路径。
 
+## 解决：「Add ObjectARX Class...」命令（0.2.0 引入，0.2.2 起可用，当前 0.2.3）
+
+按上面的思路把唯一稳妥解法落地了：解决方案资源管理器里**右键 ObjectARX 工程 →
+"Add ObjectARX Class..."**。它在预热窗口内同样安全——整条链路不经过 `NewProjectDialog`：
+
+- 命令挂在项目节点上下文菜单（`IDM_VS_CTXT_PROJNODE`），`DefaultInvisible + DynamicVisibility`，
+  只在选中**带 `<ArxAppType>` 标记的 VC++ 工程**时出现（标记检测有缓存，老 .vsz 向导建的工程也算）；
+- 弹出扩展自己的选择器（`UI\AddItemDialog`）：列出扩展安装目录下扫描到的全部项模板（名称/描述/图标，
+  按 `SortOrder` 排序），名称框用模板 `<DefaultName>` 加序号**自己造默认名**——正是替掉
+  `GenerateItemName` 的那一步，重名与非法字符在对话框内校验；
+- 确认后调 `ProjectItems.AddFromTemplate(<.vstemplate>, <名字>)`：模板引擎照常跑原有 7 个
+  `IWizard`（选项页照弹、`$ArxWrapNFile$/$ArxWrapNContent$` 照常注入、资源/.idl 后处理照跑），
+  只是**跳过了 VS 的模板对话框**。向导选项页里点取消表现为 `E_ABORT`，命令按正常退出处理。
+
+实现要点（都是实测踩出来的，重做时照抄）：
+
+- 包能加载的三要素缺一不可：csproj `<GeneratePkgDefFile>true</GeneratePkgDefFile>`（把注册特性
+  变成 `.pkgdef`）、vsixmanifest 里 `<Asset Type="Microsoft.VisualStudio.VsPackage" Path="%CurrentProject%.pkgdef" />`
+  （让 VS 采纳这份 pkgdef）、VSCT 经 `VSCTCompile` 编译并由 `MergeCtoResource` 合并进程序集
+  （`Menus.ctmenu` 落在 `_EmptyResource.resources` 里，构建后已核验 636 字节在位）；
+- `InitializeAsync` 第一行就写 `%TEMP%\ArxVsixWizard\wizard.log`（`PackageInit enter/done`），
+  包不加载时先看这里，再用 `devenv /log` 查 `ActivityLog.xml`；
+- **必须配 `ProvideAutoLoad`**（0.2.1 修）：`DefaultInvisible + DynamicVisibility` 的命令在包未加载时
+  不可见，而不可见的命令点不到、包也就永远不会加载——死锁，表现就是菜单里什么都没有。实测日志里
+  零条 `PackageInit` 即为此现象。现用
+  `[ProvideAutoLoad("f1536ef8-92ec-443c-9ed7-fdadf150da82" /* SolutionExists */, PackageAutoLoadFlags.BackgroundLoad)]`；
+- **模板引擎的收尾步要自愈**（0.2.2 修）：引擎在"文件已生成之后、把项写进工程并保存"这一步会失败，
+  抛出 `OLE_E_PROMPTSAVECANCELLED`（0x8004000C，保存对话框被取消）或 `E_FAIL`（0x80004005），
+  结果是文件躺在磁盘上、`.vcxproj` 里却没有该项（实测：`MyJig.h/.cpp` 在、`ArxApp11.vcxproj` 里无 `MyJig`）。
+  现在调用前先静默 `project.Save()` / `Solution.SaveAs(自己)`，失败后按向导登记的生成项名单
+  `ProjectItems.AddFromFile` 补进去再保存，不再把原始 HRESULT 弹给用户。
+
+VS 自带「添加新项」对话框继续可用（等「就绪」后），两条入口并存；`ProvideDefaultName=true` 维持不变。
+安装器不提供"是否安装该命令"的勾选项（用户 2026-10-10 决定）。
+
 ## 自建入口的包加载排查（首次尝试时命令未出现）
 
 日志里**没有任何包加载记录**（连 `InitializeAsync` 的第一行都没有），说明问题在 VsPackage 注册/加载环节，
 而不是菜单位置。重做时应：在 `InitializeAsync` **第一行**就写日志，并用 `devenv /log` 查看
 `ActivityLog.xml`；仍未出现则优先怀疑 VSIX 的 `Microsoft.VisualStudio.VsPackage` 资源是否被 VS 采纳。
+
+> 2026-10-10 复查确认了根因：当时 csproj 里 `GeneratePkgDefFile=false` 且清单中没有
+> `Microsoft.VisualStudio.VsPackage` 资产——包根本没有注册入口。0.2.0 已按上节修正。
 
 ## 未做 / 可选
 

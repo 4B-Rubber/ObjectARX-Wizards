@@ -9,11 +9,13 @@
     <Nullable>disable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>0.1.7</Version>
+    <Version>0.2.3</Version>
     <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
     <VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
     <CreateVsixContainer>true</CreateVsixContainer>
-    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <!-- The package (Commands\ArxWizardPackage.cs) needs its registration attributes
+         emitted as a .pkgdef or Visual Studio never learns the package exists. -->
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
     <CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
@@ -59,6 +61,14 @@
     <None Remove="TemplateSmokeTest\**" />
     <Content Remove="TemplateSmokeTest\**" />
     <Page Remove="TemplateSmokeTest\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Compiled into the assembly as the "Menus.ctmenu" resource that
+         ProvideMenuResource("Menus.ctmenu", 1) points at. -->
+    <VSCTCompile Include="Commands\ArxWizardCommands.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,40 @@
+<Window x:Class="ArxVsixWizard.UI.AddItemDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add ObjectARX Class"
+        Width="600" Height="480"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize" MinWidth="460" MinHeight="360"
+        ShowInTaskbar="False" FontSize="12">
+  <DockPanel Margin="12">
+    <Border DockPanel.Dock="Bottom" Padding="0,12,0,0">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        <Button Name="AddButton" Content="Add" Width="90" Height="28" Margin="0,0,8,0" Click="OnAdd" IsDefault="True"/>
+        <Button Content="Cancel" Width="90" Height="28" IsCancel="True"/>
+      </StackPanel>
+    </Border>
+    <TextBlock DockPanel.Dock="Bottom" Name="ErrorText" Foreground="Red" Margin="0,8,0,0" TextWrapping="Wrap"/>
+
+    <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+      <TextBlock Text="Name:" Margin="0,0,0,4"/>
+      <TextBox Name="NameBox" Height="24" VerticalContentAlignment="Center"/>
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,10" TextWrapping="Wrap" Foreground="Gray"
+               Text="Choose an ObjectARX class wizard. The name is suggested by the extension, not by Visual Studio's template dialog."/>
+
+    <ListBox Name="TemplateList" SelectionChanged="OnTemplateChanged">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Orientation="Horizontal" Margin="2,4">
+            <Image Source="{Binding Icon}" Width="32" Height="32" Margin="0,0,10,0"/>
+            <StackPanel>
+              <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+              <TextBlock Text="{Binding Description}" Foreground="Gray" TextWrapping="Wrap" MaxWidth="470"/>
+            </StackPanel>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

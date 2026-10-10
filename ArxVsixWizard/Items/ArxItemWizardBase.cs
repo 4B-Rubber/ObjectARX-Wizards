@@ -146,6 +146,7 @@ namespace ArxVsixWizard.Items
                     + " project=" + (projectItem == null || projectItem.ContainingProject == null
                         ? "?" : projectItem.ContainingProject.Name));
                 Context.CaptureProject(projectItem?.ContainingProject);
+                ItemContext.NoteGeneratedItem(projectItem?.Name);
             }
             catch (Exception ex) { ItemContext.Log("ProjectItemFinishedGenerating", ex); }
         }

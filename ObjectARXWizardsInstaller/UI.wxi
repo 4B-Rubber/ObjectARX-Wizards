@@ -374,14 +374,8 @@
                     <Publish Event="EndDialog" Value="Return"><![CDATA[ObjectARXForm_NextArgs=""]]></Publish>
                     <Publish Event="NewDialog" Value="[ObjectARXForm_NextArgs]"><![CDATA[ObjectARXForm_NextArgs<>""]]></Publish>
                 </Control>
-                <Control Id="RDSLabel" Type="Text" X="18" Y="108" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}请输入默认的 RDS 符号（可留空）：" TabSkip="no" />
+                <Control Id="RDSLabel" Type="Text" X="18" Y="108" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}注册开发者符号 (RDS)（可留空）：" TabSkip="no" />
                 <Control Id="RDSEdit" Type="Edit" X="18" Y="120" Width="348" Height="18" Property="RDS" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Sunken="yes" />
-                <Control Id="ArxLabel" Type="Text" X="18" Y="150" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK 位置（会往它的 inc 目录写文件）：" TabSkip="no" />
-                <Control Id="ArxEdit" Type="PathEdit" X="18" Y="162" Width="252" Height="18" Property="ARXPATH" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-                <Control Id="BrowseArx" Type="PushButton" X="275" Y="162" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-                    <Publish Property="SelectFolderDialog_Property" Value="ARXPATH">1</Publish>
-                    <Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-                </Control>
                 <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
                     <Publish Event="SpawnDialog" Value="Cancel" />
                 </Control>
@@ -392,10 +386,53 @@
                 </Control>
                 <Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
                 <Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}注册开发者符号 (RDS)" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-                <Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}请花一点时间指定创建新工程时默认使用的 RDS 符号，可以留空。关于 RDS 符号的说明见 http://www.autodesk.com/objectarx -&gt; 'Symbols Registration'" TabSkip="yes" NoPrefix="yes" />
+                <Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="54" Text="{\VSI_MS_Sans_Serif13.0_0_0}请指定创建新工程时使用的默认 RDS 前缀。可以留空，留空则保留原样。&#xD;&#xA;&#xD;&#xA;关于 RDS 符号的说明见 http://www.autodesk.com/objectarx -&gt; 'Symbols Registration'。" TabSkip="yes" NoPrefix="yes" />
                 <Control Id="Control273" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
                 <Control Id="Control278" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif16.0_1_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
             </Dialog>
+
+		<!-- The paths. Same three fields, same order and the same captions as the Inno line's paths
+		     page (Autodesk root -> SDK -> property sheet folder), so both lines ask for the paths on
+		     one page between RDS and the target years: the root is the parent of the SDK and AutoCAD
+		     folders, the SDK folder gets its inc files written into it, and the property sheet folder
+		     follows the install folder unless it is changed here. -->
+		<Dialog Id="PathsForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
+				<Publish Event="EndDialog" Value="Return"><![CDATA[PathsForm_NextArgs=""]]></Publish>
+				<Publish Event="NewDialog" Value="[PathsForm_NextArgs]"><![CDATA[PathsForm_NextArgs<>""]]></Publish>
+			</Control>
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
+				<Publish Event="SpawnDialog" Value="Cancel" />
+			</Control>
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
+				<Condition Action="disable"><![CDATA[PathsForm_PrevArgs=""]]></Condition>
+				<Condition Action="enable"><![CDATA[PathsForm_PrevArgs<>""]]></Condition>
+				<Publish Event="NewDialog" Value="[PathsForm_PrevArgs]"><![CDATA[PathsForm_PrevArgs<>""]]></Publish>
+			</Control>
+			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}ObjectARX SDK 与目标位置" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装向导会把这套向导写到本机，并按勾选的 AutoCAD 年份各生成一份属性表。SDK 或 AutoCAD 不在默认位置时才需要修改。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="RootLabel" Type="Text" X="18" Y="126" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Autodesk 根目录（SDK 与 AutoCAD 都在它下面）(&amp;A)：" TabSkip="no" />
+			<Control Id="RootEdit" Type="PathEdit" X="18" Y="138" Width="252" Height="18" Property="ARXROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseRoot" Type="PushButton" X="275" Y="138" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
+				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
+			</Control>
+			<Control Id="SdkLabel" Type="Text" X="18" Y="166" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK 位置（会往它的 inc 目录写文件）(&amp;O)：" TabSkip="no" />
+			<Control Id="SdkEdit" Type="PathEdit" X="18" Y="178" Width="252" Height="18" Property="ARXPATH" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseSdk" Type="PushButton" X="275" Y="178" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="ARXPATH">1</Publish>
+				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
+			</Control>
+			<Control Id="PropsLabel" Type="Text" X="18" Y="206" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用）(&amp;P)：" TabSkip="no" />
+			<Control Id="PropsEdit" Type="PathEdit" X="18" Y="218" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseProps" Type="PushButton" X="275" Y="218" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
+				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
+			</Control>
+		</Dialog>
 
 	<!-- SDK roots + which AutoCAD years to generate. The props themselves are produced by the
 		     ArxProps custom actions after InstallFiles, so nothing here is MSI payload. -->
@@ -404,39 +441,33 @@
 		     of the dialog"), and a twin dialog is impossible because the CheckBox table is keyed by
 		     Property: one property can back only one check box in the whole package. Next therefore
 		     goes on to YearSummaryForm, which is where the selection can be read back as text. -->
-		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="370" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
+		<Dialog Id="SdkForm" X="50" Y="50" Width="373" Height="300" Title="[ProductName]">
+			<Control Id="NextButton" Type="PushButton" X="300" Y="278" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<!-- The selection is only reported as text on YearSummaryForm, which reads
 				     ARX_YEARS_SUMMARY when it is created, so build it here. -->
 				<Publish Event="DoAction" Value="CA_BuildYearsSummary">1</Publish>
 				<Publish Event="EndDialog" Value="Return"><![CDATA[SdkForm_NextArgs=""]]></Publish>
 				<Publish Event="NewDialog" Value="[SdkForm_NextArgs]"><![CDATA[SdkForm_NextArgs<>""]]></Publish>
 			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
+			<Control Id="CancelButton" Type="PushButton" X="156" Y="278" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
 				<Publish Event="SpawnDialog" Value="Cancel" />
 			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="348" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
+			<Control Id="PreviousButton" Type="PushButton" X="228" Y="278" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
 				<Condition Action="disable"><![CDATA[SdkForm_PrevArgs=""]]></Condition>
 				<Condition Action="enable"><![CDATA[SdkForm_PrevArgs<>""]]></Condition>
 				<Publish Event="NewDialog" Value="[SdkForm_PrevArgs]"><![CDATA[SdkForm_PrevArgs<>""]]></Publish>
 			</Control>
 			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="Line2" Type="Line" X="0" Y="340" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+			<Control Id="Line2" Type="Line" X="0" Y="270" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}ObjectARX SDK 与目标版本" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="59" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序会为每个勾选的年份在属性表目录下各生成一份属性表。未勾选的年份不生成；勾选一个本机没装的年份没有副作用。" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="ArxRootLabel" Type="Text" X="18" Y="92" Width="240" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Autodesk 根目录（SDK 与 AutoCAD 都在它下面）：" TabSkip="no" />
-			<Control Id="ArxRootEdit" Type="PathEdit" X="18" Y="104" Width="252" Height="18" Property="ARXROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseArxRoot" Type="PushButton" X="275" Y="104" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
-				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-			</Control>
-			<Control Id="YearLabel" Type="Text" X="18" Y="138" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD 版本：" TabSkip="no" />
+			<Control Id="BodyText" Type="Text" X="9" Y="59" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}勾选的年份各生成一份属性表，未勾选的不生成；勾了一个没装的年份没有副作用。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="YearLabel" Type="Text" X="18" Y="96" Width="96" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}AutoCAD 版本：" TabSkip="no" />
 			<!-- Bulk selection is pure declarative publishing: no custom action and no page change, so the
 			     check boxes stay where they are. A YEAR_* that is not ticked has to be EMPTY - MSI clears
 			     a check box's property when it is cleared, and a non-empty value such as "0" renders as
 			     ticked. Invert needs a pair per year because MSI cannot toggle a property on its own. -->
-			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="135" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全部(&amp;A)" TabSkip="no">
+			<Control Id="AllYearsButton" Type="PushButton" X="128" Y="93" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全部(&amp;A)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="1">1</Publish>
 				<Publish Property="YEAR_2012" Value="1">1</Publish>
 				<Publish Property="YEAR_2013" Value="1">1</Publish>
@@ -454,7 +485,7 @@
 				<Publish Property="YEAR_2026" Value="1">1</Publish>
 				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="135" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全不选(&amp;N)" TabSkip="no">
+			<Control Id="NoYearsButton" Type="PushButton" X="174" Y="93" Width="44" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}全不选(&amp;N)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="{}">1</Publish>
 				<Publish Property="YEAR_2012" Value="{}">1</Publish>
 				<Publish Property="YEAR_2013" Value="{}">1</Publish>
@@ -472,7 +503,7 @@
 				<Publish Property="YEAR_2026" Value="{}">1</Publish>
 				<Publish Property="YEAR_2027" Value="{}">1</Publish>
 			</Control>
-			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="135" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}反选(&amp;I)" TabSkip="no">
+			<Control Id="InvertYearsButton" Type="PushButton" X="220" Y="93" Width="50" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}反选(&amp;I)" TabSkip="no">
 				<!-- Inverting reads each year's current value, and a publish pair that tests the very
 				     property it is about to change cannot work: setting it to 1 makes the "clear it"
 				     condition true as well, so both events fire and cancel out. Snapshot the selection
@@ -529,7 +560,7 @@
 			<!-- One year per binary-compatible generation, so a project still loads into the other
 			     AutoCAD releases sharing that SDK. 2017 is absent because the year table has no such
 			     entry and 2018's props already covers 2017/2018 (both R22). -->
-			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="135" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}兼容(&amp;C)" TabSkip="no">
+			<Control Id="CompatYearsButton" Type="PushButton" X="272" Y="93" Width="90" Height="16" Text="{\VSI_MS_Sans_Serif13.0_0_0}兼容(&amp;C)" TabSkip="no">
 				<Publish Property="YEAR_2010" Value="{}">1</Publish>
 				<Publish Property="YEAR_2012" Value="{}">1</Publish>
 				<Publish Property="YEAR_2013" Value="{}">1</Publish>
@@ -547,28 +578,22 @@
 				<Publish Property="YEAR_2026" Value="1">1</Publish>
 				<Publish Property="YEAR_2027" Value="1">1</Publish>
 			</Control>
-			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="154" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="172" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="190" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="208" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="226" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="244" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="262" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="280" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="154" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="172" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="190" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="208" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="226" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="244" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="262" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="280" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
-			<Control Id="PropsDirLabel" Type="Text" X="18" Y="302" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用，默认跟随安装目录）：" TabSkip="no" />
-			<Control Id="PropsDirEdit" Type="PathEdit" X="18" Y="314" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowsePropsDir" Type="PushButton" X="275" Y="314" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
-				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-			</Control>
+			<Control Id="YEARBOX_2010" Type="CheckBox" X="18" Y="112" Width="88" Height="16" Property="YEAR_2010" Text="{\VSI_MS_Sans_Serif13.0_0_0}2010" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2012" Type="CheckBox" X="18" Y="130" Width="88" Height="16" Property="YEAR_2012" Text="{\VSI_MS_Sans_Serif13.0_0_0}2012" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2013" Type="CheckBox" X="18" Y="148" Width="88" Height="16" Property="YEAR_2013" Text="{\VSI_MS_Sans_Serif13.0_0_0}2013" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2014" Type="CheckBox" X="18" Y="166" Width="88" Height="16" Property="YEAR_2014" Text="{\VSI_MS_Sans_Serif13.0_0_0}2014" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2015" Type="CheckBox" X="18" Y="184" Width="88" Height="16" Property="YEAR_2015" Text="{\VSI_MS_Sans_Serif13.0_0_0}2015" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2016" Type="CheckBox" X="18" Y="202" Width="88" Height="16" Property="YEAR_2016" Text="{\VSI_MS_Sans_Serif13.0_0_0}2016" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2018" Type="CheckBox" X="18" Y="220" Width="88" Height="16" Property="YEAR_2018" Text="{\VSI_MS_Sans_Serif13.0_0_0}2018" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2019" Type="CheckBox" X="18" Y="238" Width="88" Height="16" Property="YEAR_2019" Text="{\VSI_MS_Sans_Serif13.0_0_0}2019" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2020" Type="CheckBox" X="196" Y="112" Width="88" Height="16" Property="YEAR_2020" Text="{\VSI_MS_Sans_Serif13.0_0_0}2020" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2021" Type="CheckBox" X="196" Y="130" Width="88" Height="16" Property="YEAR_2021" Text="{\VSI_MS_Sans_Serif13.0_0_0}2021" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2022" Type="CheckBox" X="196" Y="148" Width="88" Height="16" Property="YEAR_2022" Text="{\VSI_MS_Sans_Serif13.0_0_0}2022" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2023" Type="CheckBox" X="196" Y="166" Width="88" Height="16" Property="YEAR_2023" Text="{\VSI_MS_Sans_Serif13.0_0_0}2023" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2024" Type="CheckBox" X="196" Y="184" Width="88" Height="16" Property="YEAR_2024" Text="{\VSI_MS_Sans_Serif13.0_0_0}2024" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2025" Type="CheckBox" X="196" Y="202" Width="88" Height="16" Property="YEAR_2025" Text="{\VSI_MS_Sans_Serif13.0_0_0}2025" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2026" Type="CheckBox" X="196" Y="220" Width="88" Height="16" Property="YEAR_2026" Text="{\VSI_MS_Sans_Serif13.0_0_0}2026" TabSkip="no" CheckBoxValue="1" />
+			<Control Id="YEARBOX_2027" Type="CheckBox" X="196" Y="238" Width="88" Height="16" Property="YEAR_2027" Text="{\VSI_MS_Sans_Serif13.0_0_0}2027" TabSkip="no" CheckBoxValue="1" />
 		</Dialog>
 
 		<!-- Where the year selection is read back. MSI binds a check box to its property only when the

@@ -9,8 +9,12 @@
     <Property Id="InstallDirForm_PrevArgs" Value="WelcomeForm" />
     <Property Id="InstallDirForm_NextArgs" Value="ObjectARXForm" />
     <Property Id="ObjectARXForm_PrevArgs" Value="InstallDirForm" />
-    <Property Id="ObjectARXForm_NextArgs" Value="SdkForm" />
-    <Property Id="SdkForm_PrevArgs" Value="ObjectARXForm" />
+    <Property Id="ObjectARXForm_NextArgs" Value="PathsForm" />
+    <!-- The paths page sits between RDS and the target years, like the Inno line: root -> SDK ->
+         property sheet folder on one page, where the root is the parent of the other two. -->
+    <Property Id="PathsForm_PrevArgs" Value="ObjectARXForm" />
+    <Property Id="PathsForm_NextArgs" Value="SdkForm" />
+    <Property Id="SdkForm_PrevArgs" Value="PathsForm" />
     <Property Id="SdkForm_NextArgs" Value="YearSummaryForm" />
     <Property Id="ConfirmInstallForm_PrevArgs" Value="YearSummaryForm" />
     <Property Id="MaintenanceForm_Action" Value="Repair" />

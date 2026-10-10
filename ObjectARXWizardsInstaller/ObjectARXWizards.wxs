@@ -71,15 +71,23 @@
 	<?include property.wxi ?>
 	<?include UI.wxi ?>
 
-	<Condition Message="本机必须安装 Microsoft Visual Studio Professional/Enterprise/Community 2022。">
-		<![CDATA[VS2022_ROOT_FOLDER]]>
-	</Condition>
+	<!-- No launch condition on Visual Studio: the WixVSExtension only ever resolves VS2022, and
+	     CA_FindVsRootFolder fills in a VS2026 (or other) install when there is no VS2022, or leaves
+	     the property at TARGETDIR - which the tree's components test for and skip - when the machine
+	     has no Visual Studio at all. -->
 	
   <!--For Debugging-->
   <Property Id="WIX_CA_LOGGING" Value="0" />
   <!--End-->
 	<Binary Id="ID_CABinary" SourceFile="Binary\ArxWizCustomAction.CA.dll" />
 	<CustomAction Id="CA_PatchVSFiles" BinaryKey="ID_CABinary" DllEntry="PatchVSFiles" Execute="immediate" Return="check" />
+	<!-- VS2022_ROOT_FOLDER comes from the WixVSExtension and is only ever set for VS2022; on a
+	     machine with another version this fills the gap before CostFinalize resolves the tree. -->
+	<CustomAction Id="CA_FindVsRootFolder" BinaryKey="ID_CABinary" DllEntry="FindVsRootFolder" Execute="immediate" Return="check" />
+	<!-- Mirrors the registration files into every other Visual Studio and rewrites the wizard engine
+	     ProgID to that version. Return=ignore: a machine where one folder cannot be written to is
+	     still a working install for the Visual Studio the MSI itself targets. -->
+	<CustomAction Id="CA_DeployWizardsToOtherVS" BinaryKey="ID_CABinary" DllEntry="DeployWizardsToOtherVS" Execute="immediate" Return="ignore" />
 	<Property Id="VSList" Value="VS2022_ROOT_FOLDER" />
 	<Property Id="ArxWizList" Value="ArxAppWiz;ArxAppWizOMF;ArxAtlWizComWrapper;ArxAtlWizDynProp;ArxWizCustomObject;ArxWizJig;ArxWizMFCSupport;ArxWizNETWrapper;ArxWizReactors" />
 	<CustomAction Id="CA_PatchHTMLWizFiles" BinaryKey="ID_CABinary" DllEntry="PatchHTMLWizFiles" Execute="immediate" Return="check" />
@@ -113,6 +121,7 @@
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" After="AppSearch"></Custom>
+		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Show Dialog="WelcomeForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
 		<Show Dialog="ResumeForm" Before="CostFinalize"><![CDATA[Installed="" AND RESUME]]></Show>
 		<Show Dialog="MaintenanceForm" Before="CostFinalize"><![CDATA[Installed<>""]]></Show>
@@ -130,9 +139,11 @@
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"></Custom>
+		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Custom Action="CA_PatchVSFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PatchHTMLWizFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PatchArxCommonJs" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
+		<Custom Action="CA_DeployWizardsToOtherVS" After="CA_PatchArxCommonJs"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PrepArxPropsData" After="InstallInitialize"></Custom>
 		<Custom Action="CA_CREATEARXPROPS" After="InstallFiles"><![CDATA[NOT Installed OR REINSTALL]]></Custom>
 		<Custom Action="CA_CLEANUPUNSELECTEDARXPROPS" After="CA_CREATEARXPROPS"><![CDATA[NOT Installed OR REINSTALL]]></Custom>

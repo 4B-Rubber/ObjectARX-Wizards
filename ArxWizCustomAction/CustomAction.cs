@@ -85,6 +85,153 @@ namespace ArxWizCustomAction
             return (ActionResult.Success);
         }
 
+        /// <summary>
+        /// Visual Studio installs this machine can see, newest first. The version comes from
+        /// devenv.exe rather than the folder name, so 2022 (17.x) and 18 (18.x) order alike, and the
+        /// same number is what the wizard engine ProgID in the .vsz files has to carry.
+        /// ProgramW6432 is read explicitly: this custom action runs as a 32-bit process, for which
+        /// SpecialFolder.ProgramFiles would resolve to the x86 folder.
+        /// </summary>
+        internal static List<KeyValuePair<string, int>> FindVsInstalls()
+        {
+            var found = new List<KeyValuePair<string, int>>();
+            var roots = new[]
+            {
+                Environment.GetEnvironmentVariable("ProgramW6432"),
+                Environment.GetEnvironmentVariable("ProgramFiles(x86)"),
+                Environment.GetEnvironmentVariable("ProgramFiles")
+            }.Where(root => !string.IsNullOrEmpty(root)).Distinct().ToArray();
+
+            foreach (string root in roots)
+            {
+                string vsRoot = Path.Combine(root, @"Microsoft Visual Studio");
+                if (!Directory.Exists(vsRoot)) continue;
+                foreach (string versionDir in Directory.GetDirectories(vsRoot))
+                {
+                    foreach (string editionDir in Directory.GetDirectories(versionDir))
+                    {
+                        string devenv = Path.Combine(editionDir, @"Common7\IDE\devenv.exe");
+                        if (!File.Exists(devenv)) continue;
+                        int major = 0;
+                        try
+                        {
+                            string version = System.Diagnostics.FileVersionInfo.GetVersionInfo(devenv).FileVersion;
+                            major = new Version(version).Major;
+                        }
+                        catch { }
+                        if (major > 0) found.Add(new KeyValuePair<string, int>(editionDir, major));
+                    }
+                }
+            }
+            return found.OrderByDescending(entry => entry.Value).ToList();
+        }
+
+        /// <summary>
+        /// The VS2022_ROOT_FOLDER the WixVSExtension resolves only ever points at Visual Studio 2022,
+        /// and with no VS2022 on the machine the property stays empty - which would root the tree in
+        /// directory.wxi at nothing. Point it at a Visual Studio that is really there: 2022, which is
+        /// what the extension would have found, otherwise the newest other one, so a machine whose
+        /// only Visual Studio is VS2026 gets the wizards as well. With no Visual Studio at all the
+        /// property becomes TARGETDIR, which is what the tree's components test against
+        /// ("VS2022_ROOT_FOLDER &lt;&gt; TARGETDIR"), so they simply skip themselves.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult FindVsRootFolder(Session session)
+        {
+            string current = session["VS2022_ROOT_FOLDER"];
+            if (!string.IsNullOrEmpty(current) && Directory.Exists(current))
+            {
+                session.Log(" >> FindVsRootFolder: keeping " + current);
+                return ActionResult.Success;
+            }
+
+            var installs = FindVsInstalls();
+            string root = installs.FirstOrDefault(entry => entry.Value == 17).Key;
+            if (string.IsNullOrEmpty(root) && installs.Count > 0) root = installs[0].Key;
+            session["VS2022_ROOT_FOLDER"] = string.IsNullOrEmpty(root) ? "TARGETDIR" : root;
+            session.Log(" >> FindVsRootFolder: " + (string.IsNullOrEmpty(current) ? "(empty)" : current) +
+                        " -> " + session["VS2022_ROOT_FOLDER"]);
+            return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// One Visual Studio is described by VS2022_ROOT_FOLDER, so the MSI installs the wizard
+        /// registration files into that one only, and the .vsz files it wrote carry that version's
+        /// wizard engine ProgID. Copy them into every other Visual Studio on the machine - a VS2026
+        /// next to a VS2022, or the other way round - and rewrite the engine ProgID to the version of
+        /// the folder they land in, or the wizards never show up there.
+        /// </summary>
+        [CustomAction]
+        public static ActionResult DeployWizardsToOtherVS(Session session)
+        {
+            session.Log("Begin DeployWizardsToOtherVS");
+            string vcFolder = session["D_VS2022VCFOLDER"];
+            if (string.IsNullOrEmpty(vcFolder) || !Directory.Exists(vcFolder))
+            {
+                session.Log(" >> DeployWizardsToOtherVS: no Visual Studio VC folder (" + vcFolder + ")");
+                return ActionResult.Success;
+            }
+
+            string targetDir = session["TARGETDIR"];
+            string primary = Path.GetFullPath(vcFolder).TrimEnd('\\');
+
+            // The registration folders the payload carries, relative to the VC folder.
+            string[] folders = { @"vcprojects\Autodesk", @"vcprojectitems\ObjectARX" };
+
+            foreach (var install in FindVsInstalls())
+            {
+                string vc = Path.GetFullPath(Path.Combine(install.Key, @"Common7\IDE\VC")).TrimEnd('\\');
+                foreach (string relative in folders)
+                {
+                    string source = Path.Combine(primary, relative);
+                    if (!Directory.Exists(source)) continue;
+                    string target = Path.Combine(vc, relative);
+                    if (!string.Equals(target, source, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { CopyFolder(source, target); }
+                        catch (Exception ex)
+                        {
+                            session.Log(" >> DeployWizardsToOtherVS: copy failed: " + ex.Message);
+                            continue;
+                        }
+                        session.Log(" >> copied " + relative + " to " + install.Key);
+                    }
+                    PatchWizardFiles(target, install.Value, targetDir, session);
+                }
+            }
+            session.Log("Ending DeployWizardsToOtherVS");
+            return ActionResult.Success;
+        }
+
+        static void CopyFolder(string source, string target)
+        {
+            Directory.CreateDirectory(target);
+            foreach (string file in Directory.GetFiles(source))
+                File.Copy(file, Path.Combine(target, Path.GetFileName(file)), true);
+            foreach (string folder in Directory.GetDirectories(source))
+                CopyFolder(folder, Path.Combine(target, Path.GetFileName(folder)));
+        }
+
+        /// <summary>
+        /// [TARGETDIR] is what the shipped .vsz files use for the wizard root and PatchVSFiles replaces
+        /// it for the primary Visual Studio; repeating it here is the safety net for the copies. The
+        /// engine ProgID is versioned - VsWizard.VsWizardEngine.17.0 - and has to match the Visual
+        /// Studio that reads the file.
+        /// </summary>
+        static void PatchWizardFiles(string folder, int major, string targetDir, Session session)
+        {
+            foreach (string file in Directory.GetFiles(folder, "*.vsz", SearchOption.AllDirectories))
+            {
+                string data = File.ReadAllText(file);
+                string patched = data.Replace("[TARGETDIR]", targetDir ?? string.Empty);
+                patched = Regex.Replace(patched, @"VsWizard\.VsWizardEngine\.\d+\.0",
+                                        "VsWizard.VsWizardEngine." + major + ".0");
+                if (patched == data) continue;
+                File.WriteAllText(file, patched);
+                session.Log(" >> patched " + file);
+            }
+        }
+
 
         [CustomAction]
         public static ActionResult PatchHTMLWizFiles(Session session)

@@ -69,7 +69,8 @@ Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX, [Steps
 
 ### 💾 Installation
 
-Any of the three lines installs the same wizard payload and the same VSIX - pick one:
+This is the classic line: the .vsz project and item wizards plus the props, and no VSIX - dev and
+main ship the VSIX instead. Any of the three lines installs the same wizard payload and the same VSIX - pick one:
 
 
 

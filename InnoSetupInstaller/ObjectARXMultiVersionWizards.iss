@@ -60,6 +60,9 @@
 #define RepoRoot ".."
 #define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"
 #define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"
+; This branch ships the classic mechanism only: the .vsz project and item wizards plus the props do
+; the work, so the setup neither carries nor installs the VSIX (dev and main ship the VSIX instead).
+#define InstallVsix 0
 #define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
 
 [Setup]
@@ -203,7 +206,9 @@ Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVs
 
 ; ---- used from [Code] only (extracted with ExtractTemporaryFile when needed) ----
 Source: "{#GenExeSource}"; Flags: dontcopy
+#if InstallVsix
 Source: "{#VsixSource}"; Flags: dontcopy
+#endif
 
 [Dirs]
 ; The property sheet folder is part of the install even when the user ticks no year at all, and
@@ -1058,6 +1063,7 @@ var
   Installer, Vsix: string;
   Code: Integer;
 begin
+#if InstallVsix
   Vsix := ExpandConstant('{tmp}\' + VsixName);
   ExtractTemporaryFile(VsixName);
   Installer := TrimTrailingSlash(VsRoot) + VsVsixInstallerRelPath;
@@ -1075,6 +1081,7 @@ begin
       MsgBox(FmtMessage(Cm('VsixFailed'), [IntToStr(Code)]), mbInformation, MB_OK);
   end else
     MsgBox(FmtMessage(Cm('VsixFailed'), ['?']), mbInformation, MB_OK);
+#endif
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

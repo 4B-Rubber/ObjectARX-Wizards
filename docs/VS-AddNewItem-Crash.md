@@ -96,6 +96,9 @@ VS 这段实现走到了自己的 **UI Automation 层**（解决方案资源管�
 
 ## 解决：「Add ObjectARX Class...」命令（0.2.0 引入，0.2.2 起可用，当前 0.2.4）
 
+> 分支差异：`classic-wizards` 分支**不提供**这个命令（那条线只用经典 `.vsz` 向导，加类走「添加 → 类」），
+> 下面这一节说的是 `dev` / `main` 两条线。
+
 按上面的思路把唯一稳妥解法落地了：解决方案资源管理器里**右键 ObjectARX 工程 →
 "Add ObjectARX Class..."**。它在预热窗口内同样安全——整条链路不经过 `NewProjectDialog`：
 

@@ -2,13 +2,15 @@
 
 > 状态：**0.2.4。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
 > 最后更新：2026-10-10
+>
+> **本分支（`classic-wizards`）例外**：这条线交付的是经典向导（`.vsz/.vsdir` + `VCAddClass`），所以 VSIX **编译时不再带模板定义**——`ArxVsixWizard.csproj` 的两条 `Content` 用 `Exclude="…\*.vstemplate"` 把 9 个 `.vstemplate` 挡在容器外（`ProjectTemplates`/`ItemTemplates` 目录与 manifest 资产仍在，只是没有可注册的模板），VSIX 在这里只承担"让 VS 重建向导列表"的触发器角色。上一条"2 个项目模板 + 7 个项模板真机可见"说的是 dev/main 两条线；在本分支里加类走经典 **添加 → 类**，`Add ObjectARX Class...` 命令连同它的选择器与模板目录扫描器（`Commands/AddArxItemCommand.cs`、`UI/AddItemDialog.xaml(.cs)`、`Commands/ArxItemTemplateCatalog.cs`）都已删除，命令表 `ArxWizardCommands.vsct` 为空，包里也不再注册任何命令。
 
 ---
 
 ## 1. 背景与目标
 
 - 老式 ObjectARX 向导（`ArxAppWiz` / `ArxAppWiz182`）基于 `VsWizardEngine` + `.vsz/.vsdir` + HTML/JScript。
-- 已实测确认：**VS2026（VS18，路径 `C:\Program Files\Microsoft Visual Studio\18\Enterprise`，v145 工具集）已移除项目级向导落点**——`VC\vcprojects` 目录不存在，1935 个相关程序集扫描无该机制引用；`.vsz` 仅保留在 `VCProjectItems`（添加项/添加类）级别。因此老 MSI 安装后 VS2026 的"新建项目"里不会出现向导。
+- 已实测确认：**VS2026（VS18，路径 `C:\Program Files\Microsoft Visual Studio\18\Enterprise`，v145 工具集）自带模板里没有项目级向导落点**——`VC\vcprojects` 初始只有我们自己装的 `Autodesk`，1935 个相关程序集扫描无该机制引用；`.vsz` 在它自带的 `VCProjectItems`（添加项/添加类）里仍大量使用。**2026-10-10 修正**：这并不等于 VS2026 不认第三方 `vcprojects` 项——把 `.vsdir/.vsz` 装进去并让 VS 重建向导缓存后，VS2026 的"新建项目"**会列出**这两条经典项；但引擎 ProgID 必须是它自己注册的那个 `VsWizard.VsWizardEngine.17.0`（见 `Common7\IDE\CommonExtensions\Microsoft\VC\VC_Pkg_Core_Registration.pkgdef`，`ProgId\VsWizard.VsWizardEngine.17.0\CLSID` → `VsWizard.dll`）。此前按 `devenv.exe` 版本改写成 `18.0`，导致点"创建"直接失败（"项目创建失败"）；`.iss` 的 `ReadWizardEngineId` 已改成从目标 VS 自己的注册文件读。
 - 目标：用 **VSIX + .vstemplate + IWizard（C#/WPF）** 重做项目向导，一个 VSIX 同时支持 **VS2022 (17.x) 和 VS2026 (18.x)**，功能对齐两个老向导：
   - ObjectARX/DBX/CRX 应用（对应 ArxAppWiz）
   - ObjectARX/DBX + OMF/MAP 垂直 SDK（对应 ArxAppWiz182，含 Enu 资源 DLL 子项目）
@@ -74,13 +76,10 @@ ArxVsixWizard/
 ├── UI/
 │   ├── WizardDialog.xaml(.cs)         # 单页 WPF 选项窗口（RDS/类型/年份/MFC/COM/.NET/OMF）
 │   ├── ItemDialog.xaml(.cs)           # 项向导的通用选项窗口（按 ItemModel.Fields 动态生成）
-│   ├── AddItemDialog.xaml(.cs)        # "Add ObjectARX Class..." 的模板/名称选择器
 ├── Commands/
-│   ├── ArxWizardPackage.cs            # AsyncPackage（仅为此命令存在；InitializeAsync 首行写日志）
-│   ├── AddArxItemCommand.cs           # 右键命令：识别 ARX 工程、AddFromTemplate 绕过 VS 对话框
-│   ├── ArxItemTemplateCatalog.cs      # 从扩展安装目录扫描项模板元数据（名称/描述/图标）
-│   ├── ArxWizardCommands.vsct         # 命令表：IDM_VS_CTXT_PROJNODE 上一个动态可见按钮
-│   ├── PackageGuids.cs                # 包/命令集 GUID 与命令 ID（与 vsct 符号保持一致）
+│   ├── ArxWizardPackage.cs            # AsyncPackage（本分支无命令，只留注册与 PackageInit 日志）
+│   ├── ArxWizardCommands.vsct         # 命令表：本分支为空（经典向导自带入口，见文首分支说明）
+│   ├── PackageGuids.cs                # 包 GUID（与 vsct 符号保持一致）
 ├── Templates/
 │   ├── ArxApp/*                       # 嵌入资源：老 ArxAppWiz 的 12 个源模板（原样复制）
 │   └── OmfApp/*                       # 嵌入资源：老 ArxAppWiz182 的 18 个模板（含 OmfEnuRes.*）
@@ -136,7 +135,7 @@ NewProjectDialog.TemplateSelectionChangedDelayed → ApplyTemplateSelection
 栈上没有一帧属于本扩展；装了 Visual Assist 时它会升级为进程级未处理异常（VS 直接消失），没装时对话框静默关闭。
 `ProvideDefaultName=false` 不触发这条调用，但会失去名称预填（Name 框为空、需手打名字）。
 
-**解法（0.2.0 引入，0.2.2 起可用）**：右键工程 → **"Add ObjectARX Class..."**（`Commands\` 里的 `ArxWizardPackage` +
+**解法（0.2.0 引入，0.2.2 起可用；dev/main 两条线，本分支已删）**：右键工程 → **"Add ObjectARX Class..."**（`Commands\` 里的 `ArxWizardPackage` +
 `AddArxItemCommand`）。选择器由扩展自绘、默认名由扩展自造，确认后走
 `ProjectItems.AddFromTemplate(<.vstemplate>, <名字>)` 驱动原 7 个向导——不经 VS 模板对话框，
 预热窗口内也安全。VS 自带对话框仍可用（等「就绪」后）。结论、证据与量化见

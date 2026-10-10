@@ -20,8 +20,8 @@ Before you begin, ensure you have the following installed:
 
 > Faster than the IDE walkthrough below:
 > - `make.bat` (in this folder) drives `candle -arch x64` + `light` and writes `ObjectARXMultiVersionWizards.msi`.
-> - `msbuild ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` builds the Burn bootstrapper (`bin\Release\ObjectARXMultiVersionWizardsSetup.exe`).
-> - The VSIX line and the Inno line are described in the root [README.md](../README.md).
+> - `msbuild ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` builds the Burn bootstrapper (`bin\Release\ObjectARXMultiVersionWizards-main.exe`).
+> - The VSIX line is described in the root [README.md](../README.md); the Inno single-file line lives on the `dev` branch.
 
 ### Step 1: Setup Environment
 

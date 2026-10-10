@@ -1,5 +1,5 @@
 {
-  "//": "ObjectARX per-year props 年份表。仓库唯一真相：安装器与离线生成器都按此表 + 骨架生成 props；年份的呈现（哪些默认勾选、哪些属于兼容集）也在这里，由 tools\\arx-props\\gen-year-fragments.ps1 生成 MSI 与 Inno 的片段。",
+  "//": "ObjectARX per-year props 年份表。仓库唯一真相：安装器与离线生成器都按此表 + 骨架生成 props；年份的呈现（哪些默认勾选、哪些属于兼容集）也在这里，MSI 把它们逐条枚举在 property.wxi / UI.wxi 里，由 tools\\arx-props\\test-years-consistency.ps1 校验（Inno 线的第四份副本在 dev 分支）。",
   "defaultRoot": "C:\\Program Files\\Autodesk\\",
   "win32RootX86": "C:\\Program Files (x86)\\Autodesk\\",
   "years": [

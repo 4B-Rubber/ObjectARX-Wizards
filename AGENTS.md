@@ -16,7 +16,7 @@
   - **不要**再用 `file:///D:/...` 形式——那种链接只有作者本机能打开。
 - 构建 / 工具命令里的路径用**变量或环境变量**，不要写死：
   - VS 工具：先设 `$vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"`，再用 `"$vs\MSBuild\Current\Bin\MSBuild.exe"`；并就近注明"按你的版本号/版本调整"。
-  - Inno / WiX 等：用 `${env:ProgramFiles}` / `${env:ProgramFiles(x86)}`。
+  - WiX 等：用 `${env:ProgramFiles}` / `${env:ProgramFiles(x86)}`。
   - 命令默认在**仓库根**执行；仓内文件用相对路径。
 - 以下路径**保留原样**（机器无关的公开事实，不算"本地路径"）：
   - 产品安装位置：`C:\Program Files\Autodesk\ObjectARX Props\`、`...\ObjectARX 2027\inc\`
@@ -24,8 +24,8 @@
 
 ## 2. 构建与产物
 
-- 三条分发线（VSIX / MSI+Burn / Inno）都从本树构建，入口与产物见根 `README.md`。
-- 构建产物**不要提交**（`.gitignore` 已覆盖）：`bin/`、`obj/`、`*.wixobj`、`*.wixpdb`、`*.binlog`、`_E2EGen/`、`.tools/`、`InnoSetupInstaller/Output/`、根目录的 `*.msi` 与 `...Setup.exe`、`.trae/`。
+- 本分支（`main`）是**原始线**：分发物为 VSIX 与 MSI + Burn bundle，入口与产物见根 `README.md`。**Inno 单文件线在 `dev` 分支、经典向导（两个 `.vsz` 项目向导）线在 `classic-wizards` 分支**，二者都不在本树里。
+- 构建产物**不要提交**（`.gitignore` 已覆盖）：`bin/`、`obj/`、`*.wixobj`、`*.wixpdb`、`*.binlog`、`_E2EGen/`、`.tools/`、根目录的 `*.msi` 与 `...Setup.exe`、`.trae/`。
 - 以下二进制是**有意提交**的，别当垃圾删掉、也别改了不还原（它们被安装器 `.wxs` 当输入引用）：
   - 根 `ObjectARXMultiVersionWizards.vsix` is NOT in this list any more: it is a build output, written into the build root by tools\build-and-pack.ps1.
   - `ObjectARXWizardsInstaller/Bundle/ArxWizardsMsiSetup.exe`、`ArxWizardsVsixSetup.exe`
@@ -36,7 +36,7 @@
 - **版本号一致性**：改动任何版本号来源（`ArxVsixWizard.csproj` 的 `<Version>`、`source.extension.vsixmanifest` 的 `Identity/@Version` 与 `Asset/@AssemblyName`、`Packaging\**\*.vstemplate` 的 `<Assembly>`）后，必须跑
   `ArxVsixWizard\test-version-consistency.ps1`（断言四处 + 已构建的 VSIX）。
 - **模板回归**：改渲染器 / 模板后跑 `TemplateSmokeTest`，要求零 diff 通过。
-- 各线自带一致性测试：`tools\arx-props\test-years-consistency.ps1`、`tools\arx-genprops\test-arx-genprops.ps1`、`InnoSetupInstaller\test-payload-parity.ps1`、`InnoSetupInstaller\test-inno-sandbox.ps1`。
+- 本线自带一致性测试：`tools\arx-props\test-years-consistency.ps1`、`tools\arx-genprops\test-arx-genprops.ps1`（后者在 `dev` 上还覆盖 Inno 线要用的 `arx-genprops.exe`，在本树里只覆盖共享的年份/props 规则）。
 
 ## 4. 语言与文风
 

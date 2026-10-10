@@ -25,7 +25,7 @@ $manifestPath = Join-Path $repo 'ArxVsixWizard\source.extension.vsixmanifest'
 $packaging = Join-Path $repo 'ArxVsixWizard\Packaging'
 $vsixPath = Join-Path $repo 'ObjectARXMultiVersionWizards.vsix'
 # The VSIX is not committed any more: point ARX_BUILD_ROOT at the build root (the folder that holds
-# vsix\, inno\ and release\) so this check still asserts the file the installers actually ship.
+# vsix\ and release\) so this check still asserts the file the installers actually ship.
 if (-not (Test-Path $vsixPath) -and $env:ARX_BUILD_ROOT) {
     $vsixPath = Join-Path $env:ARX_BUILD_ROOT 'vsix\ObjectARXMultiVersionWizards.vsix'
 }

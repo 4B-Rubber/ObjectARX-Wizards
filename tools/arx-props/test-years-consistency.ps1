@@ -2,17 +2,17 @@
 <#
   Guards the one thing the year list cannot avoid duplicating.
 
-  The year list lives in four places and MSI cannot loop, so each of them has to enumerate the years
+  The year list lives in three places and MSI cannot loop, so each of them has to enumerate the years
   literally:
     * tools\arx-props\arx-props-table.json  - the source of truth (also drives props generation)
     * ObjectARXWizardsInstaller\property.wxi - YEAR_* / ARXINV_* / DET_YEAR_* properties
     * ObjectARXWizardsInstaller\UI.wxi       - the check boxes and the four preset buttons
-    * InnoSetupInstaller\...iss              - the CsvYears* constants
   A WiX v3 <?include?> cannot inject the per-year <Publish> elements either, because it requires the
   included file to have <Include> as its document element, so the enumeration is inherent to MSI -
-  the check boxes only repaint from declarative publishes on the dialog itself.
+  the check boxes only repaint from declarative publishes on the dialog itself. The Inno line keeps a
+  fourth copy (its CsvYears* constants) on the `dev` branch, which is where that installer lives.
 
-  This therefore checks that all four agree with the JSON, rather than generating three of them. Add a
+  This therefore checks that all three agree with the JSON, rather than generating two of them. Add a
   year to the JSON and forget one site and this fails loudly, which is the failure mode that matters.
 #>
 [CmdletBinding()]
@@ -23,7 +23,6 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $jsonPath = Join-Path $repo 'tools\arx-props\arx-props-table.json'
 $propsPath = Join-Path $repo 'ObjectARXWizardsInstaller\property.wxi'
 $uiPath = Join-Path $repo 'ObjectARXWizardsInstaller\UI.wxi'
-$issPath = Join-Path $repo 'InnoSetupInstaller\ObjectARXMultiVersionWizards.iss'
 
 $fail = 0
 function Check([string]$name, [bool]$ok, [string]$detail = '') {
@@ -45,7 +44,6 @@ Write-Host ('source of truth: ' + $years.Count + ' years, ' + $defaults.Count + 
 
 $propsText = [System.IO.File]::ReadAllText($propsPath)
 $uiText = [System.IO.File]::ReadAllText($uiPath)
-$issText = [System.IO.File]::ReadAllText($issPath)
 
 function Ids([string]$text, [string]$prefix) {
   @([regex]::Matches($text, [regex]::Escape($prefix) + '(\d{4})"') |
@@ -57,11 +55,6 @@ function ButtonBlock([string]$text, [string]$controlId) {
   $j = $text.IndexOf('</Control>', $i)
   if ($j -lt 0) { throw "control not closed: $controlId" }
   return $text.Substring($i, $j - $i)
-}
-function Csv([string]$text, [string]$name) {
-  $m = [regex]::Match($text, [regex]::Escape($name) + "\s*=\s*'([^']*)'")
-  if (-not $m.Success) { throw "constant not found: $name" }
-  return @($m.Groups[1].Value.Split(',') | Where-Object { $_ -ne '' })
 }
 
 # ---------------------------------------------------------------- property.wxi
@@ -110,14 +103,6 @@ foreach ($y in $years) {
   $expectedFlips += ('YEAR_' + $y + '={}=')   # was ticked -> clear it
 }
 Eq 'UI.wxi Invert flips each year exactly twice' ($flips | Sort-Object) ($expectedFlips | Sort-Object)
-
-# ---------------------------------------------------------------- the Inno script
-$left = Csv $issText 'CsvYearsLeft'
-$right = Csv $issText 'CsvYearsRight'
-Eq 'iss CsvYearsLeft+CsvYearsRight is the year list in order' @($left + $right) $years
-Eq 'iss CsvDefaultYears matches the JSON'                     (Csv $issText 'CsvDefaultYears') $defaults
-Eq 'iss CsvCompatibleYears matches the JSON'                  (Csv $issText 'CsvCompatibleYears') $compat
-Check 'iss splits the two columns evenly' ($left.Count -eq $right.Count) ($left.Count.ToString() + ' vs ' + $right.Count.ToString())
 
 # ---------------------------------------------------------------- custom action
 # The CA reads the JSON's "default" flags now, so it must not carry its own copy of the list.

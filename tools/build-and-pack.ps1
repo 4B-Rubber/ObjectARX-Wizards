@@ -1,12 +1,21 @@
 <#
 .SYNOPSIS
-  Builds the VSIX and the Inno Setup package, with every output going to a separate build root.
+  Builds what the MSI/Burn line needs - the VSIX the bundle carries - with every output going to a
+  separate build root.
 
 .DESCRIPTION
   Nothing is written into the source tree: the repository is first mirrored to
   <BuildRoot>\src (excluding .git, bin, obj, Output, ...), and the build then runs inside that
   copy. The build-root convention is documented in AGENTS.local.md
   (on this machine: D:\builder\ObjectARX-Wizards).
+
+  This is the MSI/Burn line (the original one): the Inno single-file installer is built on `dev`,
+  the classic-wizard shape on `classic-wizards`. The MSI and the bundle are built from the mirror
+  after this script has put the VSIX in place:
+
+    msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86
+
+  (that project runs ObjectARXWizardsInstaller\make.bat for the MSI itself).
 
 .PARAMETER BuildRoot
   Build root directory. Can also come from the ARX_BUILD_ROOT environment variable.
@@ -18,8 +27,7 @@
 param(
     [string] $BuildRoot = $env:ARX_BUILD_ROOT,
     [string] $Configuration = 'Release',
-    [switch] $SkipSync,
-    [switch] $SkipInstaller
+    [switch] $SkipSync
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,8 +46,7 @@ if (-not (Test-Path $proj)) { Fail ('Cannot find the source repository (expected
 
 $srcDir  = Join-Path $BuildRoot 'src'
 $vsixDir = Join-Path $BuildRoot 'vsix'
-$innoDir = Join-Path $BuildRoot 'inno'
-foreach ($d in @($BuildRoot, $srcDir, $vsixDir, $innoDir)) {
+foreach ($d in @($BuildRoot, $srcDir, $vsixDir)) {
     New-Item -ItemType Directory -Force -Path $d | Out-Null
 }
 
@@ -63,27 +70,11 @@ function Find-MSBuild {
     return $null
 }
 
-function Find-Iscc {
-    $hits = @()
-    foreach ($root in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
-        if (-not $root) { continue }
-        $hits += Get-ChildItem $root -Directory -Filter 'Inno Setup*' -ErrorAction SilentlyContinue |
-            ForEach-Object { Join-Path $_.FullName 'ISCC.exe' }
-    }
-    foreach ($h in $hits) { if (Test-Path $h) { return $h } }
-    $cmd = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
-    return $null
-}
-
 $msbuild = Find-MSBuild
 if (-not $msbuild) { Fail 'MSBuild.exe not found (it comes with Visual Studio).' }
-$iscc = Find-Iscc
-if (-not $iscc -and -not $SkipInstaller) { Fail 'ISCC.exe not found (Inno Setup), or pass -SkipInstaller.' }
 
 Step ('Build root : ' + $BuildRoot)
 Step ('MSBuild    : ' + $msbuild)
-if ($iscc) { Step ('ISCC       : ' + $iscc) }
 
 if (-not $SkipSync) {
     Step ('Mirroring the repository to ' + $srcDir + ' (source tree stays read-only)')
@@ -109,6 +100,11 @@ $distVsix = Join-Path $vsixDir 'ObjectARXMultiVersionWizards.vsix'
 Copy-Item $builtVsix $distVsix -Force
 Step ('VSIX: ' + $distVsix + '  ' + (Get-Item $distVsix).Length + ' bytes')
 
+# The generator is not part of what this line ships - the MSI writes the year sheets through
+# ArxWizCustomAction, which carries the same table and skeletons embedded. It is still built here so
+# the mirror carries it for tools\arx-genprops\test-arx-genprops.ps1: that test compares the EXE
+# against tools\arx-props\gen-arx-props.ps1 (the offline source of truth the custom action follows),
+# so it is how the generation rules stay covered on this branch.
 Step ('MSBuild: props generator arx-genprops (' + $Configuration + ')')
 & $msbuild (Join-Path $srcDir 'tools\arx-genprops\arx-genprops.csproj') -t:Restore,Build ('-p:Configuration=' + $Configuration) -v:m -nologo
 if ($LASTEXITCODE -ne 0) { Fail 'arx-genprops build failed.' }
@@ -117,21 +113,5 @@ $genExe = Join-Path $srcDir ('tools\arx-genprops\bin\' + $Configuration + '\arx-
 if (-not (Test-Path $genExe)) { Fail ('Build output not found: ' + $genExe) }
 Step ('Generator: ' + $genExe + '  ' + (Get-Item $genExe).Length + ' bytes')
 
-if ($SkipInstaller) {
-    Step 'Installer skipped (-SkipInstaller).'
-    exit 0
-}
-
-Step 'Inno Setup: compiling the installer'
-Push-Location (Join-Path $srcDir 'InnoSetupInstaller')
-try {
-    & $iscc 'ObjectARXMultiVersionWizards.iss' ('/O' + $innoDir) |
-        ForEach-Object { if ($_ -match 'Successful|Error|error|Warning') { Write-Output ('   ' + $_.Trim()) } }
-    if ($LASTEXITCODE -ne 0) { Fail 'ISCC failed.' }
-} finally { Pop-Location }
-
-$setup = Join-Path $innoDir 'ObjectARXMultiVersionWizardsSetup-Inno.exe'
-if (-not (Test-Path $setup)) { Fail ('Installer not found: ' + $setup) }
-Step ('Setup: ' + $setup)
-Step ('       ' + (Get-Item $setup).Length + ' bytes  ' + (Get-Item $setup).LastWriteTime)
 Step 'Done. Nothing was written into the source tree.'
+Step 'Next: msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86'

@@ -1,7 +1,7 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.4。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
-> 最后更新：2026-10-10
+> 状态：**0.2.4。** 本分支（`main`，原始线）交付 VSIX 与 MSI + Burn bundle；Inno 单文件线在 `dev` 分支、经典向导线在 `classic-wizards` 分支。2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 最后更新：2026-10-11
 
 ---
 
@@ -22,13 +22,15 @@
   - `Microsoft.VisualStudio.SDK` 17.14.40265
   - `Microsoft.VisualStudio.TemplateWizardInterface` 17.10.40170
   - `Microsoft.VSSDK.BuildTools` **18.9.820**（含 VS18 的 manifest schema；必须设 `<VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>` 自动导入 VsSDK.targets）
-- 构建**不要落在源码树里**：按本机约定把源码同步到构建目录，再在副本里构建（见 `AGENTS.local.md`）。一条命令同时出 VSIX 与 Inno 安装包：
+- 构建**不要落在源码树里**：按本机约定把源码同步到构建目录，再在副本里构建（见 `AGENTS.local.md`）。一条命令把镜像备好并出 VSIX（本分支是 MSI/Burn 线，bundle 就用这份 VSIX）：
 
 ```powershell
 # $buildRoot = 构建根目录（本机约定见 AGENTS.local.md）
-& "tools\build-and-pack.ps1" -BuildRoot $buildRoot   # 同步 -> VSIX -> arx-genprops -> ISCC
+& "tools\build-and-pack.ps1" -BuildRoot $buildRoot   # 同步 -> VSIX -> arx-genprops
 # 产物：<BuildRoot>\vsix\ObjectARXMultiVersionWizards.vsix
-#       <BuildRoot>\inno\ObjectARXMultiVersionWizards-<branch>.exe
+#       <BuildRoot>\src\ObjectARXMultiVersionWizards.vsix（bundle 从这里取）
+# 接着在镜像里编 MSI + bundle：
+#   msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86
 ```
 
 - 只想要 VSIX 时，在构建目录的副本里直接构建：

@@ -83,6 +83,12 @@
 		</ResourceCompile>
 		<Link>
 			<AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+			<!-- ObjectARX 2021 and later ship the OMT geometry library separately and the SDK's own
+			     support libraries do not link it, so it has to be added here rather than in a project
+			     template: every project imports this year sheet, so projects that already exist pick
+			     it up as soon as the installer regenerates the sheet. Keyed on the file itself - the
+			     older SDKs do not have it and must not link it. -->
+			<AdditionalDependencies Condition="Exists('$(ArxSdkLibs)\acgeoment.lib')">acgeoment.lib;%(AdditionalDependencies)</AdditionalDependencies>
 			<AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 @@TMWIN32@@
 			<TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>

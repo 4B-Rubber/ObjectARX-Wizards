@@ -12,7 +12,12 @@
 
 $ErrorActionPreference = 'Stop'
 
-$vsix = Join-Path (Split-Path -Parent $PSScriptRoot) 'ObjectARXMultiVersionWizards.vsix'
+$repoRoot = Split-Path -Parent $PSScriptRoot
+# The VSIX is not committed: it lives in the build root after tools\build-and-pack.ps1 ran. Point
+# ARX_BUILD_ROOT at that root, or pass -Vsix, when the file is somewhere else.
+$candidates = @((Join-Path $repoRoot 'ObjectARXMultiVersionWizards.vsix'))
+if ($env:ARX_BUILD_ROOT) { $candidates += (Join-Path $env:ARX_BUILD_ROOT 'vsix\ObjectARXMultiVersionWizards.vsix') }
+$vsix = $candidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not (Test-Path -LiteralPath $vsix)) { throw "VSIX not found: $vsix" }
 
 $running = @(Get-Process devenv -ErrorAction SilentlyContinue)

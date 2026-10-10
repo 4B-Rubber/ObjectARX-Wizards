@@ -59,7 +59,7 @@ There are three buildable lines. The VSIX and Inno lines ship version **0.2.3**;
 | Line | Command | Output |
 |---|---|---|
 | VSIX (project + item wizards) | `msbuild ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release` | `ArxVsixWizard\bin\Release\ArxVsixWizard.vsix` |
-| MSI + Burn bundle | `ObjectARXWizardsInstaller\make.bat`, then `msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` | `ObjectARXMultiVersionWizards.msi`, `ObjectARXMultiVersionWizardsSetup.exe` |
+| MSI + Burn bundle | `tools\build-and-pack.ps1 -BuildRoot <build root> -SkipInstaller` (builds the VSIX the bundle carries), then `msbuild ObjectARXWizardsInstaller\ObjectARXWizardsBundle.wixproj -p:Configuration=Release -p:Platform=x86` | `bin\Release\ObjectARXWizard.msi`, `bin\Release\ObjectARXMultiVersionWizards-main.exe` |
 | Inno Setup (single file) | `tools\build-and-pack.ps1 -BuildRoot <build root>` | `<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe` |
 
 Build into a **separate build directory**, never into the checkout: mirror the tree, build the copy, keep the source tree read-only. The local convention (build root, exclusions, per-line commands) is in `AGENTS.local.md`; `tools\build-and-pack.ps1` does the whole Inno line in one go - mirror, VSIX, props generator, ISCC.
@@ -72,8 +72,8 @@ Each line carries its own consistency test: `ArxVsixWizard\test-version-consiste
 
 Any of the three lines installs the same wizard payload and the same VSIX - pick one:
 
-1. **`ObjectARXMultiVersionWizardsSetup.exe`** (Burn bundle) - a single UAC prompt; installs the MSI and then the VSIX for the current user. Simplest option.
-2. **`ObjectARXMultiVersionWizards.msi`** - run as **Administrator** if you want the MSI on its own (it also installs the classic `.vsz` wizards).
+1. **`bin\Release\ObjectARXMultiVersionWizards-main.exe`** (Burn bundle) - a single UAC prompt; installs the MSI and then the VSIX for the current user. Simplest option.
+2. **`bin\Release\ObjectARXWizard.msi`** - run as **Administrator** for the MSI on its own. It ships the item wizards and the props; the project wizards come from the VSIX.
 3. **`<build root>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`).
 
 Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (Visual C++ → *ObjectARX/DBX/CRX Application (Multi-Version)*) and, for the item wizards, in **Add → New Item** under the **ArxWizard** category.

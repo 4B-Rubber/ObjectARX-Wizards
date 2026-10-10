@@ -27,7 +27,7 @@
 - 三条分发线（VSIX / MSI+Burn / Inno）都从本树构建，入口与产物见根 `README.md`。
 - 构建产物**不要提交**（`.gitignore` 已覆盖）：`bin/`、`obj/`、`*.wixobj`、`*.wixpdb`、`*.binlog`、`_E2EGen/`、`.tools/`、`InnoSetupInstaller/Output/`、根目录的 `*.msi` 与 `...Setup.exe`、`.trae/`。
 - 以下二进制是**有意提交**的，别当垃圾删掉、也别改了不还原（它们被安装器 `.wxs` 当输入引用）：
-  - 根 `ObjectARXMultiVersionWizards.vsix`（便于直接分发；改向导后记得重建刷新）
+  - 根 `ObjectARXMultiVersionWizards.vsix` is a build output now: the build root holds it (tools\build-and-pack.ps1), nothing commits it.
   - `ObjectARXWizardsInstaller/Bundle/ArxWizardsMsiSetup.exe`、`ArxWizardsVsixSetup.exe`
   - `ObjectARXWizardsInstaller/Binary/ArxWizCustomAction.dll`、`ArxWizCustomAction.CA.dll`
 

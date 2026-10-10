@@ -6,11 +6,22 @@
 //
 // It also refuses to start while Visual Studio is running. The bundle installs the VSIX right
 // after this step, and VSIXInstaller aborts when devenv/DevHub hold the extension files, which
-// would leave the install half done. Stopping before msiexec touches anything keeps that atomic.
+// would leave the install half done. Stopping before msiexec touches anything keeps that atomic;
+// ArxSkipVsCheck=1 (the bundle forwards it as --skipvscheck=1) lifts the check for unattended runs.
+//
+// Optional switches, all forwarded by the bundle (see Bundle.wxs). Empty values are ignored, so
+// the bundle can pass them unconditionally:
+//   --quiet=1        hand msiexec /qn - no MSI UI, the built-in default years are used
+//   --skipvscheck=1  do not look for a running Visual Studio
+//   --rds=SYM        registered developer symbol    -> MSI property RDS
+//   --arxroot=DIR    Autodesk root folder           -> MSI property ARXROOT
+//   --arxsdk=DIR     ObjectARX SDK folder           -> MSI property ARXPATH
+//   --propsdir=DIR   property sheet folder          -> MSI property ARXPROPSDIR
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 
 static class MsiSetup
 {
@@ -31,35 +42,80 @@ static class MsiSetup
     static int Main(string[] args)
     {
         string msi = args.Length > 0 ? args[0] : null;
-        if (string.IsNullOrEmpty(msi) || !File.Exists(msi))
+        if (string.IsNullOrEmpty(msi) || (msi[0] != '/' && !File.Exists(msi)))
         {
             MessageBox(IntPtr.Zero, "The installer payload was not found:\r\n" + (msi ?? "(no argument)"),
                        "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
             return ErrorInstallFailure;
         }
 
+        bool quiet = IsSet(args, "--quiet");
+        string properties = BuildPropertyArguments(args);
+
         // /uninstall <ProductCode> is what the bundle uses to take the MSI away again. No
         // Visual Studio check there - removing the product has nothing to do with the extension.
         if (string.Equals(msi, "/uninstall", StringComparison.OrdinalIgnoreCase))
         {
             string productCode = args.Length > 1 ? args[1] : null;
-            return RunMsiexec(string.IsNullOrEmpty(productCode) ? null : "/x " + productCode + " /qb" + LogArguments());
+            string ui = quiet ? " /qn" : " /qb";
+            return RunMsiexec(string.IsNullOrEmpty(productCode) ? null : "/x " + productCode + ui + LogArguments());
         }
 
-        string blocker = FindBlockingProcess();
-        if (blocker != null)
+        if (!IsSet(args, "--skipvscheck"))
         {
-            MessageBox(IntPtr.Zero,
-                       "Please close Visual Studio before installing.\r\n\r\n" +
-                       "Running now: " + blocker + "\r\n\r\n" +
-                       "The installer adds the ObjectARX wizards to Visual Studio, and that step " +
-                       "cannot run while Visual Studio is open. Nothing has been installed yet - " +
-                       "close Visual Studio and start the setup again.",
-                       "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
-            return ErrorUserExit;
+            string blocker = FindBlockingProcess();
+            if (blocker != null)
+            {
+                MessageBox(IntPtr.Zero,
+                           "Please close Visual Studio before installing.\r\n\r\n" +
+                           "Running now: " + blocker + "\r\n\r\n" +
+                           "The installer adds the ObjectARX wizards to Visual Studio, and that step " +
+                           "cannot run while Visual Studio is open. Nothing has been installed yet - " +
+                           "close Visual Studio and start the setup again.\r\n\r\n" +
+                           "Unattended installs can pass ArxSkipVsCheck=1 to the setup.",
+                           "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
+                return ErrorUserExit;
+            }
         }
 
-        return RunMsiexec("/i \"" + msi + "\"" + LogArguments());
+        Console.WriteLine("[arx] quiet=" + quiet + " properties=" + (properties.Length == 0 ? "(none)" : properties));
+        return RunMsiexec("/i \"" + msi + "\"" + (quiet ? " /qn" : "") + properties + LogArguments());
+    }
+
+    /// <summary>True when the switch is present with 1/true (empty counts as not set).</summary>
+    static bool IsSet(string[] args, string name)
+    {
+        string value = Option(args, name);
+        return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The value of --name=value, or null. Surrounding quotes and spaces are trimmed.</summary>
+    static string Option(string[] args, string name)
+    {
+        string prefix = name + "=";
+        foreach (string arg in args)
+        {
+            if (arg != null && arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return arg.Substring(prefix.Length).Trim().Trim('"');
+        }
+        return null;
+    }
+
+    /// <summary>The msiexec property list for the values the bundle passed through.</summary>
+    static string BuildPropertyArguments(string[] args)
+    {
+        var sb = new StringBuilder();
+        AppendProperty(sb, "RDS", Option(args, "--rds"));
+        AppendProperty(sb, "ARXROOT", Option(args, "--arxroot"));
+        AppendProperty(sb, "ARXPATH", Option(args, "--arxsdk"));
+        AppendProperty(sb, "ARXPROPSDIR", Option(args, "--propsdir"));
+        return sb.ToString();
+    }
+
+    static void AppendProperty(StringBuilder sb, string name, string value)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        sb.Append(' ').Append(name).Append("=\"").Append(value.TrimEnd('\\', '"')).Append('"');
     }
 
     /// <summary>

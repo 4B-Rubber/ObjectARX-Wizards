@@ -1,6 +1,6 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.3。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 状态：**0.2.4。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
 > 最后更新：2026-10-10
 
 ---
@@ -28,7 +28,7 @@
 # $buildRoot = 构建根目录（本机约定见 AGENTS.local.md）
 & "tools\build-and-pack.ps1" -BuildRoot $buildRoot   # 同步 -> VSIX -> arx-genprops -> ISCC
 # 产物：<BuildRoot>\vsix\ObjectARXMultiVersionWizards.vsix
-#       <BuildRoot>\inno\ObjectARXMultiVersionWizardsSetup-Inno.exe
+#       <BuildRoot>\inno\ObjectARXMultiVersionWizards-<branch>.exe
 ```
 
 - 只想要 VSIX 时，在构建目录的副本里直接构建：
@@ -209,4 +209,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix](../ObjectARXMultiVersionWizards.vsix)（0.2.3，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.4，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

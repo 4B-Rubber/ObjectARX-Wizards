@@ -4,7 +4,8 @@
 
   <!-- One double-click launcher: a single UAC prompt covers the per-machine MSI, then the VSIX is
        installed for the current user by ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
-       The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process. -->
+       The bundle is per-machine because the MSI is; the VSIX must not be, hence the extra process
+       and the PerMachine="no" on that package below. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
           Version="0.2.4"
           Manufacturer="Autodesk"
@@ -18,6 +19,17 @@
                                               LocalizationFile="Bundle.zh-CN.wxl" />
     </BootstrapperApplicationRef>
 
+    <!-- Unattended switches, all optional and settable on the command line, for example
+           ObjectARXMultiVersionWizardsSetup.exe ArxQuiet=1 ArxSkipVsix=1 ArxRds=ACME ArxRoot=D:\Autodesk
+         They are declared without a default on purpose: Burn only lets the command line set
+         variables that have no value of their own, and an empty value means "behave as before". -->
+    <Variable Name="ArxQuiet" />        <!-- 1: hand msiexec /qn, no MSI UI -->
+    <Variable Name="ArxSkipVsix" />     <!-- 1: do not install the extension at all -->
+    <Variable Name="ArxSkipVsCheck" />  <!-- 1: install even while Visual Studio is running -->
+    <Variable Name="ArxRds" />          <!-- registered developer symbol; empty keeps ADSK -->
+    <Variable Name="ArxRoot" />         <!-- Autodesk root folder -->
+    <Variable Name="ArxSdkPath" />      <!-- ObjectARX SDK path (its inc folder is populated) -->
+
     <Chain>
       <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
            ProductCode is already on the machine, so once the product was installed a repeat run
@@ -25,26 +37,32 @@
            could not be changed. The launcher always calls msiexec, which then shows the year
            wizard on a first install and the maintenance page (repair / change years / remove)
            afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
-           step below cannot leave the install half done.
+           step below cannot leave the install half done; ArxSkipVsCheck=1 lifts that check and
+           ArxQuiet=1 turns the MSI UI off.
            The uninstall command's ProductCode is the one defined in ObjectARXWizards.wxs; it has
-           to be repeated here because the bundle project cannot see that file's defines. -->
+           to be repeated here because the bundle project cannot see that file's defines. It must
+           be changed whenever that define moves. -->
       <ExePackage Id="ArxWizardsMsi"
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
                   DetectCondition="false"
                   Vital="yes"
                   Permanent="no"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi"'
-                  UninstallCommand='/uninstall {E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}'>
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]"'
+                  UninstallCommand='/uninstall {7C4E9A31-58D2-4F60-9B7E-6A3D1F8C2B45}'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 
       <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.
-           The launcher must build an executable, which is why Burn cannot just call cmd.exe here. -->
+           PerMachine="no": the extension is per-user, so this launcher must not inherit the bundle's
+           elevated token - which is the whole reason it is a separate process.
+           ArxSkipVsix=1 leaves the extension out entirely (install the files only). -->
       <ExePackage Id="ArxWizardsVsix"
                   Vital="no"
                   Permanent="yes"
+                  PerMachine="no"
                   SourceFile="Bundle\ArxWizardsVsixSetup.exe"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
+                  InstallCondition='ArxSkipVsix &lt;&gt; "1"'
                   DetectCondition="false">
         <Payload SourceFile="..\ObjectARXMultiVersionWizards.vsix" Compressed="yes" />
       </ExePackage>

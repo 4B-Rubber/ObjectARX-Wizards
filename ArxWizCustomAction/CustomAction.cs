@@ -181,6 +181,7 @@ namespace ArxWizCustomAction
             foreach (var install in FindVsInstalls())
             {
                 string vc = Path.GetFullPath(Path.Combine(install.Key, @"Common7\IDE\VC")).TrimEnd('\\');
+                RefreshVsWizardCache(install.Key, session);
                 foreach (string relative in folders)
                 {
                     string source = Path.Combine(primary, relative);
@@ -201,6 +202,38 @@ namespace ArxWizCustomAction
             }
             session.Log("Ending DeployWizardsToOtherVS");
             return ActionResult.Success;
+        }
+
+        /// <summary>
+        /// Visual Studio caches its wizard and project list, so the files this action just copied are
+        /// not visible in New Project until the IDE rebuilds that cache. The same step the Inno line
+        /// runs, for the same reason: the classic project entries only ever appeared after a VSIX
+        /// install had triggered the rebuild.
+        /// </summary>
+        static void RefreshVsWizardCache(string root, Session session)
+        {
+            string devenv = Path.Combine(root, @"Common7\IDE\devenv.exe");
+            if (!File.Exists(devenv))
+            {
+                session.Log(" >> RefreshVsWizardCache: no devenv.exe under " + root);
+                return;
+            }
+            try
+            {
+                using (var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(devenv, "/updateconfiguration")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }))
+                {
+                    p.WaitForExit();
+                    session.Log(" >> RefreshVsWizardCache: " + root + " -> devenv /updateconfiguration exit " + p.ExitCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                session.Log(" >> RefreshVsWizardCache: " + root + " -> " + ex.Message);
+            }
         }
 
         static void CopyFolder(string source, string target)

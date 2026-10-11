@@ -9,14 +9,14 @@
        the VSIX launcher inherits an unelevated token. The MSI's elevation has to come from its
        launcher rather than from Windows Installer - see the note on the ArxWizardsMsi package below
        and MsiSetup.cs. -->
-  <!-- ProviderKey is the bundle's own identity: the package cache folder, the ARP entry and the
-       provider key are all named after it. Without it WiX generates a fresh GUID for every build, so
-       every rebuild registered one more "ObjectARX Multi-Version Wizards" row in Programs and
-       Features and could never upgrade the previous one - on 2026-10-11 three builds had left three
-       rows. It is fixed from here on; the UpgradeCode is what lets a higher version replace the
-       installed one. (Note: WiX 3 has no Bundle/@Id - that is CNDL0004.) -->
+  <!-- WiX 3 has no attribute for pinning the bundle's identity: the GUID behind the Programs and
+       Features entry (and the package cache folder) is generated per build, and upgrades are driven by
+       UpgradeCode plus Version instead - "newer versions upgrade earlier versions of the bundles with
+       matching UpgradeCodes" (wix.xsd). (Bundle/@Id and Bundle/@ProviderKey do not exist; both are
+       CNDL0004.) Two consequences: every rebuild lands in a fresh cache folder, and a previous bundle
+       that fails to uninstall leaves its entry behind - the related bundles are removed during the
+       upgrade, so their uninstall commands have to tolerate whatever the new MSI already took away. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          ProviderKey="{0BD7F2E5-4C8A-4A31-9E62-3D5B8C1A7F40}"
           Version="0.2.6"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">

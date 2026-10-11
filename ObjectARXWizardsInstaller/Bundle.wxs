@@ -78,7 +78,9 @@
                   Vital="yes"
                   Permanent="yes"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'>
-        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+        <!-- The Id has to be explicit: two packages carry the same MSI, and the generated payload Id
+             would collide (LGHT0091). -->
+        <Payload Id="PayArxWizardMsiInstall" SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 
       <!-- Takes the MSI away again. InstallCondition="false" means this package is never installed;
@@ -95,7 +97,7 @@
                   Vital="yes"
                   Permanent="no"
                   UninstallCommand='/uninstall --quiet=1'>
-        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+        <Payload Id="PayArxWizardMsiRemove" SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 
       <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.

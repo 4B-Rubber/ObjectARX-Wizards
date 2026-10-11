@@ -849,7 +849,40 @@ function OnFinish (document) {
 			return ;
 
 	ATTRIBUTED.disabled =false ;
+	AddRegistryResource () ;
 	OnWizFinish (document) ;
+}
+
+//- The .rgs file the generated class points at (DECLARE_REGISTRY_RESOURCEID) has to be a REGISTRY
+//- resource of the project. The engine script used to ask wizard.ResourceHelper.AddResource() for
+//- the .rc line and the #define, and that resource service hands back nothing when the project's
+//- .rc cannot be compiled with the project's *active configuration* - reported 2026-10-11:
+//- "fatal error RC1015: cannot open include file 'winres.h'" out of the v141 toolset - after which
+//- the engine script dereferenced the empty result and the wizard ended on a bare "Object
+//- required". Both edits are done here, as text, while the page is still up (arxCommon.js's
+//- ArxResAddRegistry); the file name is decided here too and handed to the engine script as
+//- ARX_RGS_FILE, so both sides use the same one (the engine renders the .rgs right afterwards).
+function AddRegistryResource () {
+	try {
+		if ( ATTRIBUTED.checked ) {
+			ArxResLog ("no registry resource: this class is generated attributed") ;
+			return ;
+		}
+		var strShortName =SHORT_NAME.value ;
+		if ( strShortName.length == 0 ) {
+			ArxResLog ("no registry resource: the short name is empty") ;
+			return ;
+		}
+		var strRgsFile =ArxResUniqueFileName (ArxResProjectDir (), strShortName + ".rgs") ;
+		var strRgsId ="IDR_" + strShortName.toUpperCase () ;
+		window.external.AddSymbol ("ARX_RGS_FILE", strRgsFile) ;
+		var oResult =ArxResAddRegistry (strRgsId, strRgsFile) ;
+		ArxResLog ("registry resource '" + strRgsId + "' (" + strRgsFile + "): " + oResult.message) ;
+		if ( !oResult.ok )
+			window.external.ReportError ("The registry resource was not added to the project:\n" + oResult.message) ;
+	} catch (e) {
+		ArxResLog ("adding the registry resource failed: " + ArxResErrText (e)) ;
+	}
 }
 
 </SCRIPT>

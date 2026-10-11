@@ -633,39 +633,30 @@ function OnFilterChange () {
 	OnBase () ;
 }
 
+//- The dialog ids the project already has. Used to come from window.external.GetDialogIds(),
+//- which makes the wizard host compile the project's .rc with the project's active configuration -
+//- on a machine whose toolset is incomplete that ends in "fatal error RC1015: cannot open include
+//- file 'winres.h'" and a "Cannot access resource information" box, and the list stays empty. The
+//- ids are read out of the .rc as text instead (ArxResDialogList in ArxWizCommon\arxCommon.js);
+//- a project whose .rc cannot be read is simply an empty list, and one can still type an id in.
 function PopulateDialogIDs () {
 	if ( window.external.FindSymbol ("IS_PARENT_DIALOG") == "true" ) {
 		DialogList.AddItem (window.external.FindSymbol ("ITEM_NAME")) ;
 		DialogList.ListIndex =0 ;
 		return ;
 	}
+	var aDialogIds =ArxResDialogList () ;
 	var GNS =window.external.ProjectObject.CodeModel ;
-
-	var strDialogIds ="" ;
-	try {
-		strDialogIds =window.external.GetDialogIds () ;
-	} catch (e) {
-		var L_WarningLocation_Text ="Error in default.htm PopulateDialogIDs():\r\n" ;
-		var L_Warning1_Text ="Cannot access resource information. Check if the .rc file is opened in another editor." ;
-		window.external.ReportError (L_WarningLocation_Text + L_Warning1_Text) ;
-	}
-
-	var len =strDialogIds.length ;
-	var iBegin =0 ;
-	var iEnd =0 ;
-	while ( iEnd >= 0 ) {
-		var strDialogId ;
-		iEnd =strDialogIds.indexOf (",", iBegin) ;
-		if ( iEnd >= 0 ) {
-			strDialogId =strDialogIds.substr (iBegin, iEnd-iBegin) ;
-			iBegin =iEnd + 1 ;
-		} else {
-			strDialogId =strDialogIds.substr (iBegin) ;
+	for ( var nId =0 ; nId < aDialogIds.length ; nId++ ) {
+		try {
+			//- An id that already has a dialog class of its own is not offered: the class wizard
+			//- creates classes, not second classes over one dialog.
+			if ( GNS.DialogClasses (aDialogIds [nId]).Count > 0 )
+				continue ;
+			DialogList.AddItem (aDialogIds [nId]) ;
+		} catch (e) {
+			ArxResLog ("offering dialog id " + aDialogIds [nId] + " failed: " + ArxResErrText (e)) ;
 		}
-		var classes =GNS.DialogClasses (strDialogId) ;
-		if ( classes.Count > 0 )
-			continue ;
-		DialogList.AddItem (strDialogId) ;
 	}
 }
 
@@ -790,7 +781,15 @@ function Validate (obj) {
 	var bValid =true ;
 	switch ( obj.id ) {
 		case "CLASS_NAME":
-			bValid =window.external.ParentObject.ValidateMember (obj.value, vsCMElementClass) ;
+			try {
+				bValid =window.external.ParentObject.ValidateMember (obj.value, vsCMElementClass) ;
+			} catch (e) {
+				//- The object this asks is not always handed out (an item wizard gets the project,
+				//- not the class it is adding to); a name with characters in it is accepted then,
+				//- instead of ending the wizard on "Object required".
+				bValid =(obj.value.length > 0) ;
+				ArxResLog ("CLASS_NAME validation via ParentObject failed (" + ArxResErrText (e) + "), used the plain check instead") ;
+			}
 			break ;
 		case "BASE_CLASS":
 			if ( BASE_CLASS.selectedIndex == -1 )
@@ -866,8 +865,60 @@ function OnFinish (document) {
 	
 	SetSymbols () ;
 	IDD_DIALOG.value =DialogList.Value ;
+	LogSymbols () ;
+	CreateDialogResource () ;
 	
 	OnWizFinish (document) ;
+}
+
+function BaseClassName () {
+	if ( BASE_CLASS.selectedIndex == -1 )
+		return ("") ;
+	return (BASE_CLASS.options [BASE_CLASS.selectedIndex].value) ;
+}
+
+//- The dialog resource the generated class is built on. It used to be added by the engine script
+//- through wizard.ResourceHelper.AddResource() - the same resource service the dialog list came
+//- from, see PopulateDialogIDs() above. That service hands back nothing when the project's .rc
+//- cannot be compiled with the project's active configuration (fatal error RC1015: cannot open
+//- include file 'winres.h'), and the engine script then died dereferencing the empty result with
+//- a bare "Object required". The id and the template are appended to the project's .rc and
+//- Resource.h as text from this scope instead, where writing files is what every page already
+//- does (see the log line this file writes through ArxWizCommon\arxCommon.js).
+function CreateDialogResource () {
+	try {
+		if ( !DialogList.Enabled ) {
+			ArxResLog ("no dialog resource: base class '" + BaseClassName () + "' does not use one") ;
+			return ;
+		}
+		var strDialogId =IDD_DIALOG.value ;
+		if ( !strDialogId.length )
+			strDialogId =DialogList.Value ;
+		var strTemplate ="dialog.rc" ;
+		if ( window.external.FindSymbol ("CHILD_DIALOG_NEEDED") || window.external.FindSymbol ("CHILD_RESOURCE_NEEDED") )
+			strTemplate ="childDialog.rc" ;
+		var oResult =ArxResAddDialog (strDialogId, ArxResTemplatePath (strTemplate)) ;
+		ArxResLog ("dialog resource '" + strDialogId + "' (" + strTemplate + "): " + oResult.message) ;
+		if ( !oResult.ok )
+			window.external.ReportError ("The dialog resource was not added to the project:\n" + oResult.message
+				+ "\n\nThe generated class references " + strDialogId + ", so it will not compile until that id is defined.") ;
+	} catch (e) {
+		ArxResLog ("adding the dialog resource failed: " + ArxResErrText (e)) ;
+	}
+}
+
+//- What the engine script is going to read back, in one line. A symbol that never made it across
+//- is the usual reason for an empty rendering or for a step failing on a bare "Object required".
+function LogSymbols () {
+	try {
+		ArxResLog ("OnFinish: class=" + CLASS_NAME.value
+			+ " base=" + BaseClassName ()
+			+ " idd=" + IDD_DIALOG.value
+			+ " header=" + HEADER_FILE.value + " impl=" + IMPL_FILE.value
+			+ " templates=" + window.external.FindSymbol ("TEMPLATES_PATH")) ;
+	} catch (e) {
+		ArxResLog ("OnFinish: reading the symbols back failed: " + ArxResErrText (e)) ;
+	}
 }
 
 </SCRIPT>

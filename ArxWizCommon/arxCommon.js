@@ -639,3 +639,316 @@ if ( typeof document != "undefined" && document != null ) {
 
 	ArxTipInstall () ;
 }
+
+//- ---------------------------------------------------------------------------------------------
+//- Project resource files, edited as text (classic line, page scope).
+//-
+//- The classic item wizards used to let the wizard host do this: window.external.GetDialogIds()
+//- for the Names page, wizard.ResourceHelper.AddResource() to add a DIALOG or a REGISTRY
+//- resource. The host routes both through its resource service, which compiles the project's .rc
+//- with the project's *active configuration*; when that configuration's toolset is incomplete -
+//- reported 2026-10-11: "fatal error RC1015: cannot open include file 'winres.h'" out of
+//- VS2017's atlmfc include, the active configuration being v141 - the resource service yields
+//- nothing at all, and the wizard then dies on a bare "Object required" (a null handed back by
+//- AddResource and dereferenced by the calling script).
+//-
+//- These helpers do the same edits as plain text, in the page's own script scope, where writing
+//- files demonstrably works (every page writes this line's log). No resource compiler and no
+//- project configuration is involved: the new id is allocated above the highest one the project
+//- knows, exactly like the resource editor would do it.
+//-
+//- The generated code depends on the id being defined, so the callers report a failed edit to the
+//- user instead of swallowing it; see ArxResErrText().
+//- ---------------------------------------------------------------------------------------------
+function ArxResFso () {
+	return (new ActiveXObject ("Scripting.FileSystemObject")) ;
+}
+
+function ArxResLog (strMsg) {
+	try {
+		var strFile =ArxResFso ().GetSpecialFolder (2) + "\\arxwiz-classic.log" ;
+		var oStream =ArxResFso ().OpenTextFile (strFile, 8, true) ;
+		oStream.WriteLine (new Date ().toString () + " [res] " + strMsg) ;
+		oStream.Close () ;
+	} catch (e) { }
+}
+
+//- Text of any error, whatever shape it arrives in. A missing description is what turns a real
+//- failure into the bare "Object required" / "Object expected" the host shows.
+function ArxResErrText (e) {
+	var strText ="" ;
+	var nNumber =0 ;
+	try { nNumber =e.number ; } catch (e0) { }
+	try { strText =e.description == null ? "" : String (e.description) ; } catch (e1) { }
+	if ( strText == "" ) { try { strText =e.message == null ? "" : String (e.message) ; } catch (e2) { } }
+	if ( strText == "" )
+		strText ="no description" ;
+	if ( nNumber == -2146823281 )	//- 0x800A138F: a property was read from null/undefined
+		strText +=" (0x800A138F - a symbol, project object or resource the wizard read back was null)" ;
+	return (strText) ;
+}
+
+function ArxResStr (v) {
+	if ( v == null || typeof (v) == "undefined" )
+		return ("") ;
+	var strValue ="" + v ;
+	if ( strValue == "undefined" || strValue == "null" )
+		return ("") ;
+	return (strValue) ;
+}
+
+function ArxResMatchName (strName, strPattern) {
+	var strRegEx ="^" + strPattern.replace (/\./g, "\\.").replace (/\*/g, ".*") + "$" ;
+	return ((new RegExp (strRegEx, "i")).test (strName)) ;
+}
+
+//- First file in strDir whose name matches strPattern ("*.rc", "resource.h"); "" when there is none.
+function ArxResFindFile (strDir, strPattern) {
+	try {
+		var oFso =ArxResFso () ;
+		if ( strDir == "" || !oFso.FolderExists (strDir) )
+			return ("") ;
+		var oEnum =new Enumerator (oFso.GetFolder (strDir).Files) ;
+		for ( ; !oEnum.atEnd () ; oEnum.moveNext () ) {
+			var oFile =oEnum.item () ;
+			if ( ArxResMatchName (String (oFile.Name), strPattern) )
+				return (String (oFile.Path)) ;
+		}
+	} catch (e) { }
+	return ("") ;
+}
+
+//- The project folder: PROJECT_PATH (the symbol the pages already browse with), else the folder of
+//- the project file. No trailing separator.
+function ArxResProjectDir () {
+	var strPath ="" ;
+	try { strPath =ArxResStr (window.external.FindSymbol ("PROJECT_PATH")) ; } catch (e) { }
+	if ( strPath == "" ) {
+		try { strPath =ArxResStr (window.external.ProjectObject.FullName) ; } catch (e1) { }
+		if ( strPath != "" ) {
+			var nSlash =strPath.lastIndexOf ("\\") ;
+			if ( nSlash > 0 )
+				strPath =strPath.substring (0, nSlash) ;
+		}
+	}
+	while ( strPath.length > 0 && (strPath.charAt (strPath.length - 1) == "\\" || strPath.charAt (strPath.length - 1) == "/") )
+		strPath =strPath.substring (0, strPath.length - 1) ;
+	return (strPath) ;
+}
+
+function ArxResReadText (strPath) {
+	var oStream =ArxResFso ().OpenTextFile (strPath, 1, false, -2) ;
+	var strText =oStream.ReadAll () ;
+	oStream.Close () ;
+	return (strText) ;
+}
+
+function ArxResWriteText (strPath, strText) {
+	var oStream =ArxResFso ().OpenTextFile (strPath, 2, true, -2) ;
+	oStream.Write (strText) ;
+	oStream.Close () ;
+}
+
+//- <dir>\<name>, uniquified the way the wizard used to do it: Name.rgs, Name1.rgs, Name2.rgs ...
+function ArxResUniqueFileName (strDir, strName) {
+	try {
+		var oFso =ArxResFso () ;
+		if ( !oFso.FileExists (strDir + "\\" + strName) )
+			return (strName) ;
+		var nDot =strName.lastIndexOf (".") ;
+		var strBase =(nDot < 0 ? strName : strName.substring (0, nDot)) ;
+		var strExt =(nDot < 0 ? "" : strName.substring (nDot)) ;
+		for ( var nTry =1 ; nTry < 1000 ; nTry++ ) {
+			if ( !oFso.FileExists (strDir + "\\" + strBase + nTry + strExt) )
+				return (strBase + nTry + strExt) ;
+		}
+	} catch (e) { }
+	return (strName) ;
+}
+
+//- The project's resource script and its resource header, or "" for the one that is missing.
+function ArxResFiles () {
+	var oFiles ={ dir:"", rc:"", header:"" } ;
+	oFiles.dir =ArxResProjectDir () ;
+	if ( oFiles.dir == "" )
+		return (oFiles) ;
+	oFiles.rc =ArxResFindFile (oFiles.dir, "*.rc") ;
+	oFiles.header =ArxResFindFile (oFiles.dir, "resource.h") ;
+	return (oFiles) ;
+}
+
+//- Names of the DIALOG resources defined in the text of a .rc (what GetDialogIds() used to list).
+function ArxResDialogIds (strRcText) {
+	var aIds =[] ;
+	var reDialog =/^[ \t]*([A-Za-z_][A-Za-z0-9_]*)[ \t]+DIALOG/i ;
+	var aLines =strRcText.replace (/\r\n/g, "\n").split ("\n") ;
+	for ( var nLine =0 ; nLine < aLines.length ; nLine++ ) {
+		var aMatch =reDialog.exec (aLines [nLine]) ;
+		if ( aMatch == null )
+			continue ;
+		var bKnown =false ;
+		for ( var nId =0 ; nId < aIds.length ; nId++ ) {
+			if ( aIds [nId] == aMatch [1] ) {
+				bKnown =true ;
+				break ;
+			}
+		}
+		if ( !bKnown )
+			aIds [aIds.length] =aMatch [1] ;
+	}
+	return (aIds) ;
+}
+
+//- A dialog template (DIALOG 0, 0, 186, 95 / DIALOG DISCARDABLE 0, 0, ...) with the id in front.
+function ArxResNameDialog (strTemplateText, strId) {
+	var strText =strTemplateText.replace (/\r\n/g, "\n") ;
+	var nEnd =strText.indexOf ("\n") ;
+	var strFirst =(nEnd < 0 ? strText : strText.substring (0, nEnd)) ;
+	var strRest =(nEnd < 0 ? null : strText.substring (nEnd + 1)) ;
+	var strTrimmed =strFirst.replace (/^[ \t]+/, "") ;
+	var strRenamed ;
+	if ( /^DIALOG/i.test (strTrimmed) )
+		strRenamed =strId + " " + strTrimmed ;
+	else {
+		var nSpace =strTrimmed.search (/[ \t]/) ;
+		strRenamed =(nSpace < 0 ? strId + " " + strTrimmed : strId + strTrimmed.substring (nSpace)) ;
+	}
+	var strResult =(strRest == null ? strRenamed : strRenamed + "\n" + strRest) ;
+	return (strResult.replace (/\n/g, "\r\n")) ;
+}
+
+//- Free resource value: _APS_NEXT_RESOURCE_VALUE when the header keeps it, else above every value
+//- the header already defines.
+function ArxResNextValue (strHeaderText) {
+	var aNext =/#define[ \t]+_APS_NEXT_RESOURCE_VALUE[ \t]+([0-9]+)/i.exec (strHeaderText) ;
+	if ( aNext != null )
+		return (parseInt (aNext [1], 10)) ;
+	var nMax =99 ;
+	var reDefine =/^[ \t]*#define[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]+([0-9]+)[ \t]*$/gmi ;
+	var aDefine ;
+	while ( (aDefine =reDefine.exec (strHeaderText)) != null ) {
+		var nValue =parseInt (aDefine [1], 10) ;
+		if ( nValue > nMax )
+			nMax =nValue ;
+	}
+	return (nMax + 1) ;
+}
+
+//- Header text with "#define <id> <value>" in it and _APS_NEXT_RESOURCE_VALUE moved past it.
+function ArxResDefineId (strHeaderText, strId, nValue) {
+	var strText =strHeaderText ;
+	var strDefine ="#define " + strId + " " + nValue ;
+	if ( !(new RegExp ("^[ \\t]*#define[ \\t]+" + strId + "\\b", "mi")).test (strText) ) {
+		var aAnchor =/^([ \t]*#define[ \t]+_APS_NEXT_RESOURCE_VALUE.*)$/mi.exec (strText) ;
+		if ( aAnchor != null )
+			strText =strText.substring (0, aAnchor.index) + strDefine + "\r\n" + strText.substring (aAnchor.index) ;
+		else {
+			var aBlock =/^(#ifdef APSTUDIO_INVOKED[ \t]*)$/mi.exec (strText) ;
+			if ( aBlock != null )
+				strText =strText.substring (0, aBlock.index) + strDefine + "\r\n\r\n" + strText.substring (aBlock.index) ;
+			else
+				strText =strText.replace (/[ \t\r\n]+$/, "") + "\r\n" + strDefine + "\r\n" ;
+		}
+	}
+	//- aValue.length is the *array* length (full match + groups), aValue [0].length the match text.
+	var aValue =/(#define[ \t]+_APS_NEXT_RESOURCE_VALUE[ \t]+)([0-9]+)/i.exec (strText) ;
+	if ( aValue != null )
+		strText =strText.substring (0, aValue.index + aValue [1].length) + (nValue + 1) + strText.substring (aValue.index + aValue [0].length) ;
+	else
+		strText =strText.replace (/[ \t\r\n]+$/, "") + "\r\n#define _APS_NEXT_RESOURCE_VALUE " + (nValue + 1) + "\r\n" ;
+	return (strText) ;
+}
+
+//- A template from this wizard's Templates folder (dialog.rc / childDialog.rc), located next to the
+//- page rather than through a host symbol, with the host's locale tried before the 1033 copy.
+function ArxResTemplatePath (strFile) {
+	var strRoot ="" ;
+	try { strRoot =ArxResStr (window.external.FindSymbol ("ABSOLUTE_PATH")) ; } catch (e) { }
+	if ( strRoot == "" )
+		return ("") ;
+	var aTries =[ strRoot + "\\Templates\\1033\\" + strFile, strRoot + "\\Templates\\" + ArxResStr (window.external.GetHostLocale ()) + "\\" + strFile ] ;
+	try {
+		var oFso =ArxResFso () ;
+		for ( var nTry =0 ; nTry < aTries.length ; nTry++ ) {
+			if ( oFso.FileExists (aTries [nTry]) )
+				return (aTries [nTry]) ;
+		}
+	} catch (e1) { }
+	return (aTries [0]) ;
+}
+
+//- The dialog ids of the project's .rc ([] when there is no resource script to read).
+function ArxResDialogList () {
+	try {
+		var oFiles =ArxResFiles () ;
+		if ( oFiles.rc == "" ) {
+			ArxResLog ("no .rc next to the project file (" + oFiles.dir + ")") ;
+			return ([]) ;
+		}
+		var aIds =ArxResDialogIds (ArxResReadText (oFiles.rc)) ;
+		ArxResLog ("dialog ids in " + oFiles.rc + ": " + aIds.join (", ")) ;
+		return (aIds) ;
+	} catch (e) {
+		ArxResLog ("reading the project's .rc failed: " + ArxResErrText (e)) ;
+		return ([]) ;
+	}
+}
+
+//- Adds a dialog resource to the project's .rc / resource.h. Returns { ok, value, message }: the
+//- caller decides whether a failure is worth a message box.
+function ArxResAddDialog (strId, strTemplatePath) {
+	try {
+		if ( strId == null || strId == "" )
+			return ({ ok:false, value:0, message:"the dialog id is empty" }) ;
+		var oFiles =ArxResFiles () ;
+		if ( oFiles.dir == "" )
+			return ({ ok:false, value:0, message:"the project folder is unknown" }) ;
+		if ( oFiles.rc == "" )
+			return ({ ok:false, value:0, message:"no .rc file next to the project file (" + oFiles.dir + ")" }) ;
+		if ( oFiles.header == "" )
+			return ({ ok:false, value:0, message:"no resource.h next to the project file (" + oFiles.dir + ")" }) ;
+		var strRcText =ArxResReadText (oFiles.rc) ;
+		var strHeaderText =ArxResReadText (oFiles.header) ;
+		if ( (new RegExp ("^[ \\t]*#define[ \\t]+" + strId + "\\b", "mi")).test (strHeaderText ) )
+			return ({ ok:true, value:0, message:"'" + strId + "' is already defined in " + oFiles.header + ", nothing to add" }) ;
+		if ( (new RegExp ("^[ \\t]*" + strId + "[ \\t]+DIALOG", "mi")).test (strRcText) )
+			return ({ ok:true, value:0, message:"'" + strId + "' is already a DIALOG in " + oFiles.rc + ", nothing to add" }) ;
+		if ( strTemplatePath == "" || !ArxResFso ().FileExists (strTemplatePath) )
+			return ({ ok:false, value:0, message:"the dialog template was not found (" + strTemplatePath + ")" }) ;
+		var nValue =ArxResNextValue (strHeaderText) ;
+		var strBlock =ArxResNameDialog (ArxResReadText (strTemplatePath), strId) ;
+		ArxResWriteText (oFiles.rc, strRcText.replace (/[ \t\r\n]+$/, "") + "\r\n\r\n" + strBlock + "\r\n") ;
+		ArxResWriteText (oFiles.header, ArxResDefineId (strHeaderText, strId, nValue)) ;
+		return ({ ok:true, value:nValue, message:"'" + strId + "' = " + nValue + " appended to " + oFiles.rc }) ;
+	} catch (e) {
+		return ({ ok:false, value:0, message:ArxResErrText (e) }) ;
+	}
+}
+
+//- Adds "<id> REGISTRY DISCARDABLE "<file>"" for a .rgs file to the project's .rc / resource.h.
+//- Same contract as ArxResAddDialog(); the caller has already claimed the .rgs file name.
+function ArxResAddRegistry (strId, strRgsFile) {
+	try {
+		if ( strId == null || strId == "" || strRgsFile == null || strRgsFile == "" )
+			return ({ ok:false, value:0, message:"the registry resource id / file name is empty" }) ;
+		var oFiles =ArxResFiles () ;
+		if ( oFiles.dir == "" )
+			return ({ ok:false, value:0, message:"the project folder is unknown" }) ;
+		if ( oFiles.rc == "" )
+			return ({ ok:false, value:0, message:"no .rc file next to the project file (" + oFiles.dir + ")" }) ;
+		if ( oFiles.header == "" )
+			return ({ ok:false, value:0, message:"no resource.h next to the project file (" + oFiles.dir + ")" }) ;
+		var strRcText =ArxResReadText (oFiles.rc) ;
+		var strHeaderText =ArxResReadText (oFiles.header) ;
+		if ( (new RegExp ("\\b" + strId + "[ \\t]+REGISTRY\\b", "i")).test (strRcText) )
+			return ({ ok:true, value:0, message:"'" + strId + "' is already a REGISTRY entry in " + oFiles.rc + ", nothing to add" }) ;
+		if ( (new RegExp ("^[ \\t]*#define[ \\t]+" + strId + "\\b", "mi")).test (strHeaderText) )
+			return ({ ok:true, value:0, message:"'" + strId + "' is already defined in " + oFiles.header + ", nothing to add" }) ;
+		var nValue =ArxResNextValue (strHeaderText) ;
+		ArxResWriteText (oFiles.rc, strRcText.replace (/[ \t\r\n]+$/, "") + "\r\n" + strId + " REGISTRY DISCARDABLE \"" + strRgsFile + "\"\r\n") ;
+		ArxResWriteText (oFiles.header, ArxResDefineId (strHeaderText, strId, nValue)) ;
+		return ({ ok:true, value:nValue, message:"'" + strId + "' = " + nValue + " and " + strRgsFile + " appended to " + oFiles.rc }) ;
+	} catch (e) {
+		return ({ ok:false, value:0, message:ArxResErrText (e) }) ;
+	}
+}

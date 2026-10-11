@@ -18,7 +18,7 @@
        that fails to uninstall leaves its entry behind - the related bundles are removed during the
        upgrade, so their uninstall commands have to tolerate whatever the new MSI already took away. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          Version="0.2.7"
+          Version="0.2.8"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 

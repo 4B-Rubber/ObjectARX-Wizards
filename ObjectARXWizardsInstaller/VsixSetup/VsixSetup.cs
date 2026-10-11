@@ -18,8 +18,10 @@
 // Every VSIXInstaller call gets its own log file next to this one, because its exit codes are not
 // documented and the failure has to be readable.
 //
-// Burn hides the console, so everything is mirrored into %TEMP%\ObjectARXWizards-vsix.log, and a
-// real failure raises a message box.
+// Nothing goes to a console: this is a WinExe on purpose (see VsixSetup.csproj). Burn does NOT give a
+// package a hidden console - a console subsystem binary makes Windows open a black window on every
+// install and every uninstall. Everything is mirrored into %TEMP%\ObjectARXWizards-vsix.log instead,
+// and a real failure raises a message box.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -35,6 +37,14 @@ static class VsixSetup
     const string DefaultVsixName = "ObjectARXMultiVersionWizards.vsix";
     // VSIXInstaller's AlreadyInstalledException: this version is already registered for the user.
     const int AlreadyInstalled = 1001;
+    // The VSIX targets [17.0,19.0) - see source.extension.vsixmanifest. The install path reads that
+    // range out of the manifest; an uninstall has no .vsix to read (the bundle calls this with just
+    // --uninstall), so the window is repeated here. Worth having: without it the removal also called
+    // VSIXInstaller for VS2017 and VS2019. Those are not targets, each call costs about twenty
+    // seconds, and each one opened a console window that had nothing to do with this product
+    // (2026-10-11, during uninstall: three black windows titled C:\Program Files (x86)\Microsoft ...).
+    const double FirstSupportedVs = 17.0;
+    const double LastSupportedVs = 19.0;
     const uint MB_OK = 0x0;
     const uint MB_ICONWARNING = 0x30;
     const uint MB_SETFOREGROUND = 0x10000;
@@ -139,7 +149,10 @@ static class VsixSetup
         // VSIXInstaller exit 2001 within a second or two, writing no log at all: its parser saw the path
         // as a second .vsix and gave up before it started logging. When VSIXInstaller really runs it
         // writes its own log to %TEMP%\VSIXInstaller_<guid>.log, so that is what gets reported.
-        var psi = new ProcessStartInfo(installer, "/quiet \"" + vsix + "\"") { UseShellExecute = false };
+        // CreateNoWindow: this launcher is a WinExe started without a console, so a console subsystem
+        // child would allocate a black window of its own.
+        var psi = new ProcessStartInfo(installer, "/quiet \"" + vsix + "\"")
+            { UseShellExecute = false, CreateNoWindow = true };
         using (var p = Process.Start(psi))
         {
             p.WaitForExit();
@@ -388,6 +401,13 @@ static class VsixSetup
         var started = new List<Process>();
         foreach (string ide in instances)
         {
+            double vsVersion = IdeVersion(ide);
+            if (vsVersion > 0 && (vsVersion < FirstSupportedVs || vsVersion >= LastSupportedVs))
+            {
+                Log("  " + ide + " -> skipped: VS " + vsVersion.ToString("0.0", CultureInfo.InvariantCulture)
+                    + " is outside the extension's support range");
+                continue;
+            }
             string installer = Path.Combine(ide, @"Common7\IDE\VSIXInstaller.exe");
             if (!File.Exists(installer))
             {
@@ -396,7 +416,8 @@ static class VsixSetup
             }
             try
             {
-                var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard") { UseShellExecute = false };
+                var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard")
+                    { UseShellExecute = false, CreateNoWindow = true };
                 started.Add(Process.Start(psi));
                 Log("  " + ide + " -> VSIXInstaller uninstall started");
             }

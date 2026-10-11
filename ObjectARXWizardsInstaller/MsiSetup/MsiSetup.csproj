@@ -5,7 +5,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe, not Exe: see the note in VsixSetup.csproj - a console subsystem binary gets a black
+         window from Windows whenever the bundle runs it, and this one runs on install AND uninstall.
+         Everything it prints is mirrored into %TEMP%\ObjectARXWizards-msi.log (msiexec's own /l*v). -->
+    <OutputType>WinExe</OutputType>
     <OutputPath>..\Bundle\</OutputPath>
     <AssemblyName>ArxWizardsMsiSetup</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>

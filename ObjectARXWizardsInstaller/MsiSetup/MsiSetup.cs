@@ -230,7 +230,9 @@ static class MsiSetup
         // those actions run as the elevated user, exactly as they do when the MSI is started from an
         // elevated shell. Measured 2026-10-11; the MSI log that shows it is %TEMP%\ObjectARXWizards-msi.log.
         bool elevated = IsElevated();
-        var psi = new ProcessStartInfo(msiexec, arguments) { UseShellExecute = !elevated };
+        // CreateNoWindow only matters on the direct path (with UseShellExecute it is ignored): Burn
+        // starts this launcher without a console, so a console subsystem child would open one.
+        var psi = new ProcessStartInfo(msiexec, arguments) { UseShellExecute = !elevated, CreateNoWindow = true };
         if (!elevated) psi.Verb = "runas";
 
         try

@@ -5,7 +5,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe, not Exe: a console subsystem binary makes Windows allocate a black console window
+         every time the bundle runs this (install and uninstall alike), and Burn does not provide a
+         hidden console. Everything it prints is mirrored into %TEMP%\ObjectARXWizards-vsix.log. -->
+    <OutputType>WinExe</OutputType>
     <OutputPath>..\Bundle\</OutputPath>
     <AssemblyName>ArxWizardsVsixSetup</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>

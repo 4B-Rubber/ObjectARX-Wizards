@@ -9,6 +9,9 @@
 //     not accept the extension anyway. VS2017 and VS2019 were 3.5 of those 7 minutes here,
 //   * exit codes that disagree with what actually landed are resolved by looking at the user's
 //     extension folder, so a "2004" that did install the extension is not reported as a failure.
+// The command line is only "/quiet <vsix>": anything else risks the parser, and VSIXInstaller writes
+// its own log in %TEMP% anyway (a "/logFile <path>" that was tried cost a whole install cycle - both
+// targets answered 2001 in a second, with no log written).
 // The folder is deliberately NOT used to decide that a call can be skipped: it survives an uninstall
 // (the bundle's uninstall starts VSIXInstaller and does not wait), and trusting it on 2026-10-11 left
 // the user with no templates at all.
@@ -93,7 +96,7 @@ static class VsixSetup
             // VSIXInstaller is the only authority on whether the extension is there; it takes about a
             // minute per instance, and exit code 1001 already means "it was installed".
 
-            int code = InstallInto(ide, vsix, vsVersion);
+            int code = InstallInto(ide, vsix);
             Log("  " + ide + " -> VSIXInstaller exit " + code);
             bool ok = code == 0 || code == AlreadyInstalled;
             if (!ok && id != null && IsInstalledFor(vsVersion, id, version))
@@ -122,8 +125,8 @@ static class VsixSetup
         return 0;
     }
 
-    /// <summary>Runs VSIXInstaller for one instance, with its own log file.</summary>
-    static int InstallInto(string ide, string vsix, double vsVersion)
+    /// <summary>Runs VSIXInstaller for one instance: /quiet and the .vsix, nothing else.</summary>
+    static int InstallInto(string ide, string vsix)
     {
         string installer = Path.Combine(ide, @"Common7\IDE\VSIXInstaller.exe");
         if (!File.Exists(installer))
@@ -131,36 +134,36 @@ static class VsixSetup
             Log("VSIXInstaller.exe not found under " + ide);
             return -1;
         }
-        string logFile = Path.Combine(Path.GetTempPath(),
-            string.Format(CultureInfo.InvariantCulture, "ObjectARXWizards-vsix-{0:0.0}.log", vsVersion));
-        string arguments = "/quiet";
-        if (SupportsLogFile(installer)) arguments += " /logFile \"" + logFile + "\"";
-        arguments += " \"" + vsix + "\"";
 
-        var psi = new ProcessStartInfo(installer, arguments) { UseShellExecute = false };
+        // Deliberately no switches beyond /quiet. A "/logFile <path>" was added on 2026-10-11 and made
+        // VSIXInstaller exit 2001 within a second or two, writing no log at all: its parser saw the path
+        // as a second .vsix and gave up before it started logging. When VSIXInstaller really runs it
+        // writes its own log to %TEMP%\VSIXInstaller_<guid>.log, so that is what gets reported.
+        var psi = new ProcessStartInfo(installer, "/quiet \"" + vsix + "\"") { UseShellExecute = false };
         using (var p = Process.Start(psi))
         {
             p.WaitForExit();
+            if (p.ExitCode != 0 && p.ExitCode != AlreadyInstalled)
+                Log("  VSIXInstaller log: " + NewestVsixInstallerLog());
             return p.ExitCode;
         }
     }
 
-    /// <summary>
-    /// VS2017's VSIXInstaller has no /logFile switch and answers with a usage error, so ask the
-    /// executable itself once per version.
-    /// </summary>
-    static readonly Dictionary<string, bool> LogFileSupport = new Dictionary<string, bool>();
-    static bool SupportsLogFile(string installer)
+    /// <summary>The log VSIXInstaller writes by itself, once a call gets far enough to log.</summary>
+    static string NewestVsixInstallerLog()
     {
-        double version = IdeVersion(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(installer))));
-        lock (LogFileSupport)
+        try
         {
-            bool known;
-            if (LogFileSupport.TryGetValue(installer, out known)) return known;
-            bool supports = version >= 17.0;
-            LogFileSupport[installer] = supports;
-            return supports;
+            string newest = null;
+            DateTime newestTime = DateTime.MinValue;
+            foreach (string file in Directory.GetFiles(Path.GetTempPath(), "VSIXInstaller*.log"))
+            {
+                DateTime written = File.GetLastWriteTime(file);
+                if (written > newestTime) { newestTime = written; newest = file; }
+            }
+            return newest ?? "(none written - the call did not get that far)";
         }
+        catch { return "(could not look)"; }
     }
 
     /// <summary>

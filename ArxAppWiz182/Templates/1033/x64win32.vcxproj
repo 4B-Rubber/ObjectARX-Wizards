@@ -35,6 +35,15 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
+  <!-- The year property sheets are written by the installer into the folder it records under
+       HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\PropsDir. Read that at build time so the project
+       keeps finding them after the folder was chosen again or moved; the literal path below is
+       only what the wizard was told when this project was generated. -->
+  <PropertyGroup Label="ObjectARX property sheets">
+  <ArxPropsDirRegistry>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\ObjectARX Wizards@PropsDir)</ArxPropsDirRegistry>
+  <ArxPropsDir Condition="'$(ArxPropsDir)' == '' And '$(ArxPropsDirRegistry)' != ''">$([MSBuild]::EnsureTrailingSlash($(ArxPropsDirRegistry)))</ArxPropsDir>
+  <ArxPropsDir Condition="'$(ArxPropsDir)' == ''">[!output ARX_PROPS_DIR]</ArxPropsDir>
+  </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Condition="'$(ArxYear)' != ''" Project="[!output ARX_PROPS_DIR]Autodesk.arx-$(ArxYear).props" />
@@ -61,8 +70,7 @@
       <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <!-- Added to avoid Narrow conversion warnings introduced in VS2015 /Wv:xx[.yy[.zzzzz],  is CL version -->
-      <AdditionalOptions>/Wv:17.00.61030[!output ARX_OMF_ZM] %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>[!output ARX_OMF_ZM] %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

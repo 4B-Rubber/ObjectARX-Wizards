@@ -35,9 +35,18 @@ $ArxToolsetXml$  </PropertyGroup>
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
+  <!-- The year property sheets are written by the installer into the folder it records under
+       HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\PropsDir. Read that at build time so the project
+       keeps finding them after the folder was chosen again or moved; the literal path below is
+       only what the wizard was told when this project was generated. -->
+  <PropertyGroup Label="ObjectARX property sheets">
+    <ArxPropsDirRegistry>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\ObjectARX Wizards@PropsDir)</ArxPropsDirRegistry>
+    <ArxPropsDir Condition="'$(ArxPropsDir)' == '' And '$(ArxPropsDirRegistry)' != ''">$([MSBuild]::EnsureTrailingSlash($(ArxPropsDirRegistry)))</ArxPropsDir>
+    <ArxPropsDir Condition="'$(ArxPropsDir)' == ''">$ArxPropsDir$</ArxPropsDir>
+  </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Condition="'$(ArxYear)' != '' And Exists('$ArxPropsDir$Autodesk.arx-$(ArxYear).props')" Project="$ArxPropsDir$Autodesk.arx-$(ArxYear).props" />
+    <Import Condition="'$(ArxYear)' != '' And Exists('$(ArxPropsDir)Autodesk.arx-$(ArxYear).props')" Project="$(ArxPropsDir)Autodesk.arx-$(ArxYear).props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(ArxYear)' != ''">
     <TargetName Condition="'$(RDS)' != ''">$(RDS)$(ProjectName)$(ArxYear)</TargetName>
@@ -74,8 +83,8 @@ $ArxToolsetXml$  </PropertyGroup>
 $ArxItemsXml$  </ItemGroup>
 <!-- 配置里选了某年份、但该年份的 props 没装（安装器没勾选）时，给出中文提示而不是一堵头文件报错。 -->
   <Target Name="CheckArxSdkProps" BeforeTargets="ClCompile">
-    <Error Condition="'$(ArxYear)' != '' And !Exists('$ArxPropsDir$Autodesk.arx-$(ArxYear).props')"
-           Text="未找到 ObjectARX $(ArxYear) 的属性表（$ArxPropsDir$Autodesk.arx-$(ArxYear).props）。请重新运行安装程序勾选该年份，或改用已安装的年份配置。" />
+    <Error Condition="'$(ArxYear)' != '' And !Exists('$(ArxPropsDir)Autodesk.arx-$(ArxYear).props')"
+           Text="未找到 ObjectARX $(ArxYear) 的属性表（$(ArxPropsDir)Autodesk.arx-$(ArxYear).props）。请重新运行安装程序勾选该年份，或改用已安装的年份配置。" />
   </Target>
 $ArxNetRefXml$  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

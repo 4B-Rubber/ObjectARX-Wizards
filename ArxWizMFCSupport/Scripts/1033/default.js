@@ -84,32 +84,95 @@ function ArxItemTemplatesDir () {
 //- RenderAddTemplate() with the template folder checked first and the result measured afterwards:
 //- a template that is not where the host looks and a template that renders nothing are both silent
 //- otherwise, and both end up as an empty class in the project.
+//- Where an item's files go. ITEM_PATH is what the item wizards that ship with Visual Studio build
+//- their target file name from; PROJECT_PATH is the project folder, which is what the classic ATL
+//- wizards used and what the reported failures showed a bare name being resolved against. Both may
+//- come with or without a trailing separator.
+function ArxItemProjectDir (oParent) {
+	var strPath =ArxItemSymbol ("ITEM_PATH") ;
+	if ( strPath == "" )
+		strPath =ArxItemSymbol ("PROJECT_PATH") ;
+	while ( strPath.length > 0 && (strPath.charAt (strPath.length - 1) == "\\" || strPath.charAt (strPath.length - 1) == "/") )
+		strPath =strPath.substring (0, strPath.length - 1) ;
+	if ( strPath == "" && oParent ) {
+		try {
+			var strProject =ArxItemStr (oParent.ContainingProject.FullName) ;
+			var nSlash =strProject.lastIndexOf ("\\") ;
+			if ( nSlash > 0 )
+				strPath =strProject.substring (0, nSlash) ;
+		} catch (e) { }
+	}
+	return (strPath) ;
+}
+
+//- Size of the rendered file, or -1 when it is not on disk / not readable.
+function ArxItemFileSize (strPath) {
+	var oFso =ArxItemFsoOrNull () ;
+	if ( oFso == null )
+		return (-1) ;
+	try {
+		if ( !oFso.FileExists (strPath) )
+			return (-1) ;
+		return (oFso.GetFile (strPath).Size) ;
+	} catch (e) {
+		return (-1) ;
+	}
+}
+
+//- One attempt at the host's render call, returning true when the target came out with content.
+//- The fourth argument is left off entirely for the two argument form.
+function ArxItemRenderWith (strTemplateFull, strFull, bCopyOnly, bFourth) {
+	ArxItemLog ("wizard.RenderTemplate (" + bCopyOnly + ", " + bFourth + ")") ;
+	if ( bFourth == null )
+		wizard.RenderTemplate (strTemplateFull, strFull) ;
+	else
+		wizard.RenderTemplate (strTemplateFull, strFull, bCopyOnly, bFourth) ;
+	return (ArxItemFileSize (strFull) > 0) ;
+}
+
+//- Renders one template into the project folder and adds the file to the project.
+//-
+//- Two things are deliberate here, both from the failures reported 2026-10-11 (template on disk and
+//- readable, target file created in the right folder, generated class still 0 bytes):
+//-  * the host call is tried in the spellings that the wizards shipping with Visual Studio use:
+//-    (false, true) as in the ResourceScript and UnitTest item wizards and in the framework's own
+//-    project skeleton, then the bare two argument form as in the DEFFile and PropertySheet item
+//-    wizards, and only last the (false, false) of the framework's RenderAddTemplate() - which no
+//-    wizard shipping with Visual Studio calls at all (it is defined in common.js and never used
+//-    there) and which is the spelling that rendered an empty file here.
+//-  * the target is an absolute path (ITEM_PATH / PROJECT_PATH + name), the spelling those item
+//-    wizards use as well.
+//- A target that stays empty is deleted and reported, never left in the project as an empty class.
 function ArxItemRender (strTemplate, strTarget, oParent, bOpen) {
+	var oFso =ArxItemFsoOrNull () ;
 	var strWas =ArxItemSymbol ("TEMPLATES_PATH") ;
 	var strDir =ArxItemTemplatesDir () ;
 	if ( strDir != "" && strDir != strWas ) {
 		wizard.AddSymbol ("TEMPLATES_PATH", strDir) ;
 		ArxItemLog ("TEMPLATES_PATH was '" + strWas + "', using '" + strDir + "'") ;
 	}
-	var oFso =ArxItemFsoOrNull () ;
-	if ( oFso != null && strDir != "" && !oFso.FileExists (strDir + "\\" + strTemplate) )
-		throw new Error ("template not found: " + strDir + "\\" + strTemplate) ;
-	RenderAddTemplate (wizard, strTemplate, strTarget, oParent, bOpen) ;
-	if ( oFso == null )
-		return ;
+	var strTemplateFull =strDir + "\\" + strTemplate ;
+	if ( oFso != null && strDir != "" && !oFso.FileExists (strTemplateFull) )
+		throw new Error ("template not found: " + strTemplateFull) ;
 	var strFull =strTarget ;
-	if ( strFull.charAt (1) != ":" )
-		strFull =ArxItemSymbol ("PROJECT_PATH") + strFull ;
-	if ( !oFso.FileExists (strFull) ) {
-		ArxItemLog ("rendered '" + strTemplate + "', but " + strFull + " is not on disk") ;
-		return ;
+	if ( strFull.charAt (1) != ":" ) {
+		var strTargetDir =ArxItemProjectDir (oParent) ;
+		if ( strTargetDir != "" )
+			strFull =strTargetDir + "\\" + strFull ;
 	}
-	var nSize =oFso.GetFile (strFull).Size ;
-	ArxItemLog ("rendered '" + strTemplate + "' -> '" + strFull + "' (" + nSize + " bytes)") ;
-	if ( nSize == 0 ) {
+	if ( !ArxItemRenderWith (strTemplateFull, strFull, false, true)
+		&& !ArxItemRenderWith (strTemplateFull, strFull, null, null) )
+		ArxItemRenderWith (strTemplateFull, strFull, false, false) ;
+	var nSize =ArxItemFileSize (strFull) ;
+	if ( oFso == null )
+		nSize =1 ;
+	if ( nSize == 0 || nSize == -1 ) {
 		try { oFso.DeleteFile (strFull) ; } catch (e) { }
-		throw new Error ("template '" + strTemplate + "' in '" + strDir + "' rendered an empty file") ;
+		throw new Error ("'" + strTemplateFull + "' rendered nothing into " + strFull) ;
 	}
+	ArxItemLog ("rendered '" + strTemplateFull + "' -> '" + strFull + "' (" + nSize + " bytes)") ;
+	if ( oParent )
+		AddFileToProject (strFull, oParent, bOpen) ;
 }
 
 function ArxItemOnFinishImpl (selProj, selObj) {

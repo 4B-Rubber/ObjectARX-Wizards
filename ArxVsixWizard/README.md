@@ -1,6 +1,8 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.4。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 状态：**0.2.5。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。
+>
+> 0.2.5 修好经典项向导的三个连在一起的故障（RC1015 / "Cannot access resource information" / 结束时的"缺少对象"）：对话框与 REGISTRY 资源不再向宿主的资源服务索取（它会用工程**活动配置**编译 .rc，配置是 v141 时必然 `fatal error RC1015`，随后 `AddResource` 返回 null 被脚本解引用），改由向导页按文本写进 `.rc`/`Resource.h`；项模板的渲染改传**绝对**目标路径（`ITEM_PATH`/`PROJECT_PATH` + 名字，VS 自带项向导就是这么写的，传裸文件名时宿主只建文件不写内容），并在渲染出 0 字节时报错而不是把空类留在工程里。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
 > 最后更新：2026-10-10
 >
 > **本分支（`classic-wizards`）例外**：这条线交付的是经典向导（`.vsz/.vsdir` + `VCAddClass`），所以 VSIX **编译时不再带模板定义**——`ArxVsixWizard.csproj` 的两条 `Content` 用 `Exclude="…\*.vstemplate"` 把 9 个 `.vstemplate` 挡在容器外（`ProjectTemplates`/`ItemTemplates` 目录与 manifest 资产仍在，只是没有可注册的模板），VSIX 在这里只承担"让 VS 重建向导列表"的触发器角色。上一条"2 个项目模板 + 7 个项模板真机可见"说的是 dev/main 两条线；在本分支里加类走经典 **添加 → 类**，`Add ObjectARX Class...` 命令连同它的选择器与模板目录扫描器（`Commands/AddArxItemCommand.cs`、`UI/AddItemDialog.xaml(.cs)`、`Commands/ArxItemTemplateCatalog.cs`）都已删除，命令表 `ArxWizardCommands.vsct` 为空，包里也不再注册任何命令。
@@ -208,4 +210,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.4，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.5，约 224 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

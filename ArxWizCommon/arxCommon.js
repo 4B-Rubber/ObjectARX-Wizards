@@ -641,6 +641,223 @@ if ( typeof document != "undefined" && document != null ) {
 }
 
 //- ---------------------------------------------------------------------------------------------
+//- Step navigation (classic line, page scope).
+//-
+//- The Previous/Next buttons are built by the framework (initItems() in Visual Studio's common.js)
+//- and call getPrevPage()/getNextPage(), which derive the target page from the left pane markup:
+//- they walk the DIVs the TABLE class="THREE" hands out and use their *indices*. On these pages
+//- that collection comes back with repeated entries - dumped on MFC Support it is 0,1,2,2,2,2,3,4,5
+//- instead of 0..5 - so "Previous" from MFC Support asked for .NET Options and the wizard's step
+//- tracking was off (reported 2026-10-11). The two functions are replaced here by a lookup over the
+//- same tabs in document order; the buttons resolve them by name when they are clicked, so no DOM
+//- surgery and no timing is involved. A tab the page marked disabled is stepped over, which is how
+//- the framework's own version skips steps.
+//- ---------------------------------------------------------------------------------------------
+//- The wizard's steps, taken from the page's own tab_array (tab_array [0] =Default ; tab_array [1]
+//- =Protocols ; ...), which every page of this line declares in the order the left pane shows them.
+//- The DOM that draws those tabs is deliberately not used: MSHTML hands the nav DIVs out *twice* on
+//- pages whose markup nests a table inside a span (MFC Support comes back as Default AppType Version
+//- MFC COM dotNET MFC COM dotNET), which is what made the framework's own getNextPage()/
+//- getPrevPage() - and the first version of this lookup - point at the wrong step.
+function ArxNavTabs () {
+	var aTabs =[] ;
+	try {
+		if ( typeof tab_array != "undefined" && tab_array != null && tab_array.length > 1 ) {
+			for ( var i =0 ; i < tab_array.length ; i++ ) {
+				if ( tab_array[i] == null )
+					continue ;
+				var strId =ArxResStr (tab_array[i].id) ;
+				if ( strId != "" )
+					aTabs[aTabs.length] = { id:strId, span:tab_array[i] } ;
+			}
+		}
+	} catch (e) { }
+	return (aTabs) ;
+}
+
+//- The page this is running in, without folder and extension ("Version" for .../Version.htm).
+function ArxNavHere () {
+	var strPath =ArxResStr (typeof window != "undefined" && window.location ? window.location.pathname : "") ;
+	var nSlash =strPath.lastIndexOf ("/") ;
+	var nBack =strPath.lastIndexOf ("\\") ;
+	if ( nBack > nSlash )
+		nSlash =nBack ;
+	var strName =(nSlash < 0 ? strPath : strPath.substring (nSlash + 1)) ;
+	var nDot =strName.lastIndexOf (".") ;
+	if ( nDot > 0 )
+		strName =strName.substring (0, nDot) ;
+	return (strName) ;
+}
+
+//- The page the next (nDirection > 0) or previous step shows, as "<name>.htm"; the current page's
+//- own name when there is no step in that direction.
+function ArxNavPage (nDirection) {
+	var aTabs =ArxNavTabs () ;
+	var strHere =ArxNavHere ().toLowerCase () ;
+	var nCurrent =-1 ;
+	for ( var i =0 ; i < aTabs.length ; i++ ) {
+		if ( aTabs[i].id.toLowerCase () == strHere )
+			nCurrent =i ;
+	}
+	if ( nCurrent < 0 )
+		return ("") ;
+	for ( var i =nCurrent + nDirection ; i >= 0 && i < aTabs.length ; i += nDirection ) {
+		if ( !aTabs[i].span.disabled )	//- a step the page marked skipped
+			return (aTabs[i].id + ".htm") ;
+	}
+	return (aTabs[nCurrent].id + ".htm") ;
+}
+
+//- Wires one of the two framework-built buttons to the step looked up above, and makes it usable
+//- again when the framework disabled it because it could not work out a step in that direction.
+function ArxNavWire (strButton, nDirection) {
+	try {
+		var oButton =document.getElementById (strButton) ;
+		if ( oButton == null )
+			return ;
+		var strTarget =ArxNavPage (nDirection) ;
+		if ( strTarget == "" || strTarget.toLowerCase () == (ArxNavHere ().toLowerCase () + ".htm") ) {
+			oButton.disabled =true ;	//- first step / last step: nowhere to go
+			return ;
+		}
+		oButton.disabled =false ;
+		oButton.onclick =function () {
+			try {
+				bValidating =true ;
+				if ( typeof ValidateInput == "function" && !ValidateInput () ) {
+					bValidating =false ;
+					return ;
+				}
+			} catch (e) { }
+			Next (document, ArxNavPage (nDirection)) ;
+		} ;
+	} catch (e) { }
+}
+
+function ArxNavInstall () {
+	//- The framework's own two functions are replaced as well: the buttons resolve them by name, so
+	//- whatever path calls them gets the right step.
+	try { window.getNextPage =function () { return (ArxNavPage (1)) ; } ; } catch (e) { }
+	try { window.getPrevPage =function () { return (ArxNavPage (-1)) ; } ; } catch (e1) { }
+	//- Build the buttons if the host has not done it yet (initItems returns early when they are
+	//- there) and re-point them.
+	try { if ( typeof initItems == "function" ) initItems () ; } catch (e2) { }
+	ArxNavWire ("PreviousBtn", -1) ;
+	ArxNavWire ("NextBtn", 1) ;
+	//- The background the framework paints on the current tab, done here as well: initItems() returns
+	//- before that part when the buttons are already there, whoever put them there.
+	try {
+		var aTables =document.getElementsByTagName ("TABLE") ;
+		for ( var i =0 ; i < aTables.length ; i++ ) {
+			var strClass =ArxResStr (aTables[i].className).toLowerCase () ;
+			if ( strClass != "linktextselected" && strClass != "linktextselectedindent" )
+				continue ;
+			var aSpans =aTables[i].getElementsByTagName ("SPAN") ;
+			for ( var j =0 ; j < aSpans.length ; j++ ) {
+				aSpans[j].style.padding ="4px" ;
+				aSpans[j].style.left ="-2px" ;
+				aSpans[j].style.backgroundColor ="InactiveBorder" ;
+				aSpans[j].style.lineHeight ="1.7em" ;
+			}
+		}
+	} catch (e3) { }
+}
+
+if ( typeof document != "undefined" && document != null ) {
+	//- Now, and then on a timer: the framework's own copy is pulled in through a script element of
+	//- its own and lands when it lands (it can arrive after this file and put its own two functions
+	//- back). Re-asserting beats guessing a delay; it stops by itself after ten seconds.
+	var g_ArxNavTicks =0 ;
+	try {
+		ArxNavInstall () ;
+		var g_ArxNavTimer =setInterval (function () {
+			g_ArxNavTicks++ ;
+			if ( g_ArxNavTicks > 40 ) {
+				clearInterval (g_ArxNavTimer) ;
+				return ;
+			}
+			ArxNavInstall () ;
+		}, 250) ;
+	} catch (e) { }
+}
+
+//- ---------------------------------------------------------------------------------------------
+//- Which target years are actually installed (classic line, page scope).
+//-
+//- The setup generates one property sheet per ticked year (Autodesk.arx-<year>.props, written by
+//- arx-genprops), so the presence of that file is what "this year is installed" means - the wizard
+//- version page disables the years without one instead of letting the page tick a year whose build
+//- configuration can never build (asked for 2026-10-11).
+//-
+//- The folder is the install folder by default and the setup records its choice in
+//- HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\PropsDir; both are tried, and *when neither holds any
+//- props file at all the answer is "unknown"* - a wizard that cannot see the props must not disable
+//- years, that would only take the feature away.
+//- ---------------------------------------------------------------------------------------------
+function ArxPropsDirs () {
+	var aDirs =[] ;
+	try {
+		var oShell =new ActiveXObject ("WScript.Shell") ;
+		var aKeys =[ "HKLM\\SOFTWARE\\Autodesk\\ObjectARX Wizards\\PropsDir",
+			"HKLM\\SOFTWARE\\Wow6432Node\\Autodesk\\ObjectARX Wizards\\PropsDir" ] ;
+		for ( var i =0 ; i < aKeys.length ; i++ ) {
+			try {
+				var strValue =ArxResStr (oShell.RegRead (aKeys[i])) ;
+				if ( strValue != "" )
+					aDirs[aDirs.length] =strValue ;
+			} catch (e) { }
+		}
+	} catch (e) { }
+	try {
+		var strWizardDir =ArxResStr (window.external.FindSymbol ("ABSOLUTE_PATH")) ;
+		var nSlash =strWizardDir.lastIndexOf ("\\") ;
+		if ( nSlash > 0 )
+			aDirs[aDirs.length] =strWizardDir.substring (0, nSlash) ;
+	} catch (e1) { }
+	return (aDirs) ;
+}
+
+//- { "<year>":1, ... } for the years whose props file is there, or null when no props file was found
+//- in any of the folders - i.e. when the installed set cannot be told.
+var g_ArxInstalledYears =undefined ;
+
+function ArxInstalledYears () {
+	if ( typeof g_ArxInstalledYears != "undefined" )
+		return (g_ArxInstalledYears) ;
+	g_ArxInstalledYears =null ;
+	try {
+		var oFso =ArxResFso () ;
+		var aDirs =ArxPropsDirs () ;
+		for ( var nDir =0 ; nDir < aDirs.length ; nDir++ ) {
+			var oYears ={} ;
+			var nFound =0 ;
+			for ( var i =0 ; i < g_ArxVersions.length ; i++ ) {
+				try {
+					if ( oFso.FileExists (aDirs[nDir] + "\\Autodesk.arx-" + g_ArxVersions[i].year + ".props") ) {
+						oYears[g_ArxVersions[i].year] =1 ;
+						nFound++ ;
+					}
+				} catch (e) { }
+			}
+			ArxResLog ("props in " + aDirs[nDir] + ": " + nFound + " year(s)") ;
+			if ( nFound > 0 ) {
+				g_ArxInstalledYears =oYears ;
+				break ;
+			}
+		}
+	} catch (e1) { }
+	return (g_ArxInstalledYears) ;
+}
+
+//- Is that year installed? True when the installed set cannot be told (see above).
+function ArxYearInstalled (strYear) {
+	var oYears =ArxInstalledYears () ;
+	if ( oYears == null )
+		return (true) ;
+	return (oYears[strYear] == 1) ;
+}
+
+//- ---------------------------------------------------------------------------------------------
 //- Project resource files, edited as text (classic line, page scope).
 //-
 //- The classic item wizards used to let the wizard host do this: window.external.GetDialogIds()

@@ -263,6 +263,8 @@
 											Building an older release needs that year's Visual Studio C++ toolset
 											(v90 / v100 / v110 / v140 / v141 / v142 / v143); the library paths and
 											toolsets come from the ObjectARX property sheets the installer generates.
+											Years the setup was not asked to install (it wrote no property sheet for them)
+											are greyed out and cannot be selected.
 											Hover a release for its ObjectARX version, toolset and platforms.</SMALL>
 									</TD>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
@@ -368,7 +370,28 @@
 			//- Load the document and initialize the controls
 			//- with the appropriate symbol values
 			window.external.Load(document);
+			//- The host syncs the declared TGT_ symbols into the controls while loading, so the years
+			//- the setup did not install are put back to "not selectable" after that.
+			ArxVersionEnforceInstalled();
 			InitControls();
+		}
+
+		//- Years the setup did not write a property sheet for stay unticked, untickable and false in
+		//- their TGT_ symbol, whatever the symbols held from an earlier visit of this page.
+		function ArxVersionEnforceInstalled() {
+			if (ArxInstalledYears() == null)
+				return;			//- no props found at all: the installed set is unknown, leave the page alone
+			for (var i = 0; i < g_ArxVersions.length; i++) {
+				var strYear = g_ArxVersions[i].year;
+				if (ArxYearInstalled(strYear))
+					continue;
+				var cb = document.getElementById("TGT_" + strYear);
+				if (cb) {
+					cb.checked = false;
+					cb.disabled = true;
+				}
+				try { window.external.AddSymbol("TGT_" + strYear, false); } catch (e) { }
+			}
 		}
 
 		//- The version list is generated from the shared table in arxCommon.js
@@ -393,17 +416,28 @@
 				cb.type = "checkbox";
 				cb.className = "Checkbox";
 				cb.id = "TGT_" + info.year;
+				//- Only the years whose property sheets the setup wrote can be built (arxCommon.js,
+				//- ArxYearInstalled); the others are greyed out and cannot be ticked at all.
+				var bInstalled = ArxYearInstalled(info.year);
 				cb.title = "ObjectARX " + info.sdk + " - " + info.toolset + (info.x64Only ? " - x64" : " - Win32/x64");
+				if (!bInstalled)
+					cb.title += " - not installed: tick this year in the ObjectARX Wizards setup to use it";
 				try {
-					cb.checked = (window.external.FindSymbol("TGT_" + info.year) == true);
+					cb.checked = bInstalled && (window.external.FindSymbol("TGT_" + info.year) == true);
 				} catch (e) {
-					cb.checked = ArxIsDefaultYear(info.year);
+					cb.checked = bInstalled && ArxIsDefaultYear(info.year);
+				}
+				if (!bInstalled) {
+					cb.disabled = true;
+					cb.checked = false;
 				}
 				td.appendChild(cb);
 				var lbl = document.createElement("LABEL");
 				lbl.htmlFor = cb.id;
 				lbl.title = cb.title;
 				lbl.appendChild(document.createTextNode("AutoCAD " + info.year));
+				if (!bInstalled)
+					lbl.style.color = "#808080";
 				td.appendChild(lbl);
 			}
 		}
@@ -416,6 +450,11 @@
 				var cb = document.getElementById("TGT_" + strYear);
 				if (!cb)
 					continue;
+				//- A year the setup did not install is not selectable, and no preset may turn it on.
+				if (cb.disabled) {
+					try { window.external.AddSymbol("TGT_" + strYear, false); } catch (e) { }
+					continue;
+				}
 				var bNew;
 				if (strPreset == "all")
 					bNew = true;

@@ -592,16 +592,13 @@ function InitDocument (document) {
 //		window.external.Finish (document, 'cancel') ;
 //		return ;
 //	}
-	if (   window.external.FindSymbol ("NOT_FIRST_TIME") == null
-		&& IsValidAdeskProject (window.external.ProjectObject, 10 /*arx | crx*/) == true
-	) {
-		var L_Msg ="COM Wrapper for Custom Object should better not be implemented in .ARX project.\nDo you want to continue anyway?" ;
-		if ( window.external.YesNoAlert (L_Msg) == false ) {
-			window.external.Finish (document, 'cancel') ;
-			return ;
-		}
-		window.external.AddSymbol ("NOT_FIRST_TIME", true) ;
-	}
+	//- Same question the Custom Object wizard used to ask ("COM Wrapper for Custom Object should
+	//- better not be implemented in .ARX project. Do you want to continue anyway?"): a COM wrapper
+	//- built into an ARX module is fine - the wrapper is a COM coclass the module registers, and the
+	//- ARX is a DLL like any other carrier of one. Reported 2026-10-11 in its Custom Object shape,
+	//- so it is a log line here too instead of a question.
+	if ( IsValidAdeskProject (window.external.ProjectObject, 10 /*arx | crx*/) == true )
+		ArxResLog ("COM Wrapper in a .ARX project - allowed, the coclass is registered by this module") ;
 	
 	//- Other texts
 	HEAD.innerText ="Welcome to the " + szArxWizCOMWrapperTitle ;

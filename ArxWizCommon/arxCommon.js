@@ -49,6 +49,11 @@ function FindAutoCAD() {
 //- the global ObjectARX property sheet are selected based on $(ArxYear).
 //- Properties sheets are expected in: C:\Program Files\Autodesk\ObjectARX Props\
 
+//- The global property sheet folder. The wizard bakes this path into the projects it generates, and
+//- both installers rewrite the literal below to the folder the user picked (Inno: PatchArxCommonJs,
+//- MSI: PatchArxCommonJsFiles). Generated projects also read
+//- HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\PropsDir at build time and prefer it over the baked
+//- path, so this value only has to be right on a machine without that registry entry.
 var ARX_PROPS_DIR ="C:\\Program Files\\Autodesk\\ObjectARX Props\\" ;
 
 //- year            : AutoCAD / ObjectARX release year

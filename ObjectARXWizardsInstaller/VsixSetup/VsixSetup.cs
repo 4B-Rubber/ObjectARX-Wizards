@@ -1,16 +1,31 @@
 // Installs the ObjectARX wizards VSIX for the user who runs the setup - into every Visual Studio
-// on the machine, not just the newest one. The bundle chains this after the per-machine MSI, so it
-// must NOT require elevation: the extension is per-user, and an elevated VSIXInstaller would
-// register it against the wrong profile.
+// the VSIX says it supports, which is not the same as every Visual Studio on the machine. The bundle
+// chains this after the per-machine MSI, so it must NOT require elevation: the extension is per-user,
+// and an elevated VSIXInstaller would register it against the wrong profile.
+//
+// VSIXInstaller takes one to two minutes per instance, so this launcher does three things to keep the
+// installer short (it used to spend seven minutes here, once per VS, and ended with a warning box):
+//   * an instance whose version is outside the VSIX's InstallationTarget range is skipped - VS would
+//     not accept the extension anyway,
+//   * an instance that already has this extension (same id, same or newer version, in the user's
+//     extension folder) is skipped without running VSIXInstaller at all, which is what a re-install
+//     hits,
+//   * exit codes that disagree with what actually landed are resolved by looking at the folder again,
+//     so a "2004" that did install the extension is not reported as a failure.
+// Every VSIXInstaller call gets its own log file next to this one, because its exit codes are not
+// documented and the failure has to be readable.
 //
 // Burn hides the console, so everything is mirrored into %TEMP%\ObjectARXWizards-vsix.log, and a
-// real failure now raises a message box instead of the silent Vital="no" exit the bundle had before.
+// real failure raises a message box.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text.RegularExpressions;
 
 static class VsixSetup
 {
@@ -43,6 +58,11 @@ static class VsixSetup
             return 0;
         }
 
+        string id, version;
+        List<double> ranges = null;
+        ReadManifest(vsix, out id, out version, ref ranges);
+        if (id != null) Log("manifest: id=" + id + " version=" + version + " targets=" + RangeText(ranges));
+
         var instances = FindVsInstalls();
         Log("Visual Studio instances: " + (instances.Count == 0 ? "(none)" : string.Join("; ", instances.ToArray())));
         if (instances.Count == 0)
@@ -53,31 +73,56 @@ static class VsixSetup
             return 0;
         }
 
-        int failed = 0;
+        var failures = new List<string>();
+        int installed = 0;
+        int skipped = 0;
         foreach (string ide in instances)
         {
-            int code = InstallInto(ide, vsix);
+            double vsVersion = IdeVersion(ide);
+            if (ranges != null && ranges.Count > 0 && !InRange(ranges, vsVersion))
+            {
+                Log("  " + ide + " -> skipped: not a target of this VSIX (" + RangeText(ranges) + ")");
+                skipped++;
+                continue;
+            }
+            if (id != null && IsInstalledFor(vsVersion, id, version))
+            {
+                Log("  " + ide + " -> skipped: extension " + version + " is already installed for this user");
+                skipped++;
+                continue;
+            }
+
+            int code = InstallInto(ide, vsix, vsVersion);
             Log("  " + ide + " -> VSIXInstaller exit " + code);
-            if (code != 0 && code != AlreadyInstalled) failed++;
+            bool ok = code == 0 || code == AlreadyInstalled;
+            if (!ok && id != null && IsInstalledFor(vsVersion, id, version))
+            {
+                Log("  " + ide + " -> exit " + code + ", but the extension is registered now; taking that as installed");
+                ok = true;
+            }
+            if (ok) installed++;
+            else failures.Add(ide + " (VSIXInstaller exit " + code + ")");
         }
 
-        if (failed > 0)
+        if (failures.Count > 0)
         {
-            Log("failed for " + failed + " instance(s)");
+            Log("failed for " + failures.Count + " instance(s): " + string.Join("; ", failures.ToArray()));
             MessageBox(IntPtr.Zero,
-                       "The ObjectARX extension was not installed for " + failed + " Visual Studio instance(s).\r\n\r\n" +
-                       "The usual cause is Visual Studio (or the Visual Studio Installer) running, or a profile the " +
+                       "The ObjectARX extension was not installed for:\r\n" + string.Join("\r\n", failures.ToArray()) +
+                       "\r\n\r\nThe usual cause is Visual Studio (or the Visual Studio Installer) running, or a profile the " +
                        "setup cannot write to. The wizards themselves are installed; install the extension again " +
-                       "by running this file:\r\n" + vsix + "\r\n\r\nDetails: " + LogPath,
+                       "by running this file:\r\n" + vsix +
+                       "\r\n\r\nDetails: " + LogPath,
                        "ObjectARX Multi-Version Wizards", MB_OK | MB_ICONWARNING | MB_SETFOREGROUND);
             return 1;
         }
 
-        Log("done");
+        Log("done (" + installed + " installed, " + skipped + " skipped)");
         return 0;
     }
 
-    static int InstallInto(string ide, string vsix)
+    /// <summary>Runs VSIXInstaller for one instance, with its own log file.</summary>
+    static int InstallInto(string ide, string vsix, double vsVersion)
     {
         string installer = Path.Combine(ide, @"Common7\IDE\VSIXInstaller.exe");
         if (!File.Exists(installer))
@@ -85,12 +130,167 @@ static class VsixSetup
             Log("VSIXInstaller.exe not found under " + ide);
             return -1;
         }
-        var psi = new ProcessStartInfo(installer, "/quiet \"" + vsix + "\"") { UseShellExecute = false };
+        string logFile = Path.Combine(Path.GetTempPath(),
+            string.Format(CultureInfo.InvariantCulture, "ObjectARXWizards-vsix-{0:0.0}.log", vsVersion));
+        string arguments = "/quiet";
+        if (SupportsLogFile(installer)) arguments += " /logFile \"" + logFile + "\"";
+        arguments += " \"" + vsix + "\"";
+
+        var psi = new ProcessStartInfo(installer, arguments) { UseShellExecute = false };
         using (var p = Process.Start(psi))
         {
             p.WaitForExit();
             return p.ExitCode;
         }
+    }
+
+    /// <summary>
+    /// VS2017's VSIXInstaller has no /logFile switch and answers with a usage error, so ask the
+    /// executable itself once per version.
+    /// </summary>
+    static readonly Dictionary<string, bool> LogFileSupport = new Dictionary<string, bool>();
+    static bool SupportsLogFile(string installer)
+    {
+        double version = IdeVersion(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(installer))));
+        lock (LogFileSupport)
+        {
+            bool known;
+            if (LogFileSupport.TryGetValue(installer, out known)) return known;
+            bool supports = version >= 17.0;
+            LogFileSupport[installer] = supports;
+            return supports;
+        }
+    }
+
+    /// <summary>
+    /// Extension identity, version and supported Visual Studio versions, straight out of the .vsix
+    /// (a zip: extension.vsixmanifest). Left null when the file cannot be read - the caller then
+    /// falls back to trying every instance.
+    /// </summary>
+    static void ReadManifest(string vsix, out string id, out string version, ref List<double> ranges)
+    {
+        id = null;
+        version = null;
+        try
+        {
+            using (var zip = ZipFile.OpenRead(vsix))
+            {
+                var entry = zip.GetEntry("extension.vsixmanifest");
+                if (entry == null)
+                {
+                    Log("extension.vsixmanifest is not in the VSIX; every instance will be tried");
+                    return;
+                }
+                string text;
+                using (var reader = new StreamReader(entry.Open())) text = reader.ReadToEnd();
+
+                var idMatch = Regex.Match(text, "<Identity[^>]*\\bId=\"([^\"]+)\"");
+                var versionMatch = Regex.Match(text, "<Identity[^>]*\\bVersion=\"([^\"]+)\"");
+                if (idMatch.Success) id = idMatch.Groups[1].Value;
+                if (versionMatch.Success) version = versionMatch.Groups[1].Value;
+
+                ranges = new List<double>();
+                foreach (Match m in Regex.Matches(text, "<InstallationTarget[^>]*Version=\"\\[([0-9.]+),([0-9.]+)\\)\""))
+                {
+                    double lo = VsNumber(m.Groups[1].Value);
+                    double hi = VsNumber(m.Groups[2].Value);
+                    if (!ranges.Contains(lo)) ranges.Add(lo);
+                    if (!ranges.Contains(hi)) ranges.Add(hi);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("VSIX manifest could not be read (" + ex.Message + "); every instance will be tried");
+            id = null;
+            version = null;
+            ranges = null;
+        }
+    }
+
+    /// <summary>"17.0" as a double that orders correctly (17.9 -&gt; 17.009, so it stays below 18.0).</summary>
+    static double VsNumber(string version)
+    {
+        string[] parts = version.Split('.');
+        double major = 0, minor = 0;
+        if (parts.Length > 0) double.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out major);
+        if (parts.Length > 1) double.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out minor);
+        return major + minor / 1000.0;
+    }
+
+    static bool InRange(List<double> ranges, double version)
+    {
+        if (version <= 0) return true;                       // unknown: try rather than skip
+        for (int i = 0; i + 1 < ranges.Count; i += 2)
+            if (version >= ranges[i] && version < ranges[i + 1]) return true;
+        return false;
+    }
+
+    static string RangeText(List<double> ranges)
+    {
+        if (ranges == null || ranges.Count == 0) return "(any)";
+        var parts = new List<string>();
+        for (int i = 0; i + 1 < ranges.Count; i += 2)
+            parts.Add(string.Format(CultureInfo.InvariantCulture, "[{0:0.0}, {1:0.0})", ranges[i], ranges[i + 1]));
+        return string.Join(" ", parts.ToArray());
+    }
+
+    /// <summary>The Visual Studio version of an installation folder, from devenv.exe. 0 when unknown.</summary>
+    static double IdeVersion(string ide)
+    {
+        if (string.IsNullOrEmpty(ide)) return 0;
+        foreach (string exe in new[] { @"Common7\IDE\devenv.exe", @"Common7\IDE\VSIXInstaller.exe" })
+        {
+            string path = Path.Combine(ide, exe);
+            if (!File.Exists(path)) continue;
+            try
+            {
+                var info = FileVersionInfo.GetVersionInfo(path);
+                return info.FileMajorPart + info.FileMinorPart / 1000.0;
+            }
+            catch { }
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// True when this user already has that extension - same id, same or newer version - in the
+    /// extension folder of a hive for that Visual Studio version. VS anonymises the folder names, so
+    /// the manifest inside each one is what gets read.
+    /// </summary>
+    static bool IsInstalledFor(double vsVersion, string id, string version)
+    {
+        if (vsVersion <= 0) return false;
+        try
+        {
+            string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                                       @"Microsoft\VisualStudio");
+            if (!Directory.Exists(root)) return false;
+            string hivePattern = string.Format(CultureInfo.InvariantCulture, "{0:0.0}*", vsVersion);
+            foreach (string hive in Directory.GetDirectories(root, hivePattern))
+            {
+                string extensions = Path.Combine(hive, "Extensions");
+                if (!Directory.Exists(extensions)) continue;
+                foreach (string extension in Directory.GetDirectories(extensions))
+                {
+                    string manifest = Path.Combine(extension, "extension.vsixmanifest");
+                    if (!File.Exists(manifest)) continue;
+                    string text = File.ReadAllText(manifest);
+                    if (text.IndexOf("Id=\"" + id + "\"", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    var versionMatch = Regex.Match(text, "<Identity[^>]*\\bVersion=\"([^\"]+)\"");
+                    if (!versionMatch.Success) return true;
+                    return CompareVersions(versionMatch.Groups[1].Value, version) >= 0;
+                }
+            }
+        }
+        catch (Exception ex) { Log("extension folder could not be checked: " + ex.Message); }
+        return false;
+    }
+
+    static int CompareVersions(string a, string b)
+    {
+        try { return Version.Parse(a).CompareTo(Version.Parse(b)); }
+        catch { return 0; }
     }
 
     /// <summary>True when the current process runs with an administrator token.</summary>

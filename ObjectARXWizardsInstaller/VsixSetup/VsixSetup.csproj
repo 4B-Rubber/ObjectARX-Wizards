@@ -19,6 +19,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <!-- ZipFile: the launcher reads the VSIX's own manifest to know its id, version and target VS. -->
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="VsixSetup.cs" />

@@ -3,15 +3,15 @@
 // chains this after the per-machine MSI, so it must NOT require elevation: the extension is per-user,
 // and an elevated VSIXInstaller would register it against the wrong profile.
 //
-// VSIXInstaller takes one to two minutes per instance, so this launcher does three things to keep the
-// installer short (it used to spend seven minutes here, once per VS, and ended with a warning box):
+// VSIXInstaller takes one to two minutes per instance, so this launcher skips the calls it can prove
+// are pointless (it used to spend seven minutes here, once per VS, and ended with a warning box):
 //   * an instance whose version is outside the VSIX's InstallationTarget range is skipped - VS would
-//     not accept the extension anyway,
-//   * an instance that already has this extension (same id, same or newer version, in the user's
-//     extension folder) is skipped without running VSIXInstaller at all, which is what a re-install
-//     hits,
-//   * exit codes that disagree with what actually landed are resolved by looking at the folder again,
-//     so a "2004" that did install the extension is not reported as a failure.
+//     not accept the extension anyway. VS2017 and VS2019 were 3.5 of those 7 minutes here,
+//   * exit codes that disagree with what actually landed are resolved by looking at the user's
+//     extension folder, so a "2004" that did install the extension is not reported as a failure.
+// The folder is deliberately NOT used to decide that a call can be skipped: it survives an uninstall
+// (the bundle's uninstall starts VSIXInstaller and does not wait), and trusting it on 2026-10-11 left
+// the user with no templates at all.
 // Every VSIXInstaller call gets its own log file next to this one, because its exit codes are not
 // documented and the failure has to be readable.
 //
@@ -85,12 +85,13 @@ static class VsixSetup
                 skipped++;
                 continue;
             }
-            if (id != null && IsInstalledFor(vsVersion, id, version))
-            {
-                Log("  " + ide + " -> skipped: extension " + version + " is already installed for this user");
-                skipped++;
-                continue;
-            }
+            // No "already installed" shortcut before the call. Visual Studio's per-user extension
+            // folder outlives an uninstall - the bundle's uninstall fires VSIXInstaller without waiting
+            // for it - so a folder carrying the right manifest does not mean the extension is
+            // registered. On 2026-10-11 that check skipped both target Visual Studios after an
+            // uninstall/reinstall and the user was left with no project or item templates at all.
+            // VSIXInstaller is the only authority on whether the extension is there; it takes about a
+            // minute per instance, and exit code 1001 already means "it was installed".
 
             int code = InstallInto(ide, vsix, vsVersion);
             Log("  " + ide + " -> VSIXInstaller exit " + code);
@@ -256,7 +257,8 @@ static class VsixSetup
     /// <summary>
     /// True when this user already has that extension - same id, same or newer version - in the
     /// extension folder of a hive for that Visual Studio version. VS anonymises the folder names, so
-    /// the manifest inside each one is what gets read.
+    /// the manifest inside each one is what gets read. Only ever used to make sense of what a
+    /// VSIXInstaller call did, never to decide that one can be skipped - see the note at the top.
     /// </summary>
     static bool IsInstalledFor(double vsVersion, string id, string version)
     {

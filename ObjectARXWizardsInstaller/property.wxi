@@ -5,8 +5,12 @@
     <!-- UI default font -->
     <Property Id="ErrorDialog" Value="ErrorDialog" />
     <!-- Specify the ErrorDialog name in use in UI.wxi -->
-    <Property Id="WelcomeForm_NextArgs" Value="InstallDirForm" />
-    <Property Id="InstallDirForm_PrevArgs" Value="WelcomeForm" />
+    <!-- InstallDirForm is the first page: the welcome text and the copyright notice moved onto it, so
+         there is no page between "the setup started" and "where do the files go". Its Back button
+         disables itself on the page's own conditions (InstallDirForm_PrevArgs="" / <>""), and the
+         property is intentionally NOT declared anywhere: WiX refuses Value="", and an undeclared
+         property reads as "" in those conditions anyway - declaring it only earns CNDL1006. -->
+
     <Property Id="InstallDirForm_NextArgs" Value="ObjectARXForm" />
     <Property Id="ObjectARXForm_PrevArgs" Value="InstallDirForm" />
     <Property Id="ObjectARXForm_NextArgs" Value="PathsForm" />

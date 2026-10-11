@@ -14,32 +14,7 @@
 		<TextStyle Id="VSI_MS_Sans_Serif13.0_0_0" FaceName="MS Sans Serif" Size="9" Red="0" Green="0" Blue="0" />
 		<TextStyle Id="VSI_MS_Sans_Serif16.0_1_0" FaceName="MS Sans Serif" Size="12" Red="0" Green="0" Blue="0" Bold="yes" />
 		<TextStyle Id="VsdDefaultUIFont.524F4245_5254_5341_4C45_534153783400" FaceName="MS Sans Serif" Size="9" Red="0" Green="0" Blue="0" />
-		
-		<!-- Start / End Dialogs -->
-		<Dialog Id="WelcomeForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
-			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
-				<Publish Event="EndDialog" Value="Return"><![CDATA[WelcomeForm_NextArgs=""]]></Publish>
-				<Publish Event="NewDialog" Value="[WelcomeForm_NextArgs]"><![CDATA[WelcomeForm_NextArgs<>""]]></Publish>
-			</Control>
-			<Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}取消" TabSkip="no" Cancel="yes">
-				<Publish Event="SpawnDialog" Value="Cancel" />
-			</Control>
-			<Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; 上一步(&amp;B)" TabSkip="no">
-				<Condition Action="disable"><![CDATA[WelcomeForm_PrevArgs=""]]></Condition>
-				<Condition Action="enable"><![CDATA[WelcomeForm_PrevArgs<>""]]></Condition>
-				<Publish Event="NewDialog" Value="[WelcomeForm_PrevArgs]"><![CDATA[WelcomeForm_PrevArgs<>""]]></Publish>
-			</Control>
-			<Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
-			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
-			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}欢迎使用 [ProductName] 安装程序" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="CopyrightWarningText" Type="Text" X="9" Y="186" Width="354" Height="66" Text="{\VSI_MS_Sans_Serif13.0_0_0}警告：本计算机程序受著作权法及国际条约保护。未经授权复制或分发本程序或其任何部分，可能招致严厉的民事或刑事处罚，并将在法律允许的最大范围内被起诉。" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="114" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序将引导您完成在本机安装 [ProductName] 所需的步骤。" TabSkip="yes" NoPrefix="yes">
-				<Condition Action="show"><![CDATA[NOT(InAdminUISequence) OR (Installed="" AND NOT RESUME)]]></Condition>
-				<Condition Action="hide"><![CDATA[InAdminUISequence AND (Installed<>"" OR RESUME)]]></Condition>
-			</Control>
-		</Dialog>
-		
+				
 		<Dialog Id="ResumeForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="FinishButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}完成(&amp;F)" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return">1</Publish>
@@ -341,13 +316,17 @@
 			<Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}安装位置" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择安装这套向导的文件夹。属性表目录默认跟随它，稍后也可以在下一页单独指定。" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="DirLabel" Type="Text" X="18" Y="118" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装目录(&amp;D)：" TabSkip="no" />
-			<Control Id="DirEdit" Type="PathEdit" X="18" Y="130" Width="252" Height="18" Property="TARGETDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseDir" Type="PushButton" X="275" Y="130" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+			<!-- The welcome text and the copyright notice used to be a page of their own; both live on
+			     this one now, so the wizard opens straight on the page that asks for something. -->
+			<Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="28" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序将引导您完成在本机安装 [ProductName] 所需的步骤。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="95" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择安装这套向导的文件夹。属性表目录默认跟随它，稍后也可以在下一页单独指定。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="DirLabel" Type="Text" X="18" Y="136" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装目录(&amp;D)：" TabSkip="no" />
+			<Control Id="DirEdit" Type="PathEdit" X="18" Y="148" Width="252" Height="18" Property="TARGETDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseDir" Type="PushButton" X="275" Y="148" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
 				<Publish Property="SelectFolderDialog_Property" Value="TARGETDIR">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
+			<Control Id="CopyrightWarningText" Type="Text" X="9" Y="180" Width="354" Height="64" Text="{\VSI_MS_Sans_Serif13.0_0_0}警告：本计算机程序受著作权法及国际条约保护。未经授权复制或分发本程序或其任何部分，可能招致严厉的民事或刑事处罚，并将在法律允许的最大范围内被起诉。" TabSkip="yes" NoPrefix="yes" />
 		</Dialog>
 
 		<Dialog Id="ObjectARXForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">

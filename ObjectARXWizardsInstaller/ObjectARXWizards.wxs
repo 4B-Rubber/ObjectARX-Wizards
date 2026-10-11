@@ -122,7 +122,7 @@
 		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" After="AppSearch"></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
-		<Show Dialog="WelcomeForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
+		<Show Dialog="InstallDirForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
 		<Show Dialog="ResumeForm" Before="CostFinalize"><![CDATA[Installed="" AND RESUME]]></Show>
 		<Show Dialog="MaintenanceForm" Before="CostFinalize"><![CDATA[Installed<>""]]></Show>
 		<Show Dialog="ProgressForm" Before="ExecuteAction" />
@@ -156,7 +156,7 @@
 	<AdminUISequence> <!-- msiexec /a (or ACTION=ADMIN) + full UI or reduced UI -->
 		<Custom Action="CA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
 		<Custom Action="CA_AdminUISequence" Before="CostInitialize"></Custom>
-		<Show Dialog="WelcomeForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
+		<Show Dialog="InstallDirForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
 		<Show Dialog="ResumeForm" Before="CostFinalize"><![CDATA[Installed="" AND RESUME]]></Show>
 		<Show Dialog="ProgressForm" Before="ExecuteAction" />		
 		<Show Dialog="FatalErrorForm" OnExit="error"><![CDATA[NOT HideFatalErrorForm]]></Show>

@@ -18,7 +18,7 @@
        that fails to uninstall leaves its entry behind - the related bundles are removed during the
        upgrade, so their uninstall commands have to tolerate whatever the new MSI already took away. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          Version="0.2.6"
+          Version="0.2.7"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
@@ -63,8 +63,13 @@
            afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
            step below cannot leave the install half done; ArxSkipVsCheck=1 lifts that check and
            ArxQuiet=1 turns the MSI UI off.
-           DetectCondition="false" plus Permanent="yes" is that decision written out: always
-           installed, never uninstalled. The ArxWizardsMsiRemoval package below is the other half.
+           DetectCondition asks the registry key the MSI writes through one of its components, so
+           the engine knows the truth in both directions, and RepairCommand is what keeps the
+           original promise: a repeat run is a repair, and the repair runs the same launcher, so the
+           maintenance page still appears. The earlier DetectCondition="false" made the engine treat
+           the package as absent forever - a bundle uninstall then skipped it entirely ("state:
+           Absent ... execute: None") and left the product, its folder and the generated property
+           sheets behind (2026-10-11).
            PerMachine stays at its default (no) on purpose. Declaring this package per-machine would
            make Burn elevate the whole bundle, and the VSIX launcher below would inherit an elevated
            token and install the extension per-machine. The MSI's elevation comes from its launcher
@@ -74,45 +79,34 @@
            with that token - every managed action fails and the install rolls back with 1603. -->
       <ExePackage Id="ArxWizardsMsi"
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
-                  DetectCondition="false"
-                  Vital="yes"
-                  Permanent="yes"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'>
-        <!-- The Id has to be explicit: two packages carry the same MSI, and the generated payload Id
-             would collide (LGHT0091). -->
-        <Payload Id="PayArxWizardMsiInstall" SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
-      </ExePackage>
-
-      <!-- Takes the MSI away again. InstallCondition="false" means this package is never installed;
-           it exists so that uninstalling the bundle - or removing it as a previous version during an
-           upgrade - runs the launcher with /uninstall. Until 2026-10-11 that was missing and the
-           engine believed the product absent, so uninstalling the bundle left the product, its folder
-           and the generated property sheets behind (the log said "state: Absent ... execute: None").
-           The launcher reads the ProductCode from the MSI next to it, so the version can move without
-           this file having to know the new code. -->
-      <ExePackage Id="ArxWizardsMsiRemoval"
-                  SourceFile="Bundle\ArxWizardsMsiSetup.exe"
                   DetectCondition="ARXWIZARD_MSI_INSTALLED"
-                  InstallCondition="false"
                   Vital="yes"
-                  Permanent="no"
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
+                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
                   UninstallCommand='/uninstall --quiet=1'>
-        <Payload Id="PayArxWizardMsiRemove" SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 
-      <!-- Permanent: the extension is removed from Visual Studio's Extensions dialog, not by the bundle.
-           PerMachine="no": the extension is per-user, so this launcher must not inherit the bundle's
-           elevated token - which is the whole reason it is a separate process.
-           ArxSkipVsix=1 leaves the extension out entirely (install the files only). -->
+      <!-- The extension is installed for the invoking user, so this launcher must not inherit an
+           elevated token - which is the whole reason it is a separate process (PerMachine="no").
+           ArxSkipVsix=1 leaves the extension out entirely (install the files only).
+           It carries the same DetectCondition as the MSI package because the two are always
+           installed together: that key exists only while the product does. The uninstall therefore
+           really runs the launcher with its uninstall switch (which waits for VSIXInstaller and
+           sweeps the folder it leaves behind). Until 2026-10-11 Permanent="yes" plus
+           DetectCondition="false" meant the engine considered the extension absent, skipped it on
+           uninstall, and left it registered in Visual Studio. A repeat run is a repair, which
+           reinstalls the extension - idempotent, and it is also what re-arms the templates after a
+           VS update. -->
       <ExePackage Id="ArxWizardsVsix"
                   Vital="no"
-                  Permanent="yes"
                   PerMachine="no"
                   SourceFile="Bundle\ArxWizardsVsixSetup.exe"
+                  DetectCondition="ARXWIZARD_MSI_INSTALLED"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
-      UninstallCommand='"[WixBundleExecutePackageCacheFolder]ArxWizardsVsixSetup.exe" --uninstall'
-                  InstallCondition='ArxSkipVsix &lt;&gt; "1"'
-                  DetectCondition="false">
+                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
+                  UninstallCommand='"[WixBundleExecutePackageCacheFolder]ArxWizardsVsixSetup.exe" --uninstall'
+                  InstallCondition='ArxSkipVsix &lt;&gt; "1"'>
         <Payload SourceFile="..\ObjectARXMultiVersionWizards.vsix" Compressed="yes" />
       </ExePackage>
     </Chain>

@@ -448,7 +448,7 @@ namespace ArxWizCustomAction
 
         /// <summary>
         /// Fills ARX_YEARS_SUMMARY from the current ticks. SdkForm's Next runs this before showing
-        /// YearSummaryForm, which is the only page that can re-read the properties: MSI binds a check
+        /// ConfirmInstallForm, which is the page that re-reads the properties: MSI binds a check
         /// box to its property when the dialog is created and never re-reads it in place, so the
         /// selection has to be reported as text somewhere else.
         ///

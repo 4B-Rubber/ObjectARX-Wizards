@@ -15,8 +15,10 @@
     <Property Id="PathsForm_PrevArgs" Value="ObjectARXForm" />
     <Property Id="PathsForm_NextArgs" Value="SdkForm" />
     <Property Id="SdkForm_PrevArgs" Value="PathsForm" />
-    <Property Id="SdkForm_NextArgs" Value="YearSummaryForm" />
-    <Property Id="ConfirmInstallForm_PrevArgs" Value="YearSummaryForm" />
+    <!-- SdkForm goes straight to the confirmation page: the years it ticked are shown there, so the
+         separate "what you selected" page had nothing of its own to say. -->
+    <Property Id="SdkForm_NextArgs" Value="ConfirmInstallForm" />
+    <Property Id="ConfirmInstallForm_PrevArgs" Value="SdkForm" />
     <Property Id="MaintenanceForm_Action" Value="Repair" />
     <Property Id="AdminMaintenanceForm_Action" Value="Repair" />
 

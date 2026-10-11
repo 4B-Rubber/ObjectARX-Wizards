@@ -218,14 +218,12 @@
 							<TABLE class="CONTENT" cellSpacing="0" cellPadding="0">
 								<COLGROUP>
 									<COL width="12">
-									<COL width="185">
+									<COL width="260">
 									<COL width="12">
-									<COL width="185">
-									<COL width="12">
-									<COL width="185">
+									<COL width="200">
 									<COL width="12">
 								<TR>
-									<TD VALIGN="top" HEIGHT="12" COLSPAN="7">
+									<TD VALIGN="top" HEIGHT="12" COLSPAN="5">
 										&nbsp;
 									</TD>
 								</TR>
@@ -233,14 +231,12 @@
 									<TD VALIGN="top" WIDTH="12">
 										&nbsp;
 									</TD>
-									<TD VALIGN="top" COLSPAN="5">
+									<TD VALIGN="top" COLSPAN="3">
 										<SPAN CLASS="itemText"><B><U>Target AutoCAD releases:</U></B></SPAN>
 										<TABLE border="0" cellpadding="0" cellspacing="0" width="100%"><TR>
-<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST1"></table></TD>
+<TD valign="top" width="50%"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLIST1"></table></TD>
 <TD width="12"><IMG height="1" alt="" src="../../Images/spacer.gif" width="12"></TD>
-<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST2"></table></TD>
-<TD width="12"><IMG height="1" alt="" src="../../Images/spacer.gif" width="12"></TD>
-<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST3"></table></TD>
+<TD valign="top" width="50%"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLIST2"></table></TD>
 </TR></TABLE>
 <TABLE border="0" cellpadding="0" cellspacing="2" style="margin-top:4px;">
 											<TR>
@@ -261,7 +257,7 @@
 								</TR>
 								<TR>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
-									<TD VALIGN="top" COLSPAN="5">
+									<TD VALIGN="top" COLSPAN="3">
 										<SMALL>Each ticked year adds a pair of build configurations (<I>2026</I> and <I>2026d</I>) and
 											appends the year to the output module name (e.g. <I>MyApp2026.arx</I>).
 											Building an older release needs that year's Visual Studio C++ toolset
@@ -378,7 +374,7 @@
 		//- The version list is generated from the shared table in arxCommon.js
 		//- (newest first). Symbols TGT_YYYY default values are declared in default.htm.
 				//- The release list is laid out in three columns (newest first).
-		var g_ArxVersionColumns = 3;
+		var g_ArxVersionColumns = 2;
 
 		function BuildVersionList() {
 			//- The list is built from the shared table in arxCommon.js; the columns are filled one

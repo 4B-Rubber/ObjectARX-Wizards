@@ -40,13 +40,13 @@
        keeps finding them after the folder was chosen again or moved; the literal path below is
        only what the wizard was told when this project was generated. -->
   <PropertyGroup Label="ObjectARX property sheets">
-  <ArxPropsDirRegistry>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\ObjectARX Wizards@PropsDir)</ArxPropsDirRegistry>
-  <ArxPropsDir Condition="'$(ArxPropsDir)' == '' And '$(ArxPropsDirRegistry)' != ''">$([MSBuild]::EnsureTrailingSlash($(ArxPropsDirRegistry)))</ArxPropsDir>
-  <ArxPropsDir Condition="'$(ArxPropsDir)' == ''">[!output ARX_PROPS_DIR]</ArxPropsDir>
+    <ArxPropsDirRegistry>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\ObjectARX Wizards@PropsDir)</ArxPropsDirRegistry>
+    <ArxPropsDir Condition="'$(ArxPropsDir)' == '' And '$(ArxPropsDirRegistry)' != ''">$([MSBuild]::EnsureTrailingSlash($(ArxPropsDirRegistry)))</ArxPropsDir>
+    <ArxPropsDir Condition="'$(ArxPropsDir)' == ''">[!output ARX_PROPS_DIR]</ArxPropsDir>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Condition="'$(ArxYear)' != ''" Project="[!output ARX_PROPS_DIR]Autodesk.arx-$(ArxYear).props" />
+    <Import Condition="'$(ArxYear)' != ''" Project="$(ArxPropsDir)Autodesk.arx-$(ArxYear).props" />
   </ImportGroup>
   <PropertyGroup Condition="'$(ArxYear)' != ''">
     <TargetName Condition="'$(RDS)' != ''">$(RDS)$(ProjectName)$(ArxYear)</TargetName>

@@ -231,12 +231,14 @@
 							<TABLE class="CONTENT" cellSpacing="0" cellPadding="0">
 								<COLGROUP>
 									<COL width="12">
-									<COL width="260">
+									<COL width="185">
 									<COL width="12">
-									<COL width="200">
+									<COL width="185">
+									<COL width="12">
+									<COL width="185">
 									<COL width="12">
 								<TR>
-									<TD VALIGN="top" HEIGHT="12" COLSPAN="5">
+									<TD VALIGN="top" HEIGHT="12" COLSPAN="7">
 										&nbsp;
 									</TD>
 								</TR>
@@ -244,14 +246,14 @@
 									<TD VALIGN="top" WIDTH="12">
 										&nbsp;
 									</TD>
-									<TD VALIGN="top" COLSPAN="3">
+									<TD VALIGN="top" COLSPAN="5">
 										<SPAN CLASS="itemText"><B><U>Target AutoCAD releases:</U></B></SPAN>
-										<TABLE border="0" cellpadding="0" cellspacing="0"><TR>
-<TD valign="top"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLISTL">
-											<tr><td colspan="2">&nbsp;</td></tr>
-										</table></TD>
-<TD width="10"><IMG height="1" alt="" src="../../Images/spacer.gif" width="10"></TD>
-<TD valign="top"><table border="0" cellpadding="0" cellspacing="0" id="VERSIONLISTR"></table></TD>
+										<TABLE border="0" cellpadding="0" cellspacing="0" width="100%"><TR>
+<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST1"></table></TD>
+<TD width="12"><IMG height="1" alt="" src="../../Images/spacer.gif" width="12"></TD>
+<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST2"></table></TD>
+<TD width="12"><IMG height="1" alt="" src="../../Images/spacer.gif" width="12"></TD>
+<TD valign="top" width="33%"><table border="0" cellpadding="2" cellspacing="0" id="VERSIONLIST3"></table></TD>
 </TR></TABLE>
 <TABLE border="0" cellpadding="0" cellspacing="2" style="margin-top:4px;">
 											<TR>
@@ -272,13 +274,14 @@
 								</TR>
 								<TR>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
-									<TD VALIGN="top" COLSPAN="3">
-										<SMALL>Each ticked year adds a pair of build configurations (<I>2026</I> and <I>2026d</I>) and
-											appends the year to the output module name (e.g. <I>MyApp2026.arx</I>).
-											Building an older release needs that year's Visual Studio C++ toolset
-											(v90 / v100 / v110 / v140 / v141 / v142 / v143); the library paths and
-											toolsets come from the ObjectARX property sheets the installer generates.</SMALL>
-									</TD>
+									<TD VALIGN="top" COLSPAN="5">
+											<SMALL>Each ticked year adds a pair of build configurations (<I>2026</I> and <I>2026d</I>) and
+												appends the year to the output module name (e.g. <I>MyApp2026.arx</I>).
+												Building an older release needs that year's Visual Studio C++ toolset
+												(v90 / v100 / v110 / v140 / v141 / v142 / v143); the library paths and
+												toolsets come from the ObjectARX property sheets the installer generates.
+												Hover a release for its ObjectARX version, toolset and platforms.</SMALL>
+										</TD>
 									<TD VALIGN="top" WIDTH="12">&nbsp;</TD>
 								</TR>
 								<TR>
@@ -361,7 +364,7 @@
 	</TABLE>
 	<SCRIPT language="JSCRIPT">
 		var tab_array = new Array();
-		tab_array[0] = Main;
+		tab_array[0] = Default;
 		tab_array[1] = AppType;
 		tab_array[2] = Version;
 		tab_array[3] = Verticals;
@@ -388,14 +391,22 @@
 
 		//- The version list is generated from the shared table in arxCommon.js
 		//- (newest first). Symbols TGT_YYYY defaults are declared in default.htm.
+				//- The release list is laid out in three columns (newest first).
+		var g_ArxVersionColumns = 3;
+
 		function BuildVersionList() {
-			var tblL = document.getElementById("VERSIONLISTL");
-			var tblR = document.getElementById("VERSIONLISTR");
+			//- The list is built from the shared table in arxCommon.js; the columns are filled one
+			//- after the other, so the last one can be short.
+			var aColumns = new Array();
+			for (var c = 0; c < g_ArxVersionColumns; c++)
+				aColumns[c] = document.getElementById("VERSIONLIST" + (c + 1));
+			var nRows = Math.ceil(g_ArxVersions.length / g_ArxVersionColumns);
 			for (var i = g_ArxVersions.length - 1; i >= 0; i--) {
 				var info = g_ArxVersions[i];
-				var tbl = (i >= (g_ArxVersions.length / 2)) ? tblL : tblR;
+				var nCol = Math.min(Math.floor((g_ArxVersions.length - 1 - i) / nRows), g_ArxVersionColumns - 1);
+				var tbl = aColumns[nCol];
 				var tr = tbl.insertRow();
-				var td1 = tr.insertCell();
+				var td = tr.insertCell();
 				var cb = document.createElement("INPUT");
 				cb.type = "checkbox";
 				cb.className = "Checkbox";
@@ -406,17 +417,12 @@
 				} catch (e) {
 					cb.checked = ArxIsDefaultYear(info.year);
 				}
-				td1.appendChild(cb);
+				td.appendChild(cb);
 				var lbl = document.createElement("LABEL");
 				lbl.htmlFor = cb.id;
+				lbl.title = cb.title;
 				lbl.appendChild(document.createTextNode("AutoCAD " + info.year));
-				td1.appendChild(lbl);
-				var td2 = tr.insertCell();
-				var span = document.createElement("SMALL");
-				span.appendChild(document.createTextNode(
-					"ObjectARX " + info.sdk + " - " + info.toolset +
-					(info.x64Only ? " - x64" : " - Win32/x64")));
-				td2.appendChild(span);
+				td.appendChild(lbl);
 			}
 		}
 

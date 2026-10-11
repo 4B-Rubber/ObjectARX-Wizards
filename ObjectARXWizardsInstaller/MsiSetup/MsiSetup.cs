@@ -18,6 +18,8 @@
 //   --arxsdk=DIR     ObjectARX SDK folder           -> MSI property ARXPATH
 //   --propsdir=DIR   property sheet folder          -> MSI property ARXPROPSDIR
 //   --years=CSV      target years, e.g. 2020,2024   -> MSI properties YEAR_<year>
+// Installing through this launcher also hides the MSI from Settings &gt; Apps (ARPSYSTEMCOMPONENT=1):
+// the bundle is the entry the user should see, and a second identical one next to it is just noise.
 // The switches mirror the Inno line's /RDS=, /ARXROOT=, /ARXSDKPATH=, /PROPSDIR=, /YEARS=,
 // /SKIPVSIX=1 (bundle level) and /SKIPVSCHECK=1 one for one.
 using System;
@@ -108,6 +110,13 @@ static class MsiSetup
     static string BuildPropertyArguments(string[] args)
     {
         var sb = new StringBuilder();
+        // The bundle is the entry the user sees in Settings > Apps: this launcher is only ever run by
+        // it, and installing the MSI through it without this would leave a second, identically named
+        // entry next to the bundle's own. ARPSYSTEMCOMPONENT hides the product from that list (and
+        // from Programs and Features) while leaving everything else - detection, repair, /x by code -
+        // alone, and the bundle's own uninstall still takes the product away. A standalone run of
+        // ObjectARXWizard.msi does not go through this launcher, so that route keeps its entry.
+        sb.Append(" ARPSYSTEMCOMPONENT=1");
         AppendProperty(sb, "RDS", Option(args, "--rds"));
         AppendProperty(sb, "ARXROOT", Option(args, "--arxroot"));
         AppendProperty(sb, "ARXPATH", Option(args, "--arxsdk"));

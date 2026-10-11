@@ -385,6 +385,7 @@ static class VsixSetup
             return 0;
         }
 
+        var started = new List<Process>();
         foreach (string ide in instances)
         {
             string installer = Path.Combine(ide, @"Common7\IDE\VSIXInstaller.exe");
@@ -393,19 +394,70 @@ static class VsixSetup
                 Log("VSIXInstaller.exe not found under " + ide);
                 continue;
             }
-            var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard") { UseShellExecute = false };
-            using (var p = Process.Start(psi))
+            try
             {
-                // No WaitForExit here, unlike the install: VSIXInstaller launches a chain of copies of
-                // itself and can stay alive in its own UI thread long after the extension is gone. The
-                // Inno uninstaller froze on exactly that; the bundle must not wait for it either.
-                Log("  " + ide + " -> VSIXInstaller uninstall started (not waited for)");
+                var psi = new ProcessStartInfo(installer, "/quiet /uninstall:ObjectARX.MultiYear.Wizard") { UseShellExecute = false };
+                started.Add(Process.Start(psi));
+                Log("  " + ide + " -> VSIXInstaller uninstall started");
+            }
+            catch (Exception ex)
+            {
+                Log("  " + ide + " -> could not start VSIXInstaller: " + ex.Message);
             }
         }
+
+        // Bounded wait, then sweep. VSIXInstaller launches a chain of copies of itself and can stay
+        // alive in its own UI thread after the extension is gone, which is why this used to return
+        // without waiting - and the folder (manifest included) was left behind. A later install then
+        // trusted that folder and skipped the extension entirely (2026-10-11). The cap keeps a
+        // caller's uninstall from hanging forever; the sweep is what makes the removal complete.
+        foreach (var process in started)
+        {
+            try
+            {
+                bool exited = process.WaitForExit(180000);
+                Log("  VSIXInstaller exit=" + (exited ? process.ExitCode.ToString(CultureInfo.InvariantCulture) : "still running after 180s"));
+            }
+            catch (Exception ex) { Log("  waiting for VSIXInstaller failed: " + ex.Message); }
+        }
+        SweepLeftoverExtensionFolders();
 
         // A leftover extension must never stop the bundle from uninstalling; the log says what happened.
         Log("done");
         return 0;
+    }
+
+    /// <summary>
+    /// Deletes extension folders this product owns that VSIXInstaller left behind. Only folders
+    /// whose manifest carries our id are touched, so nothing else in the profile is at risk.
+    /// </summary>
+    static void SweepLeftoverExtensionFolders()
+    {
+        try
+        {
+            string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                @"Microsoft\VisualStudio");
+            if (!Directory.Exists(root)) return;
+            foreach (string version in Directory.GetDirectories(root))
+            {
+                string extensions = Path.Combine(version, "Extensions");
+                if (!Directory.Exists(extensions)) continue;
+                foreach (string folder in Directory.GetDirectories(extensions))
+                {
+                    string manifest = Path.Combine(folder, "extension.vsixmanifest");
+                    try
+                    {
+                        if (!File.Exists(manifest)) continue;
+                        if (File.ReadAllText(manifest).IndexOf("ObjectARX.MultiYear.Wizard", StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+                        Directory.Delete(folder, true);
+                        Log("  swept leftover extension folder " + folder);
+                    }
+                    catch (Exception ex) { Log("  could not sweep " + folder + ": " + ex.Message); }
+                }
+            }
+        }
+        catch (Exception ex) { Log("  sweep failed: " + ex.Message); }
     }
 
     static void Log(string message)

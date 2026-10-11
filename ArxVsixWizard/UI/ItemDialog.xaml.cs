@@ -186,11 +186,23 @@ namespace ArxVsixWizard.UI
         /// <summary>Shows the model's (possibly re-derived) value in every dependent text box.</summary>
         void RefreshDerivedFields()
         {
-            foreach (var field in _model.Fields)
+            // Writing a text box raises TextChanged, which would re-enter OnValueChanged in the middle
+            // of this sweep: the nested CollectValues would publish the boxes that have not been
+            // refreshed yet (the .h file still shows the old name) back into the symbol table, and the
+            // nested refresh would then write that stale value over the derived one. That is exactly
+            // how "change the class name and the header/implementation file names do not follow" was
+            // observed on 2026-10-11 - the DXF name, refreshed first, looked fine. _syncing marks
+            // these writes as programmatic so no event is treated as user input.
+            _syncing = true;
+            try
             {
-                if (string.IsNullOrEmpty(field.DerivedFrom)) continue;
-                SetText(field.Symbol, _model.Symbols.GetString(field.Symbol));
+                foreach (var field in _model.Fields)
+                {
+                    if (string.IsNullOrEmpty(field.DerivedFrom)) continue;
+                    SetText(field.Symbol, _model.Symbols.GetString(field.Symbol));
+                }
             }
+            finally { _syncing = false; }
         }
 
         /// <summary>Symbol of the field whose control raised the event, or null.</summary>

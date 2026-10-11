@@ -48,7 +48,7 @@ namespace ArxVsixWizard.UI
                         {
                             Content = field.Label,
                             IsChecked = _model.Symbols.GetBool(field.Symbol),
-                            ToolTip = field.ToolTip,
+                            ToolTip = Tip(field),
                         };
                         box.Checked += OnValueChanged;
                         box.Unchecked += OnValueChanged;
@@ -95,9 +95,19 @@ namespace ArxVsixWizard.UI
             {
                 Text = field.Required ? field.Label + " *" : field.Label,
                 Margin = new Thickness(0, 0, 0, 4),
-                ToolTip = field.ToolTip,
+                ToolTip = Tip(field),
             });
             return panel;
+        }
+
+        /// <summary>
+        /// ItemField.ToolTip is an empty string on every field that carries no help text, and WPF
+        /// pops an empty ToolTip up as an empty box - the dark rectangle that used to appear over
+        /// the labels and check boxes of this dialog. Null means "no tooltip at all".
+        /// </summary>
+        static object Tip(ItemField field)
+        {
+            return string.IsNullOrEmpty(field.ToolTip) ? null : (object)field.ToolTip;
         }
 
         void OnValueChanged(object sender, RoutedEventArgs e)

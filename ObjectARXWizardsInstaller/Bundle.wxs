@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
   <!-- One double-click launcher: the MSI is applied by its own launcher, ArxWizardsMsiSetup.exe, which
        raises the elevation prompt and then calls msiexec; the VSIX is installed for the current user by
@@ -44,6 +45,15 @@
     <Variable Name="ArxPropsDir" />     <!-- property sheet folder; empty follows the install folder -->
     <Variable Name="ArxYears" />        <!-- e.g. 2020,2024,2026,2027: the year selection to start from -->
 
+    <!-- Whether the MSI product is on the machine. The MSI writes this key through one of its own
+         components, so it disappears together with the product. -->
+    <util:RegistrySearch Id="RS_ARXWIZARD_MSI"
+                         Root="HKLM"
+                         Key="SOFTWARE\Autodesk\ObjectARX Wizards"
+                         Value="InstallDir"
+                         Variable="ARXWIZARD_MSI_INSTALLED"
+                         Win64="yes" />
+
     <Chain>
       <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
            ProductCode is already on the machine, so once the product was installed a repeat run
@@ -53,9 +63,8 @@
            afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
            step below cannot leave the install half done; ArxSkipVsCheck=1 lifts that check and
            ArxQuiet=1 turns the MSI UI off.
-           The uninstall command's ProductCode is the one defined in ObjectARXWizards.wxs; it has
-           to be repeated here because the bundle project cannot see that file's defines. It must
-           be changed whenever that define moves.
+           DetectCondition="false" plus Permanent="yes" is that decision written out: always
+           installed, never uninstalled. The ArxWizardsMsiRemoval package below is the other half.
            PerMachine stays at its default (no) on purpose. Declaring this package per-machine would
            make Burn elevate the whole bundle, and the VSIX launcher below would inherit an elevated
            token and install the extension per-machine. The MSI's elevation comes from its launcher
@@ -67,9 +76,25 @@
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
                   DetectCondition="false"
                   Vital="yes"
+                  Permanent="yes"
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'>
+        <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
+      </ExePackage>
+
+      <!-- Takes the MSI away again. InstallCondition="false" means this package is never installed;
+           it exists so that uninstalling the bundle - or removing it as a previous version during an
+           upgrade - runs the launcher with /uninstall. Until 2026-10-11 that was missing and the
+           engine believed the product absent, so uninstalling the bundle left the product, its folder
+           and the generated property sheets behind (the log said "state: Absent ... execute: None").
+           The launcher reads the ProductCode from the MSI next to it, so the version can move without
+           this file having to know the new code. -->
+      <ExePackage Id="ArxWizardsMsiRemoval"
+                  SourceFile="Bundle\ArxWizardsMsiSetup.exe"
+                  DetectCondition="ARXWIZARD_MSI_INSTALLED"
+                  InstallCondition="false"
+                  Vital="yes"
                   Permanent="no"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
-                  UninstallCommand='/uninstall {7C4E9A31-58D2-4F60-9B7E-6A3D1F8C2B45}'>
+                  UninstallCommand='/uninstall --quiet=1'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
 

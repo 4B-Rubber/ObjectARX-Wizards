@@ -40,9 +40,19 @@ static class MsiSetup
     // Same codes msiexec itself uses, so the bundle reports something meaningful.
     const int ErrorInstallFailure = 1603;
     const int ErrorUserExit = 1602;
+    const int ErrorUnknownProduct = 1605;
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
+    [DllImport("msi.dll", CharSet = CharSet.Unicode)]
+    static extern uint MsiOpenPackage(string packagePath, out IntPtr product);
+
+    [DllImport("msi.dll", CharSet = CharSet.Unicode)]
+    static extern uint MsiGetProductProperty(IntPtr product, string property, StringBuilder value, ref int length);
+
+    [DllImport("msi.dll")]
+    static extern uint MsiCloseHandle(IntPtr handle);
 
     static int Main(string[] args)
     {
@@ -57,13 +67,28 @@ static class MsiSetup
         bool quiet = IsSet(args, "--quiet");
         string properties = BuildPropertyArguments(args);
 
-        // /uninstall <ProductCode> is what the bundle uses to take the MSI away again. No
-        // Visual Studio check there - removing the product has nothing to do with the extension.
+        // /uninstall [ProductCode] is what the bundle uses to take the MSI away again. No Visual
+        // Studio check there - removing the product has nothing to do with the extension.
+        //
+        // The code is optional on purpose. The bundle used to repeat ObjectARXWizards.wxs's define,
+        // and it went stale the moment the version moved: 0.2.5's bundle still asked msiexec to
+        // remove 0.2.4's ProductCode. Without it the code is read from the MSI that sits next to
+        // this launcher, which is the very build the bundle installed. 1605 (no such product) is
+        // success: that is what an uninstall looks like once a newer bundle took the product away.
         if (string.Equals(msi, "/uninstall", StringComparison.OrdinalIgnoreCase))
         {
-            string productCode = args.Length > 1 ? args[1] : null;
+            string productCode = args.Length > 1 && args[1].StartsWith("{", StringComparison.Ordinal)
+                ? args[1]
+                : ProductCodeOf(FindBundledMsi());
+            if (string.IsNullOrEmpty(productCode))
+            {
+                Console.WriteLine("[arx] /uninstall: no product code and no MSI next to the launcher");
+                return ErrorInstallFailure;
+            }
             string ui = quiet ? " /qn" : " /qb";
-            return RunMsiexec(string.IsNullOrEmpty(productCode) ? null : "/x " + productCode + ui + LogArguments());
+            Console.WriteLine("[arx] /uninstall " + productCode);
+            int code = RunMsiexec("/x " + productCode + ui + LogArguments());
+            return code == ErrorUnknownProduct ? 0 : code;
         }
 
         if (!IsSet(args, "--skipvscheck"))
@@ -85,6 +110,36 @@ static class MsiSetup
 
         Console.WriteLine("[arx] quiet=" + quiet + " properties=" + (properties.Length == 0 ? "(none)" : properties));
         return RunMsiexec("/i \"" + msi + "\"" + (quiet ? " /qn" : "") + properties + LogArguments());
+    }
+
+    /// <summary>The MSI that ships next to this launcher, or null when it is not there.</summary>
+    static string FindBundledMsi()
+    {
+        try
+        {
+            string folder = AppDomain.CurrentDomain.BaseDirectory;
+            if (string.IsNullOrEmpty(folder)) return null;
+            string candidate = Path.Combine(folder, "ObjectARXWizard.msi");
+            return File.Exists(candidate) ? candidate : null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>ProductCode of an MSI, read through the Windows Installer API.</summary>
+    static string ProductCodeOf(string packagePath)
+    {
+        if (string.IsNullOrEmpty(packagePath)) return null;
+        IntPtr product;
+        if (MsiOpenPackage(packagePath, out product) != 0) return null;
+        try
+        {
+            int length = 64;
+            var value = new StringBuilder(length);
+            if (MsiGetProductProperty(product, "ProductCode", value, ref length) != 0) return null;
+            return value.ToString();
+        }
+        catch { return null; }
+        finally { MsiCloseHandle(product); }
     }
 
     /// <summary>True when the switch is present with 1/true (empty counts as not set).</summary>

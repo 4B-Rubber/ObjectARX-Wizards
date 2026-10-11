@@ -28,6 +28,14 @@
       <HintPath>$(WixExtDir)WixBalExtension.dll</HintPath>
       <Name>WixBalExtension</Name>
     </WixExtension>
+    <!-- util:RegistrySearch, used in Bundle.wxs to tell the engine whether the MSI product is on the
+         machine. Without a working DetectCondition the engine considers that package absent, so a
+         bundle uninstall skipped the MSI entirely (2026-10-11: the product, its folder and the
+         generated property sheets all stayed behind). -->
+    <WixExtension Include="WixUtilExtension">
+      <HintPath>$(WixExtDir)WixUtilExtension.dll</HintPath>
+      <Name>WixUtilExtension</Name>
+    </WixExtension>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />

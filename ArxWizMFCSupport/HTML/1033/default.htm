@@ -482,7 +482,7 @@ function InitDocument (document) {
 	idd_dialog_title.disabled =true ;
 
 	xmlDoc.async =false ;
-	xmlDoc.load ("mfcsupport.xml") ;
+	xmlDoc.load ("MfcSupport.xml") ;
 	PopulateBaseList (0) ;
 
 	window.external.Load (document) ;
@@ -639,7 +639,7 @@ function PopulateDialogIDs () {
 		DialogList.ListIndex =0 ;
 		return ;
 	}
-	var GNS =window.external.ProjectObject.Codemodel ;
+	var GNS =window.external.ProjectObject.CodeModel ;
 
 	var strDialogIds ="" ;
 	try {

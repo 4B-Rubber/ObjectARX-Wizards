@@ -10,7 +10,7 @@
        launcher rather than from Windows Installer - see the note on the ArxWizardsMsi package below
        and MsiSetup.cs. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          Version="0.2.4"
+          Version="0.2.5"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 

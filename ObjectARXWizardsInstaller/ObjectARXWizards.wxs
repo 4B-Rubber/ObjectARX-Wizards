@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.2.5"?>
+	<?define ProductVersion = "0.2.6"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
 	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
@@ -37,11 +37,10 @@
       reusing it with the same version can only ever be a repair of the package that is already there -
       it would show the maintenance page instead of upgrading.-->
   <!--<?define ProductCode= "{E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}"?>-->
-<!--ProductCode for 0.2.5, which carries the fixes of 2026-10-11: header and implementation file names
-	follow the class name again, the browse buttons on the paths page sit next to their boxes, and the
-	VSIX uninstall sweeps its own folder. The new code is what turns this into an upgrade of 0.2.4
-	instead of a repair of it, which is why the version and the code move together.-->
-<?define ProductCode= "{3F1C9A64-7B2E-4D58-9A03-6E8C1D4B7F92}"?>
+<!--ProductCode for 0.2.6. It exists because the bundle got a fixed Id (see Bundle.wxs): rebuilding the
+	bundle no longer produces a new identity, so this is the release that replaces the 0.2.4/0.2.5 rows
+	instead of adding another one. The version and the code move together, as always.-->
+<?define ProductCode= "{8D2A5F47-6C1E-4B93-A072-5F3E9D81C4B6}"?>
   
 
   <Product

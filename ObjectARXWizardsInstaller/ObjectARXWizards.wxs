@@ -101,7 +101,12 @@
 	     scheduled). -->
 	<CustomAction Id="CA_PrepArxPropsData" BinaryKey="ID_CABinary" DllEntry="PrepArxPropsData" Execute="immediate" Return="check" />
 	<!-- First install only: ticks DefaultYears (2020/2024/2026/2027), so an upgrade keeps exactly the
-	     previous selection. -->
+	     previous selection. Both schedules below say NOT Installed so this action cannot run during a
+	     removal at all: an immediate DTF action costs an SfxCA extraction, and when that extraction
+	     fails Return="check" aborts the whole transaction. Seen on 2026-10-11, when an uninstall from
+	     a non-elevated shell died with "SFXCA: Failed to create temp directory. Error code 5" -> 1603
+	     and rolled back (the same removal succeeded once elevated, which is the path the ARP entry
+	     takes; the condition simply keeps install-only work off the uninstall path). -->
 	<CustomAction Id="CA_DefaultArxYears" BinaryKey="ID_CABinary" DllEntry="DefaultArxYears" Execute="immediate" Return="check" />
 	<!-- SdkForm's All / None / Invert / Compatible and its year check boxes are pure declarative
 	     publishes: a custom action that rewrote YEAR_* could not repaint the check boxes, which is
@@ -120,7 +125,7 @@
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
-		<Custom Action="CA_DefaultArxYears" After="AppSearch"></Custom>
+		<Custom Action="CA_DefaultArxYears" After="AppSearch"><![CDATA[NOT Installed]]></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Show Dialog="InstallDirForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
 		<Show Dialog="ResumeForm" Before="CostFinalize"><![CDATA[Installed="" AND RESUME]]></Show>
@@ -138,7 +143,7 @@
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>
-		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"></Custom>
+		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"><![CDATA[NOT Installed]]></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Custom Action="CA_PatchVSFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PatchHTMLWizFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>

@@ -1,0 +1,333 @@
+# ObjectARX 多年份向导 · 使用指南
+
+**适用安装包：`ObjectARXMultiVersionWizards-main.exe`（单文件安装包）**
+
+本指南面向拿到安装包的最终用户。读完本文，您可以独立完成：安装 → 新建 ObjectARX 工程 → 添加类 → 编译与在 AutoCAD 中加载调试 → 日后修改年份/修复/卸载。
+
+---
+
+## 目录
+
+1. [这套向导是什么](#1-这套向导是什么)
+2. [安装前的准备](#2-安装前的准备)
+3. [图形化安装（逐页说明）](#3-图形化安装逐页说明)
+4. [静默安装（企业/批量部署）](#4-静默安装企业批量部署)
+5. [安装后检查](#5-安装后检查)
+6. [新建第一个 ObjectARX 工程](#6-新建第一个-objectarx-工程)
+7. [向工程中添加 ObjectARX 类](#7-向工程中添加-objectarx-类)
+8. [编译、加载与调试](#8-编译加载与调试)
+9. [年份 / 工具集 / 平台速查表](#9-年份--工具集--平台速查表)
+10. [修复、增减目标年份与卸载](#10-修复增减目标年份与卸载)
+11. [常见问题](#11-常见问题)
+
+---
+
+## 1. 这套向导是什么
+
+安装后，Visual Studio 中会多出两类模板，用于 AutoCAD ObjectARX 二次开发：
+
+**2 个项目模板（文件 → 新建 → 项目）**
+
+| 模板名称 | 用途 |
+|---|---|
+| ObjectARX/DBX/CRX Application (Multi-Version) | 创建 ObjectARX（`.arx`）、ObjectDBX（`.dbx`）或 AutoCAD 控制台（`.crx`）应用 |
+| ObjectARX/DBX Application with OMF Support (Multi-Version) | 同上，并支持 OMF / MAP 垂直 SDK（面向 AutoCAD Architecture 等建筑类产品），会额外生成一个 Enu 资源 DLL 子项目 |
+
+**7 个类向导（向已有工程添加文件）**
+
+自定义实体、反应器、Jig、MFC 界面类、.NET 包装、ATL COM 包装、动态特性（详见[第 7 节](#7-向工程中添加-objectarx-类)）。
+
+**“多年份单工程”是什么意思？**
+
+一个生成的工程同时包含 AutoCAD 2010–2027 各年份的编译配置：每个年份两套配置，例如 `2024|x64`（Release）和 `2024d|x64`（Debug）。在配置工具栏切换即可为不同版本的 AutoCAD 编译，无需维护多个工程；输出文件名自动带年份后缀，例如 `MyApp2024.arx`、`MyApp2024d.arx`。
+
+---
+
+## 2. 安装前的准备
+
+| 项目 | 要求 |
+|---|---|
+| 操作系统 | 64 位 Windows |
+| Visual Studio | **Visual Studio 2022（17.x）或 Visual Studio 2026（18.x）**，Community / Professional / Enterprise 均可；需在 Visual Studio Installer 中勾选“使用 C++ 的桌面开发”工作负荷 |
+| ObjectARX SDK | 从 Autodesk Developer Network 下载您要支持的各年份 ObjectARX SDK（编译时需要，安装向导本身不强制） |
+| AutoCAD | 用于加载、调试生成的 `.arx/.dbx/.crx` |
+| 旧年份工具集（按需） | 编译 2010–2019 的配置时，还需在 VS Installer 中加装对应旧版生成工具（如 **MSVC v140、v120/v110/v100、v90 生成工具**）与 Windows 7/8 SDK；只做 2020 以后版本可忽略 |
+| .NET（按需） | 勾选“.NET 混合模块”时：2025 及以后配置需要 .NET 8（2027 需要 .NET 10）托管工具链；更早年份需要对应 .NET Framework 开发包（3.5 / 4.x） |
+| 权限 | 安装时需要一次管理员授权（UAC 弹窗点“是”即可） |
+
+**安装前请关闭所有 Visual Studio 窗口**（以及 Visual Studio Installer）。安装程序检测到 VS 正在运行会拒绝继续，这是为了避免扩展注册到一半失败——此时尚未写入任何内容，关闭 VS 后重新运行即可。
+
+---
+
+## 3. 图形化安装（逐页说明）
+
+双击 `ObjectARXMultiVersionWizards-main.exe`，在 UAC 提示中点击“是”。安装包是中文界面，依次出现以下页面：
+
+### 第 1 页：选择安装文件夹
+
+- 向导文件的安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，一般无需修改；
+- **属性表目录默认跟随安装文件夹**（下一页可单独改）；
+- 再次安装时会自动回填上次使用的目录。
+
+### 第 2 页：注册开发者符号（RDS）
+
+- 新建工程时使用的默认开发者前缀（最长 4 个字符），生成代码和输出文件名都会用到它；
+- **可以留空**，留空则使用内置的 `ADSK`；
+- RDS 的官方含义见 ObjectARX 文档的 *Symbols Registration*，不确定就直接点“下一步”。
+
+### 第 3 页：ObjectARX SDK 与目标位置
+
+三个路径，**SDK 和 AutoCAD 装在默认位置时整页都不用改**：
+
+| 字段 | 含义 | 默认值 |
+|---|---|---|
+| Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
+| ObjectARX SDK 位置 | 安装器会向其 `inc` 子目录写入 3 个公共文件 | `C:\ObjectARX` |
+| 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取 | 跟随安装文件夹 |
+
+### 第 4 页：目标 AutoCAD 版本
+
+- 勾选您需要支持的 AutoCAD 年份。**每勾选一个年份，就生成一份对应的属性表**；未勾选的不生成；
+- 勾选了本机暂时没装 SDK 的年份也没有任何副作用，以后装好 SDK 直接就能编译；
+- 首次安装默认勾选 **2020、2024、2026、2027**；
+- 四个快捷按钮：**全部**（勾上 16 个年份）、**全不选**、**反选**、**兼容**（只勾各二进制兼容代系的代表年份：2014、2016、2018、2020、2024、2026、2027，同代系共用一套属性表）。
+
+### 第 5 页：确认 → 安装
+
+确认页面列出以上全部选择。点击安装后：
+
+1. 复制向导文件、生成勾选年份的属性表、向 ObjectARX SDK 的 `inc` 目录写入公共文件；
+2. 自动为当前用户把 Visual Studio 扩展注册到本机所有受支持的 VS 实例（2022 与 2026）。每个 VS 实例大约需要 1–2 分钟，属正常现象。
+
+看到“安装完成”后，**重新启动 Visual Studio**。
+
+---
+
+## 4. 静默安装（企业/批量部署）
+
+安装包支持命令行变量。以管理员身份运行命令提示符/PowerShell：
+
+```bat
+ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 ArxRds=ACME
+```
+
+| 参数 | 作用 |
+|---|---|
+| `ArxQuiet=1` | MSI 静默安装，不显示安装界面 |
+| `ArxYears=2020,2024,2026` | 预设勾选的年份（逗号分隔，不要加空格） |
+| `ArxRds=符号` | RDS 前缀；省略则使用 ADSK |
+| `ArxRoot=路径` | Autodesk 根目录 |
+| `ArxSdkPath=路径` | ObjectARX SDK 位置 |
+| `ArxPropsDir=路径` | 属性表目录；省略则跟随安装目录 |
+| `ArxSkipVsix=1` | 只装文件和属性表，不安装 VS 扩展 |
+| `ArxSkipVsCheck=1` | Visual Studio 正在运行也继续安装（不推荐） |
+
+---
+
+## 5. 安装后检查
+
+打开 Visual Studio 2022 或 2026：
+
+1. **文件 → 新建 → 项目**（或按 `Ctrl+Shift+N`）；
+2. 搜索框输入 **ObjectARX**；
+3. 应看到两个模板：**ObjectARX/DBX/CRX Application (Multi-Version)** 与 **ObjectARX/DBX Application with OMF Support (Multi-Version)**，语言标记为 C++。
+
+能看到即表示安装成功。若看不到，见[第 11 节](#11-常见问题)。
+
+---
+
+## 6. 新建第一个 ObjectARX 工程
+
+### 6.1 操作步骤
+
+1. **文件 → 新建 → 项目**，搜索 ObjectARX，选择 **ObjectARX/DBX/CRX Application (Multi-Version)**，点击“下一步”；
+2. 输入工程名（例如 `MyArxApp`）和保存位置，点击“创建”；
+3. 弹出选项窗口 **ObjectARX/DBX Application Wizard**（英文界面，单页）。
+
+### 6.2 选项窗口逐栏说明
+
+| 分组 | 选项 | 什么时候选 |
+|---|---|---|
+| **Registered Developer Symbol (RDS)** | 最多 4 个字符 | 输出文件与样板代码的前缀，默认 `ADSK`，一般保持默认 |
+| **Application Type** | ObjectARX Application (`.arx`) | 标准 AutoCAD 扩展（最常用） |
+| | ObjectDBX Application (`.dbx`) | 宿主无关的数据库应用（可被 RealDWG/DBX 宿主加载，不依赖 AutoCAD 界面） |
+| | AutoCAD Console Application (`.crx`) | AutoCAD 控制台程序 |
+| **Target AutoCAD Versions** | 年份复选框 + Select all / Clear | 要纳入工程的年份。**只有本机已装属性表的年份可以勾选**；需要其他年份时重新运行安装包补勾（见[第 10 节](#10-修复增减目标年份与卸载)） |
+| **MFC Support** | No MFC support | 不用 MFC（纯 ObjectARX 命令/实体通常选这个） |
+| | Regular DLL with MFC statically linked | 静态链接 MFC 的规则 DLL |
+| | Regular DLL using MFC shared DLL | 动态 MFC 规则 DLL |
+| | Extension DLL using MFC shared DLL | MFC 扩展 DLL；要使用 AutoCAD 的 AdUi/AcUi 界面类时选它 |
+| | with AutoCAD MFC Extension support | 同时链接 AutoCAD MFC 扩展 |
+| **COM Options** | Not a COM server | 不做 COM（多数人选这个） |
+| | Implement a COM server / …using ATL | 向 VBA、.NET 等 COM 客户端暴露对象时选择 |
+| | use ObjectARX ATL Extensions for Custom Objects | ATL 方式下对自定义实体使用 ObjectARX ATL 扩展 |
+| | Type library to `#import` | 是否自动 `#import` ObjectDBX 或 AutoCAD 类型库 |
+| **.NET Options** | .NET mixed managed module | 生成 C++/CLI 混合模块（供 .NET 代码调用；2025 起为 .NET 8/10，更早为 .NET Framework） |
+| | AutoCAD Architecture (ACA) / AutoCAD MEP support | 对应垂直产品的 .NET 支持 |
+| **Debug** | Implement `_DEBUG` preprocessor symbol | 需要样板预置 `_DEBUG` 宏时勾选 |
+
+### 6.3 完成创建
+
+窗口底部红字会提示阻止创建的问题（例如一个年份都没选）。确认无误后点 **Finish**。
+
+生成内容包括：
+
+- `acrxEntryPoint.cpp`（命令入口）、`StdAfx.h/.cpp`、`DocData.h/.cpp`、`Resource.h`、`root.cpp/.idl/.rgs/.rc` 等样板文件（随选项增删）；
+- 每个选中年份两套配置 `<年份>|x64` 和 `<年份>d|x64`；2010–2019 年另含 Win32 平台，**2020 年起只有 x64**；
+- 选择 OMF 模板时，解决方案中还会出现一个 **Enu 资源 DLL 子项目**，主项目自动依赖它。
+
+> 建议：第一次使用时保持所有默认选项（`.arx` + 默认勾选的年份），先跑通“创建 → 编译 → 加载”全流程，再尝试其他选项。
+
+---
+
+## 7. 向工程中添加 ObjectARX 类
+
+### 7.1 推荐方式：右键菜单“Add ObjectARX Class...”
+
+在“解决方案资源管理器”中**右键工程节点 → Add ObjectARX Class...**：
+
+1. 在弹出的列表中选择需要的类模板；
+2. 类名已自动填好默认值，可自行修改；
+3. 点击确认，部分模板还会再弹一个选项窗口（例如 MFC 类要选基类和是否插入对话框资源），按提示选择即可。
+
+**为什么推荐这种方式**：这个入口不经过 Visual Studio 自带的“添加新项”对话框，在任何时候都稳定可用（它绕开了 VS 自身的一个已知缺陷，见[第 11.4 节](#114-新建工程后立即添加新项时-vs-闪退或对话框消失)）。该菜单项只在 ObjectARX 工程上出现，普通工程上自动隐藏。
+
+### 7.2 另一种方式：添加 → 新建项
+
+**项目 → 添加新项**（`Ctrl+Shift+A`），在 **ArxWizard** 分类下选择同样的 7 个模板。注意：**工程刚创建完的半分钟内请等状态栏显示“就绪”后再操作**，原因同上。
+
+### 7.3 七个类模板分别做什么
+
+| 模板 | 生成的内容 | 典型用途 |
+|---|---|---|
+| **ObjectDBX Custom Object Class** | 从 ObjectDBX 基类派生的自定义类（自定义实体） | 需要在 DWG 中保存自己的图形对象 |
+| **ObjectARX/DBX Transient Reactors Class** | 瞬态反应器类（编辑器、文档、数据库、事件等 30 余种基类可选） | 响应 AutoCAD 的各类事件（图形修改、命令开始、打印等） |
+| **ObjectARX Jig Class** | `AcEdJig` 派生类 | 实体绘制过程中的鼠标交互/动态拖拽预览 |
+| **ObjectARX MFC Class** | AdUi/AcUi MFC 派生类（对话框、停靠栏、选项板、字段对话框、文件对话框等），可选注入对话框资源 | 做模态/非模态对话框、停靠面板、属性选项板界面 |
+| **ObjectARX .NET Wrapper Class** | C++ 类的 C++/CLI 托管包装 | 让 ObjectARX .NET (C#/VB.NET) 代码调用原生 ObjectARX 类 |
+| **AutoCAD COM Wrapper Object** | ATL COM coclass 包装 | 向 VBA、.NET COM 互操作等自动化客户端暴露对象 |
+| **AutoCAD Object Dynamic Property** | 实现 `IDynamicProperty2` 的 ATL COM 对象 | 在 AutoCAD“特性”选项板中为对象增加自定义动态特性 |
+
+---
+
+## 8. 编译、加载与调试
+
+### 8.1 选择配置并编译
+
+1. 在配置工具栏选择目标年份：**`2024`** 为 Release、**`2024d`** 为 Debug（年份换成您需要的）；
+2. 2020 年起平台固定为 **x64**；
+3. **生成 → 生成解决方案**（`Ctrl+Shift+B`）。
+
+输出文件位于工程的 `x64\<年份>\`（或 `x64\<年份>d\`）目录，文件名自动带 RDS 前缀和年份，例如 `ADSKMyArxApp2024.arx`。
+
+### 8.2 在 AutoCAD 中加载
+
+- `.arx / .dbx / .crx`：在 AutoCAD 中输入命令 **APPLOAD**（或“管理 → 加载应用程序”），选择生成的文件；也可以把文件拖入 AutoCAD 窗口；
+- .NET 混合模块（`.dll`）：使用 **NETLOAD** 命令加载；
+- 样板工程已带一个测试命令（通常是工程名相关命令），加载后在命令行输入即可验证。
+
+### 8.3 调试设置
+
+右键工程 → 属性 → 调试 → 命令，填写您的 `acad.exe` 完整路径（例如 `C:\Program Files\Autodesk\AutoCAD 2024\acad.exe`），然后按 **F5**：会启动 AutoCAD，APPLOAD 加载生成的模块后，命中断点。
+
+### 8.4 编译报“未找到 ObjectARX <年份> 的属性表”怎么办
+
+报错信息类似：
+
+> 未找到 ObjectARX 2026 的属性表（…Autodesk.arx-2026.props）。请重新运行安装程序勾选该年份，或改用已安装的年份配置。
+
+说明当前选的年份配置在安装时没有勾选。**重新运行安装包 → 选择“更改目标 AutoCAD 版本并重新安装” → 勾上该年份**即可（操作见[第 10 节](#10-修复增减目标年份与卸载)），无需重装 Visual Studio。
+
+### 8.5 OMF 工程提示缺少 `AecCore.h`
+
+这是本机缺少 **AEC OMF SDK**（建筑垂直产品 SDK）导致的，与向导无关。安装对应版本的 AEC OMF SDK 后再编译；不做垂直产品开发请使用第一个（非 OMF）项目模板。
+
+---
+
+## 9. 年份 / 工具集 / 平台速查表
+
+| AutoCAD 年份 | 平台工具集 | ObjectARX SDK | 可用平台 | .NET 混合模块目标 |
+|---|---|---|---|---|
+| 2010 | v90 | 18.2 | Win32 / x64 | .NET Framework 3.5 |
+| 2012 | v90 | 18.2 | Win32 / x64 | .NET Framework 3.5 |
+| 2013 | v100 | 19.1 | Win32 / x64 | .NET Framework 4.0 |
+| 2014 | v100 | 19.1 | Win32 / x64 | .NET Framework 4.0 |
+| 2015 | v110 | 21.0 | Win32 / x64 | .NET Framework 4.5 |
+| 2016 | v110 | 21.0 | Win32 / x64 | .NET Framework 4.5 |
+| 2018 | v140 | 22.0 | Win32 / x64 | .NET Framework 4.6 |
+| 2019 | v141 | 23.0 | Win32 / x64 | .NET Framework 4.7 |
+| 2020 | v141 | 23.1 | **仅 x64** | .NET Framework 4.7 |
+| 2021 | v142 | 24.0 | 仅 x64 | .NET Framework 4.8 |
+| 2022 | v142 | 24.1 | 仅 x64 | .NET Framework 4.8 |
+| 2023 | v142 | 24.2 | 仅 x64 | .NET Framework 4.8 |
+| 2024 | v143 | 24.3 | 仅 x64 | .NET Framework 4.8 |
+| 2025 | v143 | 25.0 | 仅 x64 | **.NET 8** |
+| 2026 | v143 | 25.1 | 仅 x64 | **.NET 8** |
+| 2027 | v145 | 26.0 | 仅 x64 | **.NET 10** |
+
+---
+
+## 10. 修复、增减目标年份与卸载
+
+**重新双击运行同一个 `ObjectARXMultiVersionWizards-main.exe`**，会进入维护页面，提供三个选项：
+
+| 选项 | 作用 |
+|---|---|
+| **修复 ObjectARX Multi-Version Wizards** | 重新写入全部文件并重新注册扩展。Visual Studio 大版本更新后模板“消失”时，用它恢复 |
+| **更改目标 AutoCAD 版本并重新安装** | 重新进入年份勾选页：新勾的年份补生成属性表，取消的年份会被清理。换了新 SDK、想支持新年份时用它 |
+| **删除 ObjectARX Multi-Version Wizards** | 卸载向导文件与 VS 扩展 |
+
+也可以在 **设置 → 应用 → 已安装的应用**（或“程序和功能”）中找到 **ObjectARX Multi-Version Wizards** 进行卸载。
+
+说明：
+
+- 写入 ObjectARX SDK `inc` 目录的 3 个公共文件（`rxsdk_common.props`、`crx.props`、`arxEntryPoint.h`）和属性表文件夹在卸载后会保留，这是有意设计（Autodesk SDK 自身的安装器可能共用这些位置）；
+- 卸载后重新安装不影响已有工程，工程文件始终保存在您自己选择的目录中。
+
+---
+
+## 11. 常见问题
+
+### 11.1 “新建项目”里搜不到 ObjectARX 模板
+
+1. 确认安装时所有 Visual Studio 都已关闭，并在安装完成后重启过 VS；
+2. 确认 VS 版本为 2022（17.x）或 2026（18.x）；
+3. 重新运行安装包，选择“**修复**”，完成后再次重启 VS；
+4. 仍不显示：删除 VS 的模板缓存目录后重启 VS——
+   `%LOCALAPPDATA%\Microsoft\VisualStudio\<版本实例目录>\VTC`（例如 `18.0_xxxxxxxx`），把该目录改名或删除，再启动 VS；
+5. 以日志启动 VS 定位：命令行执行 `devenv /log`，复现后查看 `%APPDATA%\Microsoft\VisualStudio\<版本>\ActivityLog.xml`。
+
+### 11.2 安装刚开始就提示关闭 Visual Studio
+
+安装器检测到 `devenv.exe`（或 Visual Studio Installer）在运行。请保存工作、关闭所有 VS 窗口后点击重试；目前没有写入任何文件，直接取消也不会留下残余。
+
+### 11.3 安装结束提示“扩展（VSIX）没有装完”
+
+最常见原因是 VS 或 Visual Studio Installer 仍在后台运行。关闭它们后**重新运行安装包即可**（重跑是安全的，已复制的文件不受影响），也可重新运行安装包选择“修复”。
+
+### 11.4 新建工程后立即“添加新项”时 VS 闪退或对话框消失
+
+这是 Visual Studio 2022/2026 自身的已知缺陷（工程刚创建时后台正在解析/索引大量头文件，此时在“添加新项”对话框中选中会预填名称的模板可能触发，错误码 `0x80040201`）。规避方法：
+
+- **始终优先使用右键工程 → Add ObjectARX Class...**（见 [7.1](#71-推荐方式右键菜单add-objectarx-class)），它完全不走有缺陷的对话框；
+- 或等待 VS 状态栏显示“**就绪**”后再使用“添加新项”。
+
+### 11.5 部分年份配置编译失败，提示找不到工具集（如 v90/v100/v140）
+
+旧年份需要旧版平台工具集：打开 Visual Studio Installer → 修改 → 单个组件，勾选对应的 **MSVC vxxx 生成工具**（v140 = VS2015 工具集，v100/v90 等为更早版本）与旧版 Windows SDK。只做 2020 以后版本则无需安装。
+
+### 11.6 在哪里看安装日志
+
+| 用途 | 位置 |
+|---|---|
+| 向导/扩展运行日志 | `%TEMP%\ArxVsixWizard\wizard.log` |
+| VSIX 扩展安装日志 | `%TEMP%\ObjectARXWizards-vsix.log`、`%TEMP%\vsixinstall.log` |
+| 详细 MSI 安装日志 | 管理员命令行执行 `msiexec /i ObjectARXWizard.msi /l*v "%TEMP%\arx-msi.log"` 复现 |
+
+### 11.7 VS 中看到两套相似的 ObjectARX 添加项入口
+
+除扩展自带的 ArxWizard 分类模板外，安装器同时部署了一套经典同名项向导（可能出现在“添加 → 类”或“添加新项”列表中），两者生成的代码功能一致，任选其一即可；为避开 11.4 的缺陷，推荐统一使用右键 **Add ObjectARX Class...**。
+
+---
+
+*ObjectARX 官方文档：<https://help.autodesk.com/view/OARX/2024/ENU/> · AutoCAD 开发者中心：<https://www.autodesk.com/developer-network/platform-technologies/autocad>*

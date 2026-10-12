@@ -36,6 +36,11 @@ $text = (Get-Content $sourceIss -Raw) -replace "`r`n", "`n"
 $test = $text
 # the derived script lives in %TEMP%, so its relative payload root has to become absolute
 $test = $test.Replace('#define RepoRoot ".."', '#define RepoRoot "' + $repo + '"')
+# the shipped script expects the VSIX beside the sources (tools\build-and-pack.ps1 puts it there
+# when it compiles the real package); the sandbox has no build, so point the payload at a stand-in
+$vsix = Join-Path $work 'ObjectARXMultiVersionWizards.vsix'
+Set-Content -Path $vsix -Value 'sandbox stand-in' -Encoding ASCII
+$test = $test.Replace('#define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"', '#define VsixSource "' + $vsix + '"')
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
@@ -61,7 +66,7 @@ $arxSdk = Join-Path $work 'ObjectARX'
 $vsRoot = Join-Path $work 'vs2022'
 # {$appDir} is deliberately NOT created here: Inno only removes a directory it created itself,
 # so the uninstall checks below need the installer to make it.
-foreach ($d in @($propsDir, $arxSdk,
+foreach ($d in @($propsDir,
                  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk'),
                  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX'))) {
   New-Item -ItemType Directory -Force $d | Out-Null
@@ -74,7 +79,7 @@ $installArgs = @(
   ('/DIR="' + $appDir + '"'),
   ('/PROPSDIR="' + $propsDir + '"'),
   ('/ARXROOT="' + $sdkDir + '"'),
-  ('/ARXSDKPATH="' + $arxSdk + '"'),
+
   ('/VSROOT="' + $vsRoot + '"'),
   ('/YEARS=' + $years),
   '/RDS=ABC',
@@ -118,7 +123,7 @@ Check 'installer exited 0' ($p.ExitCode -eq 0) ('exit=' + $p.ExitCode)
 
 # ---- install folder ----
 $expectApp = @(
-  'rxsdk_common.props', 'crx.props',
+
   'ArxWizCommon\arxCommon.js', 'ArxAppWiz\1033\styles.css', 'ArxAppWiz182\1033\styles.css',
   'ArxAtlWizComWrapper\Templates\1033\object.h', 'ArxAtlWizDynProp\Templates\1033\dynprop.h',
   'ArxWizCustomObject\Templates\1033\object.h', 'ArxWizJig\Templates\1033\Jig.h',
@@ -164,11 +169,8 @@ $jsLine = (($js -split "`n") | Where-Object { $_ -match 'var ARX_PROPS_DIR =' } 
 Check 'arxCommon.js points at the props folder' `
       ($null -ne $jsLine -and $jsLine.Contains('var ARX_PROPS_DIR ="' + $jsExpect + '" ;')) $jsLine
 
-# ---- SDK inc folder ----
-Check 'SDK inc folder populated' (
-  (Test-Path (Join-Path $arxSdk 'inc\rxsdk_common.props')) -and
-  (Test-Path (Join-Path $arxSdk 'inc\crx.props')) -and
-  (Test-Path (Join-Path $arxSdk 'inc\arxEntryPoint.h')))
+# ---- the SDK folder is never touched ----
+Check 'the installer leaves the SDK folder alone' (-not (Test-Path $arxSdk))
 
 # ---- no property sheet ships: the props folder holds the generated ones and nothing else ----
 $foreign = @(Get-ChildItem $propsDir -File | Where-Object { $_.Name -notlike 'Autodesk.arx-*' -and $_.Name -ne 'ObjectARX.User.props' })
@@ -246,7 +248,7 @@ Wait-Gone $appDir
 Check 'generated props removed on uninstall' ((Get-ChildItem $propsDir -Filter 'Autodesk.arx-*.props' -ErrorAction SilentlyContinue).Count -eq 0)
 Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $propsDir 'ObjectARX.User.props')))
 Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
-Check 'SDK inc files survive the uninstall' (Test-Path (Join-Path $arxSdk 'inc\arxEntryPoint.h'))
+
 Check 'install folder removed' (-not (Test-Path $appDir))
 Check 'VS wizard files removed' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz')))
 $k = Get-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -ErrorAction SilentlyContinue
@@ -263,7 +265,7 @@ Set-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Name 'Instal
 $argsRemembered = ($installArgs -replace ' /DIR="[^"]*"', '') -replace ' /PROPSDIR="[^"]*"', ''
 $p = Start-Process -FilePath $setup -ArgumentList $argsRemembered -NoNewWindow -Wait -PassThru
 Check 'install folder defaults to the remembered folder' `
-      ($p.ExitCode -eq 0 -and (Test-Path (Join-Path $remembered 'rxsdk_common.props'))) ('exit=' + $p.ExitCode)
+      ($p.ExitCode -eq 0 -and (Test-Path (Join-Path $remembered 'ArxWizCommon\arxCommon.js'))) ('exit=' + $p.ExitCode)
 Check 'its props folder follows it' (Test-Path (Join-Path $remembered 'Autodesk.arx-2020.props'))
 Start-Process -FilePath (Join-Path $remembered 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
 Wait-Gone $remembered

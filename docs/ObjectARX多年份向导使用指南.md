@@ -86,7 +86,6 @@
 | 字段 | 含义 | 默认值 |
 |---|---|---|
 | Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
-| ObjectARX SDK 位置 | 安装器会向其 `inc` 子目录写入 3 个公共文件 | `C:\ObjectARX` |
 | 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取；只要不手动改，它会一直跟随第 2 页的安装目录 | 跟随安装目录 |
 
 ### 第 5 页：目标 AutoCAD 版本
@@ -98,11 +97,11 @@
 
 ### 第 6 页：准备安装
 
-本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、SDK 位置、属性表目录、目标年份），确认无误后点击“安装”。
+本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份），确认无误后点击“安装”。
 
 ### 安装过程中
 
-1. 复制向导文件、生成勾选年份的属性表、向 ObjectARX SDK 的 `inc` 目录写入公共文件；
+1. 复制向导文件、生成勾选年份的属性表；
 2. 自动为当前用户把 Visual Studio 扩展注册到本机所有受支持的 VS 实例（Visual Studio 2022 与 2026）。此步骤可能弹出 Visual Studio 自带的扩展安装窗口并持续 1–2 分钟，属正常现象，**请勿手动关闭它**；
 3. 如果扩展安装返回错误，安装结束时会弹出提示框（处理方法见 [11.3](#113-安装结束提示扩展vsix没有装完)）。
 
@@ -127,7 +126,6 @@ ObjectARXMultiVersionWizards-dev.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=2020,2
 | `/DIR=路径` | 安装目录 |
 | `/PROPSDIR=路径` | 属性表目录；省略则跟随安装目录 |
 | `/ARXROOT=路径` | Autodesk 根目录（SDK 与 AutoCAD 的共同上级） |
-| `/ARXSDKPATH=路径` | ObjectARX SDK 位置 |
 | `/VSROOT=路径` | 手工指定 Visual Studio 安装根目录（自动检测不到时使用） |
 | `/SKIPVSIX=1` | 只装文件和属性表，不安装 VS 扩展 |
 | `/SKIPVSCHECK=1` | Visual Studio 正在运行也继续安装（不推荐） |
@@ -299,7 +297,7 @@ ObjectARXMultiVersionWizards-dev.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=2024,2
 
 **卸载：**
 
-通过“设置 → 应用 → 已安装的应用”，或重新运行安装包选择“卸载安装”。卸载会移除向导文件、VS 中的注册项、扩展以及已生成的年份属性表；写入 ObjectARX SDK `inc` 目录的 3 个公共文件会保留（Autodesk SDK 可能共用它们）。
+通过“设置 → 应用 → 已安装的应用”，或重新运行安装包选择“卸载安装”。卸载会移除向导文件、VS 中的注册项、扩展以及已生成的年份属性表；本版安装器不再向 ObjectARX SDK 目录写入任何文件。
 
 ---
 

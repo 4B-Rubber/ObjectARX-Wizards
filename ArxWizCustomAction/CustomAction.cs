@@ -32,58 +32,9 @@ namespace ArxWizCustomAction
     public static class CustomActions
     {
 
-        /// <summary>
-        /// The Objective of this custom action is, we will replace [TARGETDIRECTORY] which is retrieved at time of Installation session in to
-        /// several *.vsz file.
-        /// We will not replace Wizversion, as every year MSVS comes with some new directory change, fix the [WIZVERSION] on several *.vsz files is becoming complex.
-        /// We will change the WIZVERSION to hardcode value start copying.
-        /// </summary>
-        /// <param name="session"></param>
-        /// <returns></returns>
-        [CustomAction]
-        public static ActionResult PatchVSFiles(Session session)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-            session.Log("Begin PatchVSFiles");
-            string TARGETDIR = session["TARGETDIR"];
-            //This gives us the right folder where the wizard files are sitting.
-            string vcFolder = session["D_VS2022VCFOLDER"];
-
-            char[] delimiterChars = { ' ', ',', ';', ':', '\t' };
-
-            //ArxAppWiz;ArxAppWiz182;ArxAtlWizComWrapper;ArxAtlWizDynProp;ArxWizCustomObject;ArxWizJig;ArxWizMFCSupport;ArxWizNETWrapper;ArxWizReactors
-            string pArxWizList = session["ArxWizList"];
-            session.Log(" >> PatchVSFiles: ArxWizList = " + pArxWizList);
-
-            string[] ArxWizList = pArxWizList.Split(delimiterChars);
-            List<string> lArxWizList = ArxWizList.ToList();
-
-            session.Log(" >> PatchVSFiles:   Processing = " + vcFolder);
-            DirectoryInfo di = new DirectoryInfo(vcFolder);
-            FileInfo[] files = di.GetFiles("*.vsz", SearchOption.AllDirectories)
-                                 .Where(p => lArxWizList.Contains(Path.GetFileNameWithoutExtension(p.Name))).ToArray();
-            session.Log(" >> PatchVSFiles:   DirectoryInfo = " + files.Length.ToString());
-            foreach (FileInfo file in files)
-            {
-                try
-                {
-                    session.Log(" >> PatchVSFiles:   ArxWizList =>> " + file.FullName);
-                    string szData = File.ReadAllText(file.FullName);
-                    szData = szData.Replace("[TARGETDIR]", TARGETDIR);
-                    File.WriteAllText(file.FullName, szData);
-                    session.Log("\n" + szData);
-                }
-                catch (Exception ex)
-                {
-                    session.Log(ex.Message);
-                    return ActionResult.Failure;
-                }
-            }
-            session.Log("Ending PatchVSFiles");
-            return (ActionResult.Success);
-        }
+        // (PatchVSFiles used to rewrite [TARGETDIR] in the nine classic .vsz files, driven by the
+        //  ArxWizList property. This line installs no classic wizard payload any more, so there is
+        //  nothing left to rewrite.)
 
         /// <summary>
         /// Visual Studio installs this machine can see, newest first. The version comes from
@@ -154,55 +105,11 @@ namespace ArxWizCustomAction
             return ActionResult.Success;
         }
 
-        /// <summary>
-        /// One Visual Studio is described by VS2022_ROOT_FOLDER, so the MSI installs the wizard
-        /// registration files into that one only, and the .vsz files it wrote carry that version's
-        /// wizard engine ProgID. Copy them into every other Visual Studio on the machine - a VS2026
-        /// next to a VS2022, or the other way round - and rewrite the engine ProgID to the version of
-        /// the folder they land in, or the wizards never show up there.
-        /// </summary>
-        [CustomAction]
-        public static ActionResult DeployWizardsToOtherVS(Session session)
-        {
-            session.Log("Begin DeployWizardsToOtherVS");
-            string vcFolder = session["D_VS2022VCFOLDER"];
-            if (string.IsNullOrEmpty(vcFolder) || !Directory.Exists(vcFolder))
-            {
-                session.Log(" >> DeployWizardsToOtherVS: no Visual Studio VC folder (" + vcFolder + ")");
-                return ActionResult.Success;
-            }
-
-            string targetDir = session["TARGETDIR"];
-            string primary = Path.GetFullPath(vcFolder).TrimEnd('\\');
-
-            // The registration folders the payload carries, relative to the VC folder.
-            string[] folders = { @"vcprojects\Autodesk", @"vcprojectitems\ObjectARX" };
-
-            foreach (var install in FindVsInstalls())
-            {
-                string vc = Path.GetFullPath(Path.Combine(install.Key, @"Common7\IDE\VC")).TrimEnd('\\');
-                RefreshVsWizardCache(install.Key, session);
-                foreach (string relative in folders)
-                {
-                    string source = Path.Combine(primary, relative);
-                    if (!Directory.Exists(source)) continue;
-                    string target = Path.Combine(vc, relative);
-                    if (!string.Equals(target, source, StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { CopyFolder(source, target); }
-                        catch (Exception ex)
-                        {
-                            session.Log(" >> DeployWizardsToOtherVS: copy failed: " + ex.Message);
-                            continue;
-                        }
-                        session.Log(" >> copied " + relative + " to " + install.Key);
-                    }
-                    PatchWizardFiles(target, install.Value, targetDir, session);
-                }
-            }
-            session.Log("Ending DeployWizardsToOtherVS");
-            return ActionResult.Success;
-        }
+        // (DeployWizardsToOtherVS used to mirror vcprojects\Autodesk and vcprojectitems\ObjectARX
+        //  into every other Visual Studio and rewrite their engine ProgID. This line installs no
+        //  classic wizard payload any more, so there is nothing left to mirror. The helpers below
+        //  - FindVsInstalls / RefreshVsWizardCache / CopyFolder / PatchWizardFiles - stay: they are
+        //  what a future registration deployment would build on.)
 
         /// <summary>
         /// Visual Studio caches its wizard and project list, so the files this action just copied are
@@ -266,84 +173,9 @@ namespace ArxWizCustomAction
         }
 
 
-        [CustomAction]
-        public static ActionResult PatchHTMLWizFiles(Session session)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-            session.Log("Begin PatchHTMLWizFiles");
-            string TARGETDIR = session["TARGETDIR"];
-            string RDS = String.IsNullOrEmpty(session["RDS"]) ? "ADSK" : session["RDS"];
-            session.Log(" >> PatchHTMLWizFiles: RDS = " + RDS + " / TARGETDIR = " + TARGETDIR);
-
-            DirectoryInfo di = new DirectoryInfo(TARGETDIR);
-            FileInfo[] files = di.GetFiles("default.htm", SearchOption.AllDirectories)
-                             .Where(p => p.DirectoryName.Contains("AppWiz")).ToArray();
-            session.Log(" >> PatchHTMLWizFiles:   DirectoryInfo = " + files.Length.ToString());
-            foreach (FileInfo file in files)
-            {
-                try
-                {
-                    session.Log(" >> PatchHTMLWizFiles:   =>> " + file.FullName);
-                    string szData = File.ReadAllText(file.FullName);
-                    szData = szData.Replace("ADSK", RDS);
-                    File.WriteAllText(file.FullName, szData);
-                }
-                catch (Exception ex)
-                {
-                    session.Log(ex.Message);
-                    return ActionResult.Failure;
-                }
-            }
-
-            session.Log("Ending PatchHTMLWizFiles");
-            return (ActionResult.Success);
-        }
-        /// <summary>
-        /// The legacy HTML wizard keeps the props folder in a hardcoded JS constant. Point it at the
-        /// folder the user chose so the old and the new wizards resolve the same place.
-        /// </summary>
-        [CustomAction]
-        public static ActionResult PatchArxCommonJsFiles(Session session)
-        {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-            session.Log("Begin PatchArxCommonJsFiles");
-            try
-            {
-                string targetDir = session["TARGETDIR"];
-                string propsDir = session["ARXPROPSDIR"];
-                session.Log(" >> PatchArxCommonJsFiles: propsDir = " + propsDir + " / TARGETDIR = " + targetDir);
-                if (string.IsNullOrEmpty(targetDir) || string.IsNullOrEmpty(propsDir) || !Directory.Exists(targetDir))
-                {
-                    session.Log(" >> PatchArxCommonJsFiles: nothing to patch");
-                    return ActionResult.Success;
-                }
-
-                // JavaScript string literal: every backslash has to be doubled.
-                string jsPath = propsDir.TrimEnd('\\').Replace("\\", "\\\\") + "\\\\";
-                foreach (string file in Directory.GetFiles(targetDir, "arxCommon.js", SearchOption.AllDirectories))
-                {
-                    string text = File.ReadAllText(file);
-                    string updated = Regex.Replace(text, "var ARX_PROPS_DIR\\s*=\\s*\"[^\"]*\"\\s*;",
-                                                   m => "var ARX_PROPS_DIR =\"" + jsPath + "\" ;");
-                    if (updated != text)
-                    {
-                        File.WriteAllText(file, updated);
-                        session.Log(" >> PatchArxCommonJsFiles: patched " + file);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                session.Log(ex.Message);
-                return ActionResult.Failure;
-            }
-            session.Log("Ending PatchArxCommonJsFiles");
-            return (ActionResult.Success);
-        }
+        // (PatchHTMLWizFiles rewrote ADSK to the chosen RDS in the classic HTML pages, and
+        //  PatchArxCommonJsFiles pointed arxCommon.js at the chosen props folder. Both files belong
+        //  to the classic line, which this line does not install.)
 
     }
 

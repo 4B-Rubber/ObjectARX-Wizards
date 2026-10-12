@@ -81,19 +81,13 @@
   <Property Id="WIX_CA_LOGGING" Value="0" />
   <!--End-->
 	<Binary Id="ID_CABinary" SourceFile="Binary\ArxWizCustomAction.CA.dll" />
-	<CustomAction Id="CA_PatchVSFiles" BinaryKey="ID_CABinary" DllEntry="PatchVSFiles" Execute="immediate" Return="check" />
 	<!-- VS2022_ROOT_FOLDER comes from the WixVSExtension and is only ever set for VS2022; on a
 	     machine with another version this fills the gap before CostFinalize resolves the tree. -->
 	<CustomAction Id="CA_FindVsRootFolder" BinaryKey="ID_CABinary" DllEntry="FindVsRootFolder" Execute="immediate" Return="check" />
-	<!-- Mirrors the registration files into every other Visual Studio and rewrites the wizard engine
-	     ProgID to that version. Return=ignore: a machine where one folder cannot be written to is
-	     still a working install for the Visual Studio the MSI itself targets. -->
-	<CustomAction Id="CA_DeployWizardsToOtherVS" BinaryKey="ID_CABinary" DllEntry="DeployWizardsToOtherVS" Execute="immediate" Return="ignore" />
-	<Property Id="VSList" Value="VS2022_ROOT_FOLDER" />
-	<Property Id="ArxWizList" Value="ArxAppWiz;ArxAppWizOMF;ArxAtlWizComWrapper;ArxAtlWizDynProp;ArxWizCustomObject;ArxWizJig;ArxWizMFCSupport;ArxWizNETWrapper;ArxWizReactors" />
-	<CustomAction Id="CA_PatchHTMLWizFiles" BinaryKey="ID_CABinary" DllEntry="PatchHTMLWizFiles" Execute="immediate" Return="check" />
-	<!-- The legacy HTML wizard hardcodes the props folder in arxCommon.js; rewrite it to the chosen one. -->
-	<CustomAction Id="CA_PatchArxCommonJs" BinaryKey="ID_CABinary" DllEntry="PatchArxCommonJsFiles" Execute="immediate" Return="check" />
+	<!-- (CA_PatchVSFiles / CA_PatchHTMLWizFiles / CA_PatchArxCommonJs / CA_DeployWizardsToOtherVS,
+	     and the VSList / ArxWizList properties they used, are gone: they only ever touched the
+	     classic wizard payload, which this line no longer installs. The CA dll keeps the helper
+	     code - FindVsRootFolder still walks the same machines.) -->
 	
 	<!-- Install-time generation of Autodesk.arx-<year>.props. A deferred custom action only receives
 	     CustomActionData, and a type-51 property-set action is capped at 255 characters in the MSI
@@ -146,10 +140,6 @@
 		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"><![CDATA[NOT Installed]]></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
-		<Custom Action="CA_PatchVSFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
-		<Custom Action="CA_PatchHTMLWizFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
-		<Custom Action="CA_PatchArxCommonJs" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
-		<Custom Action="CA_DeployWizardsToOtherVS" After="CA_PatchArxCommonJs"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 		<Custom Action="CA_PrepArxPropsData" After="InstallInitialize"></Custom>
 		<Custom Action="CA_CREATEARXPROPS" After="InstallFiles"><![CDATA[NOT Installed OR REINSTALL]]></Custom>
 		<Custom Action="CA_CLEANUPUNSELECTEDARXPROPS" After="CA_CREATEARXPROPS"><![CDATA[NOT Installed OR REINSTALL]]></Custom>
@@ -171,9 +161,6 @@
 	</AdminUISequence>
 	<AdminExecuteSequence>
 		<Custom Action="CA_TARGETDIR" Before="CostInitialize"><![CDATA[TARGETDIR=""]]></Custom>
-		<Custom Action="CA_PatchVSFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
-		<Custom Action="CA_PatchHTMLWizFiles" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
-		<Custom Action="CA_PatchArxCommonJs" After="InstallFinalize"><![CDATA[REINSTALL OR NOT Installed]]></Custom>
 	</AdminExecuteSequence>
 
 

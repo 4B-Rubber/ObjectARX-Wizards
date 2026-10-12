@@ -716,6 +716,11 @@ end;
 function InitializeUninstall(): Boolean;
 begin
   Result := True;
+  // The uninstaller has work of its own to report (RemoveVsRegistrations / RemoveVsix), and
+  // InitializeSetup does not run during an uninstall, so point Alog at the same file the install
+  // side writes - one log then holds the whole install/uninstall history.
+  LogFile := ExpandConstant('{%TEMP}') + '\ObjectARXWizards-Inno.log';
+  Alog('InitializeUninstall');
   if not RegQueryStringValue(HKLM64, RegKey, 'PropsDir', UninstallPropsDir) then
     UninstallPropsDir := '';
 end;
@@ -873,13 +878,15 @@ begin
   Lbl.Top := ScaleY(2);
   Lbl.Caption := Cm('YearsLabel');
 
-  BtnW := ScaleX(56);
+  // One width for all four so the row reads as one group: they used to be 56, 56, 56 and 96,
+  // which looked like two different rows of controls.
+  BtnW := ScaleX(96);
   Gap := ScaleX(6);
   Right := PageYears.SurfaceWidth;
-  AddYearButton(Cm('BtnAll'), Right - 3 * BtnW - ScaleX(96) - 3 * Gap, BtnW, @OnYearsAll);
-  AddYearButton(Cm('BtnNone'), Right - 2 * BtnW - ScaleX(96) - 2 * Gap, BtnW, @OnYearsNone);
-  AddYearButton(Cm('BtnInvert'), Right - BtnW - ScaleX(96) - Gap, BtnW, @OnYearsInvert);
-  AddYearButton(Cm('BtnCompatible'), Right - ScaleX(96), ScaleX(96), @OnYearsCompatible);
+  AddYearButton(Cm('BtnAll'), Right - 4 * BtnW - 3 * Gap, BtnW, @OnYearsAll);
+  AddYearButton(Cm('BtnNone'), Right - 3 * BtnW - 2 * Gap, BtnW, @OnYearsNone);
+  AddYearButton(Cm('BtnInvert'), Right - 2 * BtnW - Gap, BtnW, @OnYearsInvert);
+  AddYearButton(Cm('BtnCompatible'), Right - BtnW, BtnW, @OnYearsCompatible);
 
   Y := ScaleY(28);
   ColW := (PageYears.SurfaceWidth - ScaleX(8)) div 2;
@@ -1235,10 +1242,41 @@ begin
     DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsdir');
     DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.ico');
   end;
-end;procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+end;
+
+/// <summary>
+/// The extension is per user and was installed by a separate process, so the uninstaller has to ask
+/// VSIXInstaller to take it away again - as the original user, or it would look in the wrong profile.
+/// </summary>
+procedure RemoveVsix();
+var
+  Root, Installer: string;
+  Major, Code: Integer;
+begin
+  for Major := 17 to 18 do begin
+    Root := FindVsRootByMajor(Major);
+    if Root = '' then Continue;
+    Installer := TrimTrailingSlash(Root) + VsVsixInstallerRelPath;
+    if not FileExists(Installer) then Continue;
+    // ExecAsOriginalUser is installation only - Inno raises a runtime error if the uninstaller calls
+    // it, which aborted the whole uninstall. Exec runs with the uninstaller's own token; an
+    // administrator uninstalling its own copy is the same profile VSIXInstaller has to look at, which
+    // is the case here. Run as a standard user it would look at the elevating account instead, and
+    // the log line below is what tells the two apart.
+    // VSIXInstaller starts a chain of copies of itself and can sit in its own UI thread long after it
+    // has done the work; waiting for it froze the whole uninstaller (a hang on 2026-10-10, cleared by
+    // killing the processes). Start it and carry on - by the time Visual Studio is opened again the
+    // extension is gone, and the log records that it was asked to go.
+    if Exec(Installer, '/quiet /uninstall:ObjectARX.MultiYear.Wizard', '', SW_HIDE, ewNoWait, Code) then
+      Alog('uninstall: VSIXInstaller for ' + IntToStr(Major) + ' started (not waited for)');
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep <> usUninstall then Exit;
   RemoveVsRegistrations();
   RefreshVsCache();
+  RemoveVsix();
   DeleteGeneratedProps(UninstallPropsDir);
 end;

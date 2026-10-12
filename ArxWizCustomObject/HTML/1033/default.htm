@@ -444,13 +444,21 @@ function InitDocument (document) {
 		return ;
 	}
 	
-	//- This used to be a question - "Custom Object should be implemented in .DBX project. Are you
-	//- sure you want to continue?" and a chance to cancel - whenever the project was not a .DBX one.
-	//- A custom object in an ARX module is fine: the class registers itself with that module and the
-	//- objects it defines live there; what a DBX buys is *sharing* them with other modules. Reported
-	//- 2026-10-11 as wrong for an ARX project, so it is a log line now instead of a question.
-	if ( IsValidAdeskProject (window.external.ProjectObject, 14 /*arx | dhost | crx*/) == true )
-		ArxResLog ("Custom Object in a project that is not a .DBX one - allowed, the class is registered by this module") ;
+	//- A custom object works in an ARX module (the class registers itself with that module and its
+	//- objects live there); what a .DBX buys is *sharing* those objects with other modules - so the
+	//- message names both. Asked once per project (NOT_FIRST_TIME), whenever it is not a .DBX one.
+	//- The wording used to name .DBX alone, which read as "not in ARX"; reworded 2026-10-12 at the
+	//- user's request (reported 2026-10-11).
+	if (   window.external.FindSymbol ("NOT_FIRST_TIME") == null
+		&& IsValidAdeskProject (window.external.ProjectObject, 14 /*arx | dhost | crx*/) == true
+	) {
+		var L_Msg ="Custom Object should be implemented in .DBX/ARX project.\nAre you sure you want to continue?" ;
+		if ( window.external.YesNoAlert (L_Msg) == false ) {
+			window.external.Finish (document, 'cancel') ;
+			return ;
+		}
+		window.external.AddSymbol ("NOT_FIRST_TIME", true) ;
+	}
 	
 	var rds =GetRDSValue () ;
 	//- Set the label for Class Name

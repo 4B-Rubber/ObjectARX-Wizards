@@ -51,7 +51,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.4"
+#define AppVersion "0.2.7"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -168,17 +168,11 @@ english.VsixFailed=The extension was not installed: VSIXInstaller returned %1. T
 Source: "{#RepoRoot}\_Installs\rxsdk_common.props"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#RepoRoot}\_Installs\crx.props"; DestDir: "{app}"; Flags: ignoreversion
 
-; ---- wizard payload trees ----
-Source: "{#RepoRoot}\ArxWizCommon\arxCommon.js"; DestDir: "{app}\ArxWizCommon"; Flags: ignoreversion
-Source: "{#RepoRoot}\ArxAppWiz\*"; DestDir: "{app}\ArxAppWiz"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxAppWiz182\*"; DestDir: "{app}\ArxAppWiz182"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxAtlWizComWrapper\*"; DestDir: "{app}\ArxAtlWizComWrapper"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxAtlWizDynProp\*"; DestDir: "{app}\ArxAtlWizDynProp"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxWizCustomObject\*"; DestDir: "{app}\ArxWizCustomObject"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxWizJig\*"; DestDir: "{app}\ArxWizJig"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxWizMFCSupport\*"; DestDir: "{app}\ArxWizMFCSupport"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxWizNETWrapper\*"; DestDir: "{app}\ArxWizNETWrapper"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#RepoRoot}\ArxWizReactors\*"; DestDir: "{app}\ArxWizReactors"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ---- no classic wizard payload on this line ----
+; The classic HTML wizards (ArxAppWiz / ArxAppWiz182 / ArxWiz* / ArxAtlWiz* / ArxWizCommon) and
+; the seven .vsz item wizards belong to the classic line. Here the VSIX *is* the Visual Studio
+; integration ("Add ObjectARX Class..." and the ArxWizard item templates); [InstallDelete]
+; below takes away whatever earlier versions copied into the Visual Studio folders and {app}.
 
 ; ---- ObjectARX SDK \inc. Permanent, like the MSI component C__3CB44E97... (Permanent="yes"). ----
 Source: "{#RepoRoot}\_Installs\rxsdk_common.props"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
@@ -190,26 +184,32 @@ Source: "{#RepoRoot}\_Installs\arxEntryPoint.h"; DestDir: "{code:GetArxSdkIncDir
 ; experiments of the authoring machine that no shipped wizard imports. The folder itself is
 ; created below instead.
 
-; ---- Visual Studio integration: the item wizards behind VS's "Add Class" dialog.
-;      The two classic .vsz *project* wizards (ArxAppWiz / ArxAppWizOMF) are deliberately NOT
-;      installed any more: the VSIX ships the same two project templates, and installing both
-;      put four entries into VS2022's New Project dialog (two classic "multi-year" + two
-;      "Multi-Version") while VS2026 only ever showed the VSIX pair. [InstallDelete] below
-;      removes the copies 0.2.3 and earlier left in the VS project-template folder. ----
-Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAvailable
-
 ; ---- used from [Code] only (extracted with ExtractTemporaryFile when needed) ----
 Source: "{#GenExeSource}"; Flags: dontcopy
 Source: "{#VsixSource}"; Flags: dontcopy
 
 [InstallDelete]
-; Classic project wizards copied into the VS project-template folder by 0.2.3 and earlier.
+; Everything the classic wizard line used to put on the machine, so a machine that had it is
+; cleaned the moment this line is installed: the two classic .vsz project wizards (0.2.3 and
+; earlier) in the VS project-template folder, the seven .vsz item wizards in vcprojectitems,
+; and the HTML wizard trees earlier versions unpacked under {app}.
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsz"
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsdir"
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.ico"
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsz"
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsdir"
 Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.ico"
+Type: filesandordirs; Name: "{code:GetVsVcProjectItemsDir}"
+Type: filesandordirs; Name: "{app}\ArxWizCommon"
+Type: filesandordirs; Name: "{app}\ArxAppWiz"
+Type: filesandordirs; Name: "{app}\ArxAppWiz182"
+Type: filesandordirs; Name: "{app}\ArxAtlWizComWrapper"
+Type: filesandordirs; Name: "{app}\ArxAtlWizDynProp"
+Type: filesandordirs; Name: "{app}\ArxWizCustomObject"
+Type: filesandordirs; Name: "{app}\ArxWizJig"
+Type: filesandordirs; Name: "{app}\ArxWizMFCSupport"
+Type: filesandordirs; Name: "{app}\ArxWizNETWrapper"
+Type: filesandordirs; Name: "{app}\ArxWizReactors"
 
 [Dirs]
 ; The property sheet folder is part of the install even when the user ticks no year at all, and
@@ -832,13 +832,15 @@ begin
   Lbl.Top := ScaleY(2);
   Lbl.Caption := Cm('YearsLabel');
 
-  BtnW := ScaleX(56);
+  // One width for all four so the row reads as one group: they used to be 56, 56, 56 and 96,
+  // which looked like two different rows of controls.
+  BtnW := ScaleX(96);
   Gap := ScaleX(6);
   Right := PageYears.SurfaceWidth;
-  AddYearButton(Cm('BtnAll'), Right - 3 * BtnW - ScaleX(96) - 3 * Gap, BtnW, @OnYearsAll);
-  AddYearButton(Cm('BtnNone'), Right - 2 * BtnW - ScaleX(96) - 2 * Gap, BtnW, @OnYearsNone);
-  AddYearButton(Cm('BtnInvert'), Right - BtnW - ScaleX(96) - Gap, BtnW, @OnYearsInvert);
-  AddYearButton(Cm('BtnCompatible'), Right - ScaleX(96), ScaleX(96), @OnYearsCompatible);
+  AddYearButton(Cm('BtnAll'), Right - 4 * BtnW - 3 * Gap, BtnW, @OnYearsAll);
+  AddYearButton(Cm('BtnNone'), Right - 3 * BtnW - 2 * Gap, BtnW, @OnYearsNone);
+  AddYearButton(Cm('BtnInvert'), Right - 2 * BtnW - Gap, BtnW, @OnYearsInvert);
+  AddYearButton(Cm('BtnCompatible'), Right - BtnW, BtnW, @OnYearsCompatible);
 
   Y := ScaleY(28);
   ColW := (PageYears.SurfaceWidth - ScaleX(8)) div 2;
@@ -918,7 +920,6 @@ begin
   Alog('patched ' + Path + ' (' + FromStr + ' -> ' + ToStr + ')');
 end;
 
-/// <summary>CA_PatchVSFiles: the [TARGETDIR] placeholder in the nine project wizards.</summary>
 /// <summary>
 /// Visual Studio builds its wizard and project list once and caches it: copying the .vsz/.vsdir files
 /// into vcprojects is not enough. That is why the classic project entries only showed up after a VSIX
@@ -940,70 +941,12 @@ begin
     else
       Alog('refresh: could not run devenv for ' + IntToStr(Major));
   end;
-end;procedure PatchVsFiles(const AppDir: string);
-var
-  Vc: string;
-  Target: string;
-begin
-  if not VsFound then Exit;
-  Vc := TrimTrailingSlash(VsRoot) + VsVcRelPath;
-  Target := AddBackslash(AppDir);
-  // Add-class / add-object wizards (MSI: _Installs\VC\VCAddClass\ObjectARX).
-  // The two classic project wizards that used to be patched here are no longer installed
-  // (see the [InstallDelete] section), so there is nothing left to patch for them.
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', '[TARGETDIR]', Target);
 end;
 
-/// <summary>CA_PatchHTMLWizFiles: ADSK -> the chosen RDS, in the AppWiz HTML pages only.</summary>
-procedure PatchHtmlWizardFiles(const AppDir: string);
-var
-  Rds: string;
-begin
-  Rds := GetRds('');
-  if Rds = '' then begin
-    Alog('RDS is empty; leaving the ADSK placeholder in the HTML wizard alone');
-    Exit;
-  end;
-  PatchFile(AppDir + '\ArxAppWiz\HTML\1033\default.htm', 'ADSK', Rds);
-  PatchFile(AppDir + '\ArxAppWiz182\HTML\1033\default.htm', 'ADSK', Rds);
-end;
-
-/// <summary>CA_PatchArxCommonJsFiles: the legacy HTML wizard has the props folder hardcoded.</summary>
-procedure PatchArxCommonJs(const AppDir, PropsDir: string);
-var
-  Path, S, JsPath, Clean: string;
-  i, P1, P2: Integer;
-begin
-  Path := AppDir + '\ArxWizCommon\arxCommon.js';
-  if not FileExists(Path) then Exit;
-  if not ReadTextFile(Path, S) then Exit;
-
-  Clean := TrimTrailingSlash(PropsDir);
-  if Clean = '' then Exit;
-  // JavaScript string literal: every backslash has to be doubled.
-  JsPath := '';
-  for i := 1 to Length(Clean) do
-    if Clean[i] = '\' then JsPath := JsPath + '\\' else JsPath := JsPath + Clean[i];
-  JsPath := JsPath + '\\';
-
-  P1 := Pos('var ARX_PROPS_DIR', S);
-  if P1 <= 0 then Exit;
-  P1 := PosFrom('"', S, P1);
-  if P1 <= 0 then Exit;
-  P2 := PosFrom('"', S, P1 + 1);
-  if P2 <= 0 then Exit;
-
-  // Copy(S, 1, P1) keeps the opening quote; starting the tail at P2 keeps the closing one.
-  S := Copy(S, 1, P1) + JsPath + Copy(S, P2, Length(S) - P2 + 1);
-  if WriteTextFile(Path, S) then
-    Alog('patched ' + Path + ' (ARX_PROPS_DIR -> ' + JsPath + ')');
-end;
+// (PatchVsFiles / PatchHtmlWizardFiles / PatchArxCommonJs used to live here. This line installs
+// no classic wizard payload any more - the VSIX is the whole Visual Studio integration - so there
+// is nothing left for them to patch. PatchFile and the text helpers above stay: they are what a
+// future file patch in this script would use.)
 
 /// <summary>
 /// The bundle chains VsixSetup.exe for this, precisely because the MSI is per-machine and the VSIX
@@ -1058,10 +1001,6 @@ begin
   RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Root) +
          ' --acad-root ' + QuoteArg(Root) + ' --years ' + Selected);
   RunGen('cleanup --props-dir ' + QuoteArg(Props) + ' --keep ' + Selected);
-
-  PatchVsFiles(AppDir);
-  PatchHtmlWizardFiles(AppDir);
-  PatchArxCommonJs(AppDir, Props);
 
   if ExpandConstant('{param:SKIPVSIX|}') <> '1' then
     InstallVsix()

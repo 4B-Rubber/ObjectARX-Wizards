@@ -135,20 +135,20 @@ function ArxItemSizeSettled (strPath) {
 	return (nSize) ;
 }
 
-//- One attempt at the host's render call, returning true when the target came out with content.
-//- The fourth argument is left off entirely for the two argument form. The target is removed
-//- first: a retry after a write that was merely slow to land has to overwrite, never append to,
-//- what the previous attempt put there.
-function ArxItemRenderWith (strTemplateFull, strFull, bCopyOnly, bFourth) {
-	ArxItemLog ("wizard.RenderTemplate (" + bCopyOnly + ", " + bFourth + ")") ;
+//- The one render call, in the two argument spelling the DEFFile, PropertySheet and RCFile item
+//- wizards shipping with Visual Studio use. There is no retry spelling, and that is the fix for
+//- the files that came out with the template twice: the (false, true) spelling of ResourceScript
+//- and UnitTest does not write at once - it landed 18 seconds after the wizard returned on
+//- 2026-10-12, when the project was saved - and that late write appends, so the retry that had
+//- already written the file produced a second copy. The target is removed first so the call
+//- always starts from nothing.
+function ArxItemRenderWith (strTemplateFull, strFull) {
+	ArxItemLog ("wizard.RenderTemplate (\"" + strTemplateFull + "\", \"" + strFull + "\")") ;
 	var oFso =ArxItemFsoOrNull () ;
 	if ( oFso != null ) {
 		try { oFso.DeleteFile (strFull) ; } catch (e) { }
 	}
-	if ( bFourth == null )
-		wizard.RenderTemplate (strTemplateFull, strFull) ;
-	else
-		wizard.RenderTemplate (strTemplateFull, strFull, bCopyOnly, bFourth) ;
+	wizard.RenderTemplate (strTemplateFull, strFull) ;
 	return (ArxItemSizeSettled (strFull) > 0) ;
 }
 
@@ -156,12 +156,9 @@ function ArxItemRenderWith (strTemplateFull, strFull, bCopyOnly, bFourth) {
 //-
 //- Two things are deliberate here, both from the failures reported 2026-10-11 (template on disk and
 //- readable, target file created in the right folder, generated class still 0 bytes):
-//-  * the host call is tried in the spellings that the wizards shipping with Visual Studio use:
-//-    (false, true) as in the ResourceScript and UnitTest item wizards and in the framework's own
-//-    project skeleton, then the bare two argument form as in the DEFFile and PropertySheet item
-//-    wizards, and only last the (false, false) of the framework's RenderAddTemplate() - which no
-//-    wizard shipping with Visual Studio calls at all (it is defined in common.js and never used
-//-    there) and which is the spelling that rendered an empty file here.
+//-  * the host call is the bare two argument form, the one the DEFFile, PropertySheet and RCFile
+//-    item wizards shipping with Visual Studio use; see ArxItemRenderWith for why there is no
+//-    retry spelling behind it.
 //-  * the target is an absolute path (ITEM_PATH / PROJECT_PATH + name), the spelling those item
 //-    wizards use as well.
 //- A target that stays empty is deleted and reported, never left in the project as an empty class.
@@ -182,9 +179,7 @@ function ArxItemRender (strTemplate, strTarget, oParent, bOpen) {
 		if ( strTargetDir != "" )
 			strFull =strTargetDir + "\\" + strFull ;
 	}
-	if ( !ArxItemRenderWith (strTemplateFull, strFull, false, true)
-		&& !ArxItemRenderWith (strTemplateFull, strFull, null, null) )
-		ArxItemRenderWith (strTemplateFull, strFull, false, false) ;
+	ArxItemRenderWith (strTemplateFull, strFull) ;
 	var nSize =ArxItemSizeSettled (strFull) ;
 	if ( oFso == null )
 		nSize =1 ;

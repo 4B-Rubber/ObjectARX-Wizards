@@ -100,7 +100,6 @@
 | 字段 | 含义 | 默认值 |
 |---|---|---|
 | Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
-| ObjectARX SDK 位置 | 安装器会向其 `inc` 子目录写入 3 个公共文件 | `C:\ObjectARX` |
 | 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取；只要不手动改，它会一直跟随第 2 页的安装目录 | 跟随安装目录 |
 
 > 📷 **【图 3 · 截图占位】ObjectARX SDK 与目标位置页**
@@ -120,15 +119,15 @@
 
 ### 第 6 页：准备安装
 
-本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、SDK 位置、属性表目录、目标年份），确认无误后点击“安装”。
+本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份），确认无误后点击“安装”。
 
 > 📷 **【图 5 · 截图占位】准备安装页（设置汇总清单）**
-> 应截取：第 6 页完整窗口，清单中六项设置（安装目录、RDS、Autodesk 根目录、SDK 位置、属性表目录、目标年份）全部可见，目标年份显示为 2020, 2024, 2026, 2027。
+> 应截取：第 6 页完整窗口，清单中五项设置（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份）全部可见，目标年份显示为 2020, 2024, 2026, 2027。
 > 文件名：`images/setup-06-ready.png`
 
 ### 安装过程中
 
-1. 复制向导文件、生成勾选年份的属性表、向 ObjectARX SDK 的 `inc` 目录写入公共文件；
+1. 复制向导文件、生成勾选年份的属性表；
 2. 把项目向导和类向导读入 Visual Studio（2022、2026 都会处理），并请求 VS 刷新向导列表；
 3. 自动安装 Visual Studio 扩展组件（它负责让 VS 重新生成向导读取列表，本身不提供额外模板入口）。此步骤可能弹出 Visual Studio 自带的扩展安装窗口并持续 1–2 分钟，属正常现象，**请勿手动关闭它**。
 
@@ -153,7 +152,6 @@ ObjectARXMultiVersionWizards-classic.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=20
 | `/DIR=路径` | 安装目录 |
 | `/PROPSDIR=路径` | 属性表目录；省略则跟随安装目录 |
 | `/ARXROOT=路径` | Autodesk 根目录（SDK 与 AutoCAD 的共同上级） |
-| `/ARXSDKPATH=路径` | ObjectARX SDK 位置 |
 | `/VSROOT=路径` | 手工指定 Visual Studio 安装根目录（自动检测不到时使用） |
 | `/SKIPVSIX=1` | 只装文件和属性表，跳过扩展组件（此时需自行让 VS 刷新向导列表） |
 | `/SKIPVSCHECK=1` | Visual Studio 正在运行也继续安装（不推荐） |
@@ -405,7 +403,7 @@ ObjectARXMultiVersionWizards-classic.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=20
 
 **卸载：**
 
-通过“设置 → 应用 → 已安装的应用”，或重新运行安装包选择“卸载安装”。卸载会移除向导文件、两个版本 Visual Studio 中的向导读写、扩展组件以及已生成的年份属性表；写入 ObjectARX SDK `inc` 目录的 3 个公共文件会保留（Autodesk SDK 可能共用它们）。
+通过“设置 → 应用 → 已安装的应用”，或重新运行安装包选择“卸载安装”。卸载会移除向导文件、两个版本 Visual Studio 中的向导读写、扩展组件以及已生成的年份属性表；本版安装器不再向 ObjectARX SDK 目录写入任何文件。
 
 ---
 

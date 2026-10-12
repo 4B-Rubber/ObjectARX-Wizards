@@ -42,7 +42,6 @@
 ;     /PROPSDIR=<dir>         property sheet folder (HKLM PropsDir); defaults to /DIR
 ;     /ARXROOT=<dir>          Autodesk root: the prefix the generated sheets use for the SDK and
 ;                             AutoCAD, and the value patched into the shipped 2026 template
-;     /ARXSDKPATH=<dir>       ObjectARX SDK location (its inc folder is populated)
 ;     /VSROOT=<dir>           override the detected Visual Studio root (2022 or 2026)
 ;     /SKIPVSIX=1             do not install the VSIX
 ;     /SKIPVSCHECK=1          install even while Visual Studio is running
@@ -121,7 +120,6 @@ chinese.PathsCaption=ObjectARX SDK 与目标位置
 chinese.PathsDesc=安装向导会把这套向导写到本机，并按勾选的 AutoCAD 年份各生成一份属性表。
 chinese.PathsSubCaption=SDK 或 AutoCAD 不在默认位置时才需要修改。
 chinese.PathsRootPrompt=Autodesk 根目录（SDK 与 AutoCAD 都在它下面）(&A)：
-chinese.PathsSdkPrompt=ObjectARX SDK 位置（会往它的 inc 目录写文件）(&O)：
 chinese.PathsPropsPrompt=属性表目录（与 VS 向导共用）(&P)：
 chinese.YearsCaption=目标 AutoCAD 版本
 chinese.YearsDesc=勾选的年份各生成一份属性表，未勾选的不生成；勾了一个没装的年份没有副作用。
@@ -133,7 +131,6 @@ chinese.BtnCompatible=兼容(&C)
 chinese.ReadyInstallFolder=安装目录：
 chinese.ReadyRds=注册开发者符号 (RDS)：
 chinese.ReadyRoot=Autodesk 根目录：
-chinese.ReadySdk=ObjectARX SDK 位置：
 chinese.ReadyProps=属性表目录：
 chinese.ReadyYears=目标 AutoCAD 版本：
 chinese.NoneSelected=无。不生成任何属性表，并且会把以前生成的清掉。
@@ -148,7 +145,6 @@ english.PathsCaption=ObjectARX SDK and Target Locations
 english.PathsDesc=The installer writes its wizards to this computer and generates one property sheet per ticked AutoCAD year.
 english.PathsSubCaption=Only change these when the SDK or AutoCAD is not in the default location.
 english.PathsRootPrompt=&Autodesk root folder (the SDK and AutoCAD live under it):
-english.PathsSdkPrompt=&ObjectARX SDK location (its inc folder is populated):
 english.PathsPropsPrompt=&Property sheet folder (shared with the VS wizard):
 english.YearsCaption=Target AutoCAD Versions
 english.YearsDesc=One property sheet per ticked year is generated; unticked years are not created, and ticking a year you do not have installed is harmless.
@@ -160,7 +156,6 @@ english.BtnCompatible=&Compatible
 english.ReadyInstallFolder=Install folder:
 english.ReadyRds=Registered developer symbol (RDS):
 english.ReadyRoot=Autodesk root folder:
-english.ReadySdk=ObjectARX SDK location:
 english.ReadyProps=Property sheet folder:
 english.ReadyYears=Target AutoCAD versions:
 english.NoneSelected=None. No property sheet is generated, and any generated earlier is removed.
@@ -173,8 +168,6 @@ english.VsixFailed=The extension was not installed: VSIXInstaller returned %1. T
 ; No Autodesk.arx-<year>.props ships as payload: arx-genprops generates the ticked years at install
 ; time, so a hard-wired single-year sheet would only go stale (or collide with the generated one,
 ; the property sheet folder being the install folder by default).
-Source: "{#RepoRoot}\_Installs\rxsdk_common.props"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#RepoRoot}\_Installs\crx.props"; DestDir: "{app}"; Flags: ignoreversion
 
 ; ---- wizard payload trees ----
 Source: "{#RepoRoot}\ArxWizCommon\arxCommon.js"; DestDir: "{app}\ArxWizCommon"; Flags: ignoreversion
@@ -188,10 +181,6 @@ Source: "{#RepoRoot}\ArxWizMFCSupport\*"; DestDir: "{app}\ArxWizMFCSupport"; Fla
 Source: "{#RepoRoot}\ArxWizNETWrapper\*"; DestDir: "{app}\ArxWizNETWrapper"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\ArxWizReactors\*"; DestDir: "{app}\ArxWizReactors"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; ---- ObjectARX SDK \inc. Permanent, like the MSI component C__3CB44E97... (Permanent="yes"). ----
-Source: "{#RepoRoot}\_Installs\rxsdk_common.props"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
-Source: "{#RepoRoot}\_Installs\crx.props"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
-Source: "{#RepoRoot}\_Installs\arxEntryPoint.h"; DestDir: "{code:GetArxSdkIncDir}"; Flags: ignoreversion uninsneveruninstall
 
 ; No property sheet is payload: arx-genprops generates the ticked years at install time, and the
 ; .props files that used to travel alongside them (ObjectARX.*, HCSoft.*, ZWSoft.*, ...) were
@@ -241,7 +230,6 @@ const
   CsvDefaultYears = '2020,2024,2026,2027';
   CsvCompatibleYears = '2014,2016,2018,2020,2024,2026,2027';
   FallbackArxRoot = 'C:\Program Files\Autodesk\';
-  FallbackArxSdkPath = 'C:\ObjectARX';
   GenExeName = 'arx-genprops.exe';
   VsixName = 'ObjectARXMultiVersionWizards.vsix';
   VsVcRelPath = '\Common7\IDE\VC';
@@ -271,7 +259,7 @@ var
   UninstallPropsDir: string;
   LogFile: string;
 
-  InitRds, InitArxRoot, InitArxSdkPath, InitPropsDir: string;
+  InitRds, InitArxRoot, InitPropsDir: string;
   // The install folder, tracked from the wizard's own directory edit. {app} cannot be used here:
   // it is not initialized yet while the wizard is being built.
   PropsDefault: string;
@@ -432,7 +420,7 @@ end;
 function GetPropsDir(Param: string): string;
 begin
   // The property sheet folder defaults to the install folder.
-  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[2], PropsDefault)
+  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[1], PropsDefault)
   else Result := PropsDefault;
 end;
 
@@ -443,17 +431,7 @@ begin
   Result := EnsureTrailingSlash(Result);
 end;
 
-function GetArxSdkPath(Param: string): string;
-begin
-  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[1], InitArxSdkPath)
-  else Result := InitArxSdkPath;
-  Result := EnsureTrailingSlash(Result);
-end;
 
-function GetArxSdkIncDir(Param: string): string;
-begin
-  Result := AddBackslash(TrimTrailingSlash(GetArxSdkPath(''))) + 'inc';
-end;
 
 function GetRds(Param: string): string;
 begin
@@ -671,7 +649,6 @@ begin
   InitArxRoot := ExpandConstant('{param:ARXROOT|}');
   if InitArxRoot = '' then
     if not RegQueryStringValue(HKLM64, RegKey, 'ArxRoot', InitArxRoot) then InitArxRoot := FallbackArxRoot;
-  InitArxSdkPath := ExpandConstant('{param:ARXSDKPATH|' + FallbackArxSdkPath + '}');
   // Empty means "follow the install folder"; InitializeWizard fills the field in. The property
   // sheet folder is not remembered across installs on purpose - it belongs to the install folder,
   // and Inno already remembers that one.
@@ -863,12 +840,10 @@ begin
     Cm('PathsCaption'), Cm('PathsDesc'), Cm('PathsSubCaption'),
     False, '');
   PagePaths.Add(Cm('PathsRootPrompt'));
-  PagePaths.Add(Cm('PathsSdkPrompt'));
   PagePaths.Add(Cm('PathsPropsPrompt'));
   PagePaths.Values[0] := InitArxRoot;
-  PagePaths.Values[1] := InitArxSdkPath;
-  PagePaths.Values[2] := Pick(InitPropsDir, PropsDefault);
-  PropsAuto := PagePaths.Values[2];
+  PagePaths.Values[1] := Pick(InitPropsDir, PropsDefault);
+  PropsAuto := PagePaths.Values[1];
 
   PageYears := CreateCustomPage(PagePaths.ID, Cm('YearsCaption'), Cm('YearsDesc'));
 
@@ -911,8 +886,8 @@ begin
   PropsDefault := App;
   if PropsPinned or (CurPageID <> PagePaths.ID) then Exit;
   // Still on the value we put there ourselves, so keep it in step with the install folder.
-  if TrimTrailingSlash(PagePaths.Values[2]) = TrimTrailingSlash(PropsAuto) then begin
-    PagePaths.Values[2] := App;
+  if TrimTrailingSlash(PagePaths.Values[1]) = TrimTrailingSlash(PropsAuto) then begin
+    PagePaths.Values[1] := App;
     PropsAuto := App;
   end;
 end;
@@ -924,7 +899,6 @@ begin
     Cm('ReadyInstallFolder') + NewLine + Space + PropsDefault + NewLine + NewLine +
     Cm('ReadyRds') + NewLine + Space + GetRds('') + NewLine + NewLine +
     Cm('ReadyRoot') + NewLine + Space + GetArxRoot('') + NewLine + NewLine +
-    Cm('ReadySdk') + NewLine + Space + GetArxSdkPath('') + NewLine + NewLine +
     Cm('ReadyProps') + NewLine + Space + GetPropsDir('') + NewLine + NewLine +
     Cm('ReadyYears') + NewLine + Space + CsvToDisplay(GetSelectedYearsCsv()) + NewLine;
 end;

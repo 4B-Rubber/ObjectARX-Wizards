@@ -302,9 +302,12 @@ namespace ArxGenProps
             m["SDKLIBSS_WIN32"] = y.HasWin32
                 ? "\t\t<ArxSdkLibs Condition=\"'$(Platform)'=='Win32'\">" +
                   "$(ArxSdkDir)\\lib-win32</ArxSdkLibs>\n" : "";
+            // The CRX shape does not go through the SDK's inc\crx.props any more: SDK 2022 and 2027
+            // do not ship that file at all. dbx.props carries the base libraries, and the two pieces
+            // crx.props used to add - the .crx extension and accore.lib - are expressed down here.
             m["CRXIMPORT"] = y.HasCrx
                 ? "\t\t<Import Condition=\"'$(ArxAppType)'=='crx' or '$(ArxAppType)'=='crxnet'\" " +
-                  "Project=\"$(ArxSdkDir)\\inc\\crx.props\" />\n" : "";
+                  "Project=\"$(ArxSdkDir)\\inc\\dbx.props\" />\n" : "";
             m["TF35BLOCK"] = y.LegacyV35
                 ? "\t<PropertyGroup>\n\t\t<TargetFrameworkVersion>v3.5</TargetFrameworkVersion> " +
                   "<!-- That will force Platform Toolset to vc9 in Visual Studio 2010 -->\n\t</PropertyGroup>\n" : "";
@@ -318,6 +321,12 @@ namespace ArxGenProps
             m["CRXDEF"] = y.HasCrx
                 ? "\t\t\t<PreprocessorDefinitions Condition=\"'$(ArxAppType)'=='crx' or " +
                   "'$(ArxAppType)'=='crxnet'\">_CRXAPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>\n" : "";
+            m["CRXTARGETEXT"] = y.HasCrx
+                ? "\t\t<TargetExt Condition=\"'$(ArxAppType)'=='crx' or '$(ArxAppType)'=='crxnet'\">" +
+                  ".crx</TargetExt>\n" : "";
+            m["CRXLIB"] = y.HasCrx
+                ? "\t\t\t<AdditionalDependencies Condition=\"'$(ArxAppType)'=='crx' or " +
+                  "'$(ArxAppType)'=='crxnet'\">accore.lib;%(AdditionalDependencies)</AdditionalDependencies>\n" : "";
             m["TMWIN32"] = y.HasWin32
                 ? "\t\t\t<TargetMachine Condition=\"'$(Platform)'=='Win32'\">MachineX86</TargetMachine>\n" : "";
             m["FORACAD"] = string.IsNullOrEmpty(y.NetForAcad) ? "" : "\t\t<!--  " + y.NetForAcad + " -->\n";

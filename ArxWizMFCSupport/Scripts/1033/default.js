@@ -119,15 +119,37 @@ function ArxItemFileSize (strPath) {
 	}
 }
 
+//- The host's write can land a moment after RenderTemplate returns; wait briefly before calling an
+//- attempt a failure. Reading 0 too early is what made the retry append a second copy of the
+//- template on 2026-10-11 (dbdemo.h came out with two copyright headers).
+function ArxItemSizeSettled (strPath) {
+	var nSize =ArxItemFileSize (strPath) ;
+	if ( nSize > 0 )
+		return (nSize) ;
+	var oStart =(new Date ()).getTime () ;
+	while ( ((new Date ()).getTime () - oStart) < 1000 ) {
+		nSize =ArxItemFileSize (strPath) ;
+		if ( nSize > 0 )
+			return (nSize) ;
+	}
+	return (nSize) ;
+}
+
 //- One attempt at the host's render call, returning true when the target came out with content.
-//- The fourth argument is left off entirely for the two argument form.
+//- The fourth argument is left off entirely for the two argument form. The target is removed
+//- first: a retry after a write that was merely slow to land has to overwrite, never append to,
+//- what the previous attempt put there.
 function ArxItemRenderWith (strTemplateFull, strFull, bCopyOnly, bFourth) {
 	ArxItemLog ("wizard.RenderTemplate (" + bCopyOnly + ", " + bFourth + ")") ;
+	var oFso =ArxItemFsoOrNull () ;
+	if ( oFso != null ) {
+		try { oFso.DeleteFile (strFull) ; } catch (e) { }
+	}
 	if ( bFourth == null )
 		wizard.RenderTemplate (strTemplateFull, strFull) ;
 	else
 		wizard.RenderTemplate (strTemplateFull, strFull, bCopyOnly, bFourth) ;
-	return (ArxItemFileSize (strFull) > 0) ;
+	return (ArxItemSizeSettled (strFull) > 0) ;
 }
 
 //- Renders one template into the project folder and adds the file to the project.
@@ -163,7 +185,7 @@ function ArxItemRender (strTemplate, strTarget, oParent, bOpen) {
 	if ( !ArxItemRenderWith (strTemplateFull, strFull, false, true)
 		&& !ArxItemRenderWith (strTemplateFull, strFull, null, null) )
 		ArxItemRenderWith (strTemplateFull, strFull, false, false) ;
-	var nSize =ArxItemFileSize (strFull) ;
+	var nSize =ArxItemSizeSettled (strFull) ;
 	if ( oFso == null )
 		nSize =1 ;
 	if ( nSize == 0 || nSize == -1 ) {

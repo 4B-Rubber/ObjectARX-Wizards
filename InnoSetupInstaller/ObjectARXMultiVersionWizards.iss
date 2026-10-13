@@ -50,7 +50,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.9"
+#define AppVersion "0.2.10"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -59,7 +59,9 @@
 #define RepoRoot ".."
 #define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"
 #define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"
-#define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
+; The line's own installer icon, copied from ArxVsixWizard - the classic _Installs payload
+; no longer exists on this branch.
+#define AppIconSource RepoRoot + "\InnoSetupInstaller\SetupWizard.ico"
 
 [Setup]
 AppId={#AppId}
@@ -162,10 +164,12 @@ english.VsixFailed=The extension was not installed: VSIXInstaller returned %1. T
 ; the property sheet folder being the install folder by default).
 
 ; ---- no classic wizard payload on this line ----
-; The classic HTML wizards (ArxAppWiz / ArxAppWiz182 / ArxWiz* / ArxAtlWiz* / ArxWizCommon) and
-; the seven .vsz item wizards belong to the classic line. Here the VSIX *is* the Visual Studio
-; integration ("Add ObjectARX Class..." and the ArxWizard item templates); [InstallDelete]
-; below takes away whatever earlier versions copied into the Visual Studio folders and {app}.
+; The VSIX *is* the Visual Studio integration ("Add ObjectARX Class..." and the ArxWizard item
+; templates). This line writes nothing into Visual Studio's vcprojects/vcprojectitems folders, and
+; nothing there is deleted blindly: the files under those legacy names are shared with the official
+; yearly ObjectARX wizard, so post-install code reclaims only what this product's own 0.2.4-and-
+; earlier builds put there, identified by the ABSOLUTE_PATH inside each .vsz. [InstallDelete]
+; below only removes the HTML wizard trees this product's own old versions unpacked under {app}.
 
 
 ; No property sheet is payload: arx-genprops generates the ticked years at install time, and the
@@ -178,17 +182,9 @@ Source: "{#GenExeSource}"; Flags: dontcopy
 Source: "{#VsixSource}"; Flags: dontcopy
 
 [InstallDelete]
-; Everything the classic wizard line used to put on the machine, so a machine that had it is
-; cleaned the moment this line is installed: the two classic .vsz project wizards (0.2.3 and
-; earlier) in the VS project-template folder, the seven .vsz item wizards in vcprojectitems,
-; and the HTML wizard trees earlier versions unpacked under {app}.
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsz"
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.vsdir"
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWiz.ico"
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsz"
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.vsdir"
-Type: files; Name: "{code:GetVsVcProjectsDir}\ArxAppWizOMF.ico"
-Type: filesandordirs; Name: "{code:GetVsVcProjectItemsDir}"
+; Only this product's own old payload trees under its own install folder. Registrations inside
+; Visual Studio's folders are handled in [Code], content-guarded, so an official yearly ObjectARX
+; wizard sharing the legacy names is never removed.
 Type: filesandordirs; Name: "{app}\ArxWizCommon"
 Type: filesandordirs; Name: "{app}\ArxAppWiz"
 Type: filesandordirs; Name: "{app}\ArxAppWiz182"
@@ -206,15 +202,15 @@ Type: filesandordirs; Name: "{app}\ArxWizReactors"
 Name: "{code:GetPropsDir}"; Flags: uninsneveruninstall
 
 [Registry]
-; The registry contract the VS wizard and the legacy HTML wizard read back
-; (ArxVsixWizard\Models\ArxVersion.cs, ArxWizCommon\arxCommon.js). ArxRoot and AcadRoot carry the
+; The registry contract the VSIX wizard reads back (ArxVsixWizard\Models\ArxVersion.cs).
+; ArxRoot and AcadRoot carry the
 ; same value on purpose: this is a multi-year product, so both point at the Autodesk root and the
 ; generated sheets append the year themselves.
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "PropsDir"; ValueData: "{code:GetPropsDir}"; Flags: uninsdeletekey
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "ArxRoot"; ValueData: "{code:GetArxRoot}"
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "AcadRoot"; ValueData: "{code:GetArxRoot}"
 ; The RDS the user picked, for the VSIX project wizard: it starts its RDS field from this value (an
-; empty value keeps the built-in ADSK). The classic line patches its HTML wizard with the same answer.
+; empty value keeps the built-in ADSK).
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "RDS"; ValueData: "{code:GetRds}"
 ; The install folder, so the next install pre-fills it instead of resetting to the shipped default.
 ; The MSI line writes and reads the same value, so the two remember each other's choice.
@@ -425,21 +421,6 @@ function GetRds(Param: string): string;
 begin
   if Assigned(PageRds) then Result := Pick(PageRds.Values[0], InitRds)
   else Result := InitRds;
-end;
-
-function GetVsVcProjectsDir(Param: string): string;
-begin
-  Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojects\Autodesk';
-end;
-
-function GetVsVcProjectItemsDir(Param: string): string;
-begin
-  Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojectitems\ObjectARX';
-end;
-
-function VsAvailable(): Boolean;
-begin
-  Result := VsFound;
 end;
 
 // ---------------------------------------------------------------------------------------------
@@ -955,6 +936,83 @@ begin
     MsgBox(FmtMessage(Cm('VsixFailed'), ['?']), mbInformation, MB_OK);
 end;
 
+// ---------------------------------------------------------------------------------------------
+// legacy registrations (this product's 0.2.4-and-earlier builds): the same names the official
+// yearly ObjectARX wizard uses. They are removed ONLY when the file on disk is one of ours, i.e.
+// its ABSOLUTE_PATH points at this product's install folder. The official wizard's files stay.
+// ---------------------------------------------------------------------------------------------
+
+function IsOwnedLegacyVsz(const Path: string): Boolean;
+var
+  S: AnsiString;
+begin
+  Result := False;
+  if not FileExists(Path) then Exit;
+  if not LoadStringFromFile(Path, S) then Exit;
+  Result := Pos('{#AppName}', S) > 0;
+end;
+
+procedure DeleteOwnedLegacyTriple(const Dir, BaseName: string);
+var
+  Vsz: string;
+begin
+  Vsz := AddBackslash(Dir) + BaseName + '.vsz';
+  if not IsOwnedLegacyVsz(Vsz) then Exit;
+  DeleteFile(Vsz);
+  DeleteFile(AddBackslash(Dir) + BaseName + '.vsdir');
+  DeleteFile(AddBackslash(Dir) + BaseName + '.ico');
+  Alog('removed own legacy project registration: ' + Vsz);
+end;
+
+procedure DeleteOwnedLegacyItemWizards(const ItemsDir: string);
+var
+  Names: array of String;
+  i: Integer;
+  Vsz: string;
+begin
+  // The seven item wizards this product shipped under vcprojectitems\ObjectARX up to 0.2.4.
+  Names := ['ArxAtlWizComWrapper', 'ArxAtlWizDynProp', 'ArxWizCustomObject',
+            'ArxWizJig', 'ArxWizMFCSupport', 'ArxWizNETWrapper', 'ArxWizReactors'];
+  for i := 0 to GetArrayLength(Names) - 1 do begin
+    Vsz := AddBackslash(ItemsDir) + Names[i] + '.vsz';
+    if IsOwnedLegacyVsz(Vsz) then begin
+      DeleteFile(Vsz);
+      DeleteFile(AddBackslash(ItemsDir) + Names[i] + '.ico');
+      Alog('removed own legacy item registration: ' + Vsz);
+    end;
+  end;
+  // Take the folder only when nothing is left - the official wizard's files (for example its
+  // Maya wizards) keep it alive.
+  RemoveDir(ItemsDir);
+end;
+
+procedure CleanupLegacyRegistrations(const VsRootArg: string);
+var
+  Vc: string;
+begin
+  if (VsRootArg = '') or (not DirExists(VsRootArg)) then Exit;
+  Vc := TrimTrailingSlash(VsRootArg) + VsVcRelPath;
+  DeleteOwnedLegacyTriple(Vc + '\vcprojects\Autodesk', 'ArxAppWiz');
+  DeleteOwnedLegacyTriple(Vc + '\vcprojects\Autodesk', 'ArxAppWizOMF');
+  DeleteOwnedLegacyItemWizards(Vc + '\vcprojectitems\ObjectARX');
+end;
+
+/// <summary>The /VSROOT override plus every detected Visual Studio 2022/2026 root, each
+/// deduplicated.</summary>
+procedure CleanupLegacyOnAllRoots();
+var
+  Major: Integer;
+  Root: string;
+begin
+  if VsFound and (VsRoot <> '') then
+    CleanupLegacyRegistrations(VsRoot);
+  for Major := 17 to 18 do begin
+    Root := FindVsRootByMajor(Major);
+    if (Root <> '') and (CompareText(TrimTrailingSlash(Root), TrimTrailingSlash(VsRoot)) <> 0) then
+      CleanupLegacyRegistrations(Root);
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppDir, Props, Root, Selected: string;
@@ -978,6 +1036,10 @@ begin
   RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Root) +
          ' --acad-root ' + QuoteArg(Root) + ' --years ' + Selected);
   RunGen('cleanup --props-dir ' + QuoteArg(Props) + ' --keep ' + Selected);
+
+  // Reclaim this product's own 0.2.4-and-earlier registrations from the Visual Studio folders,
+  // content-guarded so the official yearly ObjectARX wizard is never touched.
+  CleanupLegacyOnAllRoots();
 
   if ExpandConstant('{param:SKIPVSIX|}') <> '1' then
     InstallVsix()
@@ -1012,32 +1074,24 @@ begin
 end;
 
 /// <summary>
-/// The uninstaller takes away what the setup copied, but the .vsz files in the Visual Studio folders
-/// were rewritten in place afterwards (the wizard root and the engine id), so they look modified and
-/// are left behind - and with them the IDE keeps offering the ObjectARX wizards. Delete them for
-/// every Visual Studio by major version, whether it is the one this setup targeted or the other.
+/// This line installs nothing into Visual Studio's vcprojects/vcprojectitems folders (the VSIX is
+/// the whole integration). The only uninstall work there is reclaiming the registrations this
+/// product's OWN 0.2.4-and-earlier builds left behind, content-guarded by ABSOLUTE_PATH so an
+/// official yearly ObjectARX wizard sharing the legacy names survives untouched.
 /// </summary>
 procedure RemoveVsRegistrations();
 var
-  Vc: string;
   Major: Integer;
+  Root: string;
 begin
   for Major := 17 to 18 do begin
-    Vc := FindVsRootByMajor(Major);
-    if Vc = '' then Continue;
-    Vc := TrimTrailingSlash(Vc) + '\Common7\IDE\VC';
-    if DirExists(Vc + '\vcprojectitems\ObjectARX') then begin
-      DelTree(Vc + '\vcprojectitems\ObjectARX', True, True, True);
-      Alog('uninstall: removed ' + Vc + '\vcprojectitems\ObjectARX');
-    end;
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsdir');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.ico');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsdir');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.ico');
+    Root := FindVsRootByMajor(Major);
+    if Root <> '' then
+      CleanupLegacyRegistrations(Root);
   end;
-end;/// <summary>
+end;
+
+/// <summary>
 /// The extension is per user and was installed by a separate process, so the uninstaller has to ask
 /// VSIXInstaller to take it away again - as the original user, or it would look in the wrong profile.
 /// </summary>

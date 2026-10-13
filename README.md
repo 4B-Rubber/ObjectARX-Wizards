@@ -11,21 +11,27 @@
 
 This repository contains Visual Studio project wizards for **ObjectARX** development, making it easier to create AutoCAD plugins and applications. The wizards provide templates and boilerplate code for various ObjectARX development scenarios.
 
-### Available Wizards
+### Available Wizards (shipped by the VSIX)
 
-- **ArxAppWiz** - Main ObjectARX application wizard
-- **ArxWizCustomObject** - Custom AutoCAD entity creation
-- **ArxWizReactors** - Event-driven reactor implementations  
-- **ArxWizJig** - Interactive drawing jigs
-- **ArxWizMFCSupport** - MFC-based UI components
-- **ArxWizNETWrapper** - .NET wrapper classes
-- **ArxAtlWizComWrapper** - COM component wrappers
-- **ArxAtlWizDynProp** - Dynamic property implementations
+- **ObjectARX/DBX/CRX Application (Multi-Version)** - main project wizard (AutoCAD 2010-2027)
+- **ObjectARX/DBX Application with OMF Support (Multi-Version)** - OMF/MAP vertical SDK project wizard
+- **ObjectDBX Custom Object Class** - custom AutoCAD entity creation
+- **ObjectARX/DBX Transient Reactors Class** - event-driven reactor implementations
+- **ObjectARX Jig Class** - interactive drawing jigs
+- **ObjectARX MFC Class** - MFC-based UI components
+- **ObjectARX .NET Wrapper Class** - .NET wrapper classes
+- **AutoCAD COM Wrapper Object** - COM component wrappers
+- **AutoCAD Object Dynamic Property** - dynamic property implementations
 
-The same wizards are also shipped as a modern **VSIX** (`ArxVsixWizard`) that installs into Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md).
+On this branch the modern **VSIX** (`ArxVsixWizard`) *is* the product, in Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md). The classic `.vsz` wizard sources and the `_Installs` payload live on the `classic-wizards` branch only.
 
-> **Status (0.2.9).** The VSIX, the MSI/Burn bundle and the Inno single-file installer are all built
-> from this tree. Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
+> **Status (0.2.10).** The VSIX and the Inno single-file installer are built from this tree (the
+> MSI/Burn bundle lives on `main`). The setup installs nothing into Visual Studio's
+> `vcprojects`/`vcprojectitems` folders itself - the VSIX is the whole Visual Studio integration;
+> registrations this product's own 0.2.4-and-earlier builds left under the legacy names shared with
+> the official yearly ObjectARX wizard are only reclaimed when their content identifies this
+> product, so installing or uninstalling this line never removes the official wizard.
+> Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
 > that pre-fills the name can take `devenv` down while a freshly created project is still being
 > parsed (UI-Automation `ElementNotAvailableException`, `0x80040201`). The VSIX ships
 > **Add ObjectARX Class...** on the Solution Explorer project context menu, which bypasses the
@@ -54,28 +60,25 @@ cd ObjectARX-Wizards
 
 ### 🔨 Build Instructions
 
-There are three buildable lines. The VSIX and Inno lines ship version **0.2.9**; the MSI/Burn bundle remains **0.1.7**.
+Two lines are buildable here, both at version **0.2.10**; the MSI/Burn bundle lives on `main`.
 
 | Line | Command | Output |
 |---|---|---|
 | VSIX (project + item wizards) | `msbuild ArxVsixWizard\ArxVsixWizard.csproj -t:Restore,Build -p:Configuration=Release` | `ArxVsixWizard\bin\Release\ArxVsixWizard.vsix` |
-
-| Inno Setup (single file) | `tools\build-and-pack.ps1 -BuildRoot <build root>` | `<build root>\inno\ObjectARXMultiVersionWizards-<branch>.exe` |
+| Inno Setup (single file, the package to ship here) | `tools\build-and-pack.ps1 -BuildRoot <build root>` | `<build root>\inno\ObjectARXMultiVersionWizards-dev.exe` |
 
 Build into a **separate build directory**, never into the checkout: mirror the tree, build the copy, keep the source tree read-only. The local convention (build root, exclusions, per-line commands) is in `AGENTS.local.md`; `tools\build-and-pack.ps1` does the whole Inno line in one go - mirror, VSIX, props generator, ISCC.
 
-Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX, [StepsToBuild.md](ObjectARXWizardsInstaller/StepsToBuild.md) for the WiX/MSI project, and `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` for the Inno line (its original plan document was removed; the crash analysis summary is in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md)).
+Details: [ArxVsixWizard/README.md](ArxVsixWizard/README.md) for the VSIX and `InnoSetupInstaller\ObjectARXMultiVersionWizards.iss` for the Inno line (the WiX/MSI project lives on `main`; the crash analysis summary is in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md)).
 
 
 ### 💾 Installation
 
-Any of the three lines installs the same wizard payload and the same VSIX - pick one:
+The only package built here is the Inno single-file installer:
 
+1. **`<build root>\inno\ObjectARXMultiVersionWizards-dev.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`). It installs the VSIX (the whole Visual Studio integration) and the generated multi-year property sheets; it writes nothing into Visual Studio's own wizard folders.
 
-
-3. **`<build root>\inno\ObjectARXMultiVersionWizards-<branch>.exe`** - single file, Chinese-first UI, user-selectable install folder (build-directory convention: `AGENTS.local.md`). It installs the VSIX, the SDK/property-sheet payload and the classic *item* wizards behind VS's "Add Class" dialog, but **not** the two classic `.vsz` project wizards: project templates come from the VSIX only, so the New Project dialog shows one consistent set (an upgrade deletes the copies 0.2.4 and earlier left behind).
-
-Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (Visual C++ → *ObjectARX/DBX/CRX Application (Multi-Version)*) and, for the item wizards, in **Add → New Item** under the **ArxWizard** category.
+Restart Visual Studio afterwards. The wizards then appear in **File → New → Project** (*ObjectARX/DBX/CRX Application (Multi-Version)* and *ObjectARX/DBX Application with OMF Support (Multi-Version)*) and the item wizards in **Add → New Item** / the project context menu's **Add ObjectARX Class...**. An upgrade still takes away the files this product's own 0.2.4-and-earlier builds copied into the Visual Studio folders, but only when they identify this product - the official yearly ObjectARX wizard, which uses the same legacy names, is left untouched.
 
 Note: the item templates pre-fill the **Name** box (`ProvideDefaultName=true`). After a project has just been created, either add classes through the project context menu's **Add ObjectARX Class...** (safe at any time - it does not use Visual Studio's template dialog) or wait for the status bar to show **Ready** / 「就绪」 before using Add → New Item. The underlying VS-side defect and the full analysis are in [docs/VS-AddNewItem-Crash.md](docs/VS-AddNewItem-Crash.md).
 
@@ -97,22 +100,13 @@ See our comprehensive **[Troubleshooting Guide](ObjectARX%20Wizard%20Troubleshoo
 
 ```
 ObjectARX-Wizards/
-├── ArxVsixWizard/          # VSIX wizards (project + item) for VS 2022/2026
-├── InnoSetupInstaller/     # Inno Setup line (single-file installer)
-├── ArxAppWiz/              # Main application wizard (classic .vsz)
-├── ArxWizCustomObject/     # Custom object wizard  
-├── ArxWizReactors/         # Reactor wizard templates
-├── ArxWizJig/              # Jig wizard templates
-├── ArxWizMFCSupport/       # MFC support templates
-├── ArxWizNETWrapper/       # .NET wrapper templates
-├── ArxAtlWizComWrapper/    # COM wrapper templates
-├── ArxAtlWizDynProp/       # Dynamic property templates
-├── ObjectARXWizardsInstaller/ # MSI + Burn bundle (WiX)
-├── ArxAppWiz182/           # OMF/MAP vertical SDK wizard (classic .vsz)
-├── tools/                  # arx-props / arx-genprops helpers shared by both installer lines
-├── docs/                   # installer plan + crash analysis
-└── _Installs/              # Installation files and props
+├── ArxVsixWizard/          # VSIX wizards (project + item) for VS 2022/2026 - the product
+├── InnoSetupInstaller/     # Inno Setup line (single-file installer), carries its own SetupWizard.ico
+├── tools/                  # arx-props / arx-genprops helpers
+└── docs/                   # usage guide + crash analysis
 ```
+
+The classic `.vsz` wizard trees (`ArxAppWiz`, `ArxWiz*`, `ArxAtlWiz*`) and the `_Installs` payload live on the `classic-wizards` branch only; the MSI/Burn project lives on `main`.
 
 ---
 

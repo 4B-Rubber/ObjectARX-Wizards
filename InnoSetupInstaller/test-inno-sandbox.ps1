@@ -19,8 +19,10 @@
   Visual Studio.
 
   This branch installs no classic wizard payload at all: the VSIX is the whole Visual Studio
-  integration, and [InstallDelete] takes the classic line's files out of the VS folders and {app}
-  on the way in. The rounds below check that, plus the props generation and the VSIX step.
+  integration. The setup writes nothing into the Visual Studio folders; on the way in (and at
+  uninstall) it only reclaims this product's own 0.2.4-and-earlier registrations under the legacy
+  names, identified by the ABSOLUTE_PATH inside each .vsz - files the official yearly ObjectARX
+  wizard owns must survive. The rounds below pin down both sides, plus props and the VSIX step.
 #>
 [CmdletBinding()]
 param(
@@ -98,22 +100,51 @@ $propsDir = Join-Path $work 'props'
 $sdkDir = Join-Path $work 'sdkroot\Autodesk'
 $arxSdk = Join-Path $work 'ObjectARX'
 $vsRoot = Join-Path $work 'vs2022'
-# The classic line's files, as an older install would have left them: [InstallDelete] has to take
-# them away again the moment this line is installed. This branch ships no wizard payload of its own.
-# {$appDir} is normally NOT created here (Inno only removes a directory it created itself), but this
-# pre-seeded leftover needs a home; the round below drops the folder by hand afterwards.
-$classicProjectWizard = Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz'
-$classicItemWizards = Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX'
+$vsVc        = Join-Path $vsRoot 'Common7\IDE\VC'
+$vsProjects  = Join-Path $vsVc 'vcprojects\Autodesk'
+$vsItemsOld  = Join-Path $vsVc 'vcprojectitems\ObjectARX'
+$vsItemsNew  = Join-Path $vsVc 'vcprojectitems\ObjectARXMV'
+# {app}\ArxWizCommon is an own old payload tree: [InstallDelete] must still take it away. Inno only
+# removes a directory it created itself, so pre-seed it; the fresh-install round drops it.
 $classicAppTree = Join-Path $appDir 'ArxWizCommon'
-foreach ($d in @($propsDir,
-                 (Split-Path $classicProjectWizard),
-                 $classicItemWizards,
-                 $classicAppTree)) {
+foreach ($d in @($propsDir, $vsProjects, $vsItemsOld, $classicAppTree)) {
   New-Item -ItemType Directory -Force $d | Out-Null
 }
-Set-Content -Path $classicProjectWizard -Value 'classic leftover' -Encoding ASCII
-Set-Content -Path (Join-Path $classicItemWizards 'ArxWizReactors.vsz') -Value 'classic leftover' -Encoding ASCII
 Set-Content -Path (Join-Path $classicAppTree 'arxCommon.js') -Value 'classic leftover' -Encoding ASCII
+
+# ---- official yearly ObjectARX wizard placeholders (the legacy names are theirs too) ----
+function Set-OfficialPlaceholder([string]$path, [string]$wizard) {
+  Set-Content -Path $path -Encoding ASCII -Value @(
+    'VSWIZARD 7.0',
+    'Wizard=VsWizard.VsWizardEngine.17.0',
+    ('Param="WIZARD_NAME = ' + $wizard + '"'),
+    ('Param="ABSOLUTE_PATH = C:\Program Files\Autodesk\ObjectARX 2026 Wizards\' + $wizard + '"'),
+    'Param="FALLBACK_LCID = 1033"'
+  )
+}
+Set-OfficialPlaceholder (Join-Path $vsProjects 'ArxAppWiz.vsz') 'ArxAppWiz'
+Set-OfficialPlaceholder (Join-Path $vsProjects 'ArxAppWizOMF.vsz') 'ArxAppWiz182'
+Set-Content (Join-Path $vsProjects 'ArxAppWiz.vsdir') 'ArxAppWiz.vsz| |ARX/DBX Project For AutoCAD 2026' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWiz.ico') 'official-icon-1' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWizOMF.vsdir') 'ArxAppWizOMF.vsz| |OMF Project For AutoCAD 2026' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWizOMF.ico') 'official-icon-2' -Encoding ASCII
+Set-OfficialPlaceholder (Join-Path $vsItemsOld 'ArxWizCustomObject.vsz') 'ArxWizCustomObject'
+Set-Content (Join-Path $vsItemsOld 'ArxWizCustomObject.ico') 'official-icon-3' -Encoding ASCII
+Set-Content (Join-Path $vsItemsOld 'MayaCommand.vsz') 'official maya wizard' -Encoding ASCII
+Set-Content (Join-Path $vsItemsOld 'MayaCustomNode.vsz') 'official maya wizard' -Encoding ASCII
+$officialSurvivors = @(
+  (Join-Path $vsProjects 'ArxAppWiz.vsz'), (Join-Path $vsProjects 'ArxAppWiz.vsdir'),
+  (Join-Path $vsProjects 'ArxAppWiz.ico'), (Join-Path $vsProjects 'ArxAppWizOMF.vsz'),
+  (Join-Path $vsProjects 'ArxAppWizOMF.vsdir'), (Join-Path $vsProjects 'ArxAppWizOMF.ico'),
+  (Join-Path $vsItemsOld 'ArxWizCustomObject.vsz'), (Join-Path $vsItemsOld 'ArxWizCustomObject.ico'),
+  (Join-Path $vsItemsOld 'MayaCommand.vsz'), (Join-Path $vsItemsOld 'MayaCustomNode.vsz')
+)
+function Assert-OfficialSurvivors([string]$stage) {
+  $lost = @($officialSurvivors | Where-Object { -not (Test-Path $_) })
+  Check ('official wizard files survive ' + $stage) ($lost.Count -eq 0) ($lost -join ', ')
+  $stillOfficial = (Get-Content (Join-Path $vsProjects 'ArxAppWiz.vsz') -Raw) -match [regex]::Escape('ObjectARX 2026 Wizards')
+  Check ('official wizard content untouched after ' + $stage) ($stillOfficial)
+}
 
 $years = '2020,2024,2026,2027'
 $installArgs = @(
@@ -137,8 +168,9 @@ function Wait-Gone([string]$Path) {
 
 # ---------------------------------------------------------------- fresh install
 # With no /PROPSDIR and an empty registry the property sheet folder must follow the install folder.
-# This round also proves the generated sheets are cleared from it on uninstall and that
-# [InstallDelete] takes the classic line's leftovers away on the way in.
+# This round also proves the generated sheets are cleared from it on uninstall, that [InstallDelete]
+# drops this product's own old payload tree under {app}, and that official wizard files sharing the
+# legacy VS folder names are not touched.
 Remove-Item $regKey -Recurse -Force -ErrorAction SilentlyContinue
 $argsFresh = ($installArgs -replace ' /PROPSDIR="[^"]*"', '') -replace ' /RDS=ABC', ''
 $p = Start-Process -FilePath $setup -ArgumentList $argsFresh -NoNewWindow -Wait -PassThru
@@ -146,9 +178,9 @@ Check 'fresh install exits 0 (property sheet folder follows the install folder)'
 Check 'generated props land in the install folder' (
   (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')) -and
   (Test-Path (Join-Path $appDir 'ObjectARX.User.props')))
-Check 'classic project wizard removed from the VS folder' (-not (Test-Path $classicProjectWizard))
-Check 'classic item wizard folder removed from the VS tree' (-not (Test-Path $classicItemWizards))
-Check 'classic wizard tree removed from the install folder' (-not (Test-Path $classicAppTree))
+Check 'own old payload tree removed from the install folder' (-not (Test-Path $classicAppTree))
+Assert-OfficialSurvivors 'fresh install'
+Check 'the setup creates no ObjectARXMV folder of its own on this line' (-not (Test-Path $vsItemsNew))
 $k0 = Get-ItemProperty $regKey -ErrorAction SilentlyContinue
 Check 'registry PropsDir follows the install folder' ($k0 -and ($k0.PropsDir -eq $appDir)) ($(if ($k0) { $k0.PropsDir } else { 'missing' }))
 Check 'empty RDS is recorded as an empty value (the wizard then keeps ADSK)' `
@@ -172,18 +204,21 @@ $leftovers = @(
   (Join-Path $appDir 'ArxAtlWizComWrapper'), (Join-Path $appDir 'ArxAtlWizDynProp'),
   (Join-Path $appDir 'ArxWizCustomObject'), (Join-Path $appDir 'ArxWizJig'),
   (Join-Path $appDir 'ArxWizMFCSupport'), (Join-Path $appDir 'ArxWizNETWrapper'),
-  (Join-Path $appDir 'ArxWizReactors'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX')
+  (Join-Path $appDir 'ArxWizReactors')
 )
 $kept = @($leftovers | Where-Object { Test-Path $_ })
-Check 'no classic wizard tree landed in the install folder or the VS tree' ($kept.Count -eq 0) ($kept -join ', ')
-Check 'no classic project wizard landed in the VS folder' (-not (Test-Path $classicProjectWizard))
+Check 'no classic wizard tree landed in the install folder' ($kept.Count -eq 0) ($kept -join ', ')
+Check 'the setup creates nothing new inside the VS tree (no ObjectARXMV folder)' (-not (Test-Path $vsItemsNew))
+Assert-OfficialSurvivors 'install'
 
 # No shipped Autodesk.arx-<year>.props anywhere: arx-genprops generates the ticked years at install
 # time, so a hard-wired single-year sheet would only go stale (or collide with the generated one,
 # the property sheet folder being the install folder by default).
-Check 'no property sheet template ships as payload' `
-      (@(Get-ChildItem (Join-Path $repo '_Installs') -Filter 'Autodesk.arx-*.props' -ErrorAction SilentlyContinue).Count -eq 0)
+$repoClassics = @('ArxAppWiz','ArxAppWiz182','ArxWizCommon','ArxWizCustomObject','ArxWizJig',
+                  'ArxWizMFCSupport','ArxWizNETWrapper','ArxWizReactors',
+                  'ArxAtlWizComWrapper','ArxAtlWizDynProp','_Installs')
+$presentClassics = @($repoClassics | Where-Object { Test-Path (Join-Path $repo $_) })
+Check 'no classic wizard payload directory is part of this branch' ($presentClassics.Count -eq 0) ($presentClassics -join ', ')
 
 # ---- the SDK folder is never touched ----
 Check 'the installer leaves the SDK folder alone' (-not (Test-Path $arxSdk))
@@ -267,8 +302,48 @@ Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $p
 Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
 
 Check 'install folder removed' (-not (Test-Path $appDir))
+Check 'uninstall created nothing and removed nothing in the shared VS folders' (-not (Test-Path $vsItemsNew))
+Assert-OfficialSurvivors 'uninstall'
 $k = Get-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -ErrorAction SilentlyContinue
 Check 'registry key removed on uninstall' ($null -eq $k)
+
+# ----------------------------------------- upgrade path: this product's own 0.2.4-era leftovers
+# Legacy names again, but now the ABSOLUTE_PATH points at THIS product's folder: the content-guarded
+# post-install cleanup must take every one of them (and the item folder with them once empty).
+$ownItemNames = @('ArxAtlWizComWrapper','ArxAtlWizDynProp','ArxWizCustomObject',
+                  'ArxWizJig','ArxWizMFCSupport','ArxWizNETWrapper','ArxWizReactors')
+function Set-OwnLegacy([string]$path, [string]$wizard) {
+  Set-Content -Path $path -Encoding ASCII -Value @(
+    'VSWIZARD 7.0',
+    'Wizard=VsWizard.VsWizardEngine.17.0',
+    ('Param="WIZARD_NAME = ' + $wizard + '"'),
+    ('Param="ABSOLUTE_PATH = C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\' + $wizard + '"')
+  )
+}
+Remove-Item (Join-Path $vsProjects '*') -Force
+foreach ($pair in @(@('ArxAppWiz.vsz','ArxAppWiz'), @('ArxAppWizOMF.vsz','ArxAppWiz182'))) {
+  Set-OwnLegacy (Join-Path $vsProjects $pair[0]) $pair[1]
+  Set-Content (Join-Path $vsProjects ($pair[0] -replace '\.vsz$','.vsdir')) 'own legacy' -Encoding ASCII
+  Set-Content (Join-Path $vsProjects ($pair[0] -replace '\.vsz$','.ico')) 'own legacy icon' -Encoding ASCII
+}
+Remove-Item (Join-Path $vsItemsOld '*') -Force
+foreach ($n in $ownItemNames) {
+  Set-OwnLegacy (Join-Path $vsItemsOld ($n + '.vsz')) $n
+  Set-Content (Join-Path $vsItemsOld ($n + '.ico')) 'own legacy icon' -Encoding ASCII
+}
+$p = Start-Process -FilePath $setup -ArgumentList $installArgs -NoNewWindow -Wait -PassThru
+Check 'upgrade over own legacy layout exited 0' ($p.ExitCode -eq 0) ('exit=' + $p.ExitCode)
+$leftOldProject = @('ArxAppWiz.vsz','ArxAppWiz.vsdir','ArxAppWiz.ico',
+                    'ArxAppWizOMF.vsz','ArxAppWizOMF.vsdir','ArxAppWizOMF.ico' |
+                    ForEach-Object { Join-Path $vsProjects $_ } | Where-Object { Test-Path $_ })
+Check 'own legacy project registrations reclaimed' ($leftOldProject.Count -eq 0) ($leftOldProject -join ', ')
+$leftOldItems = @($ownItemNames | ForEach-Object { Join-Path $vsItemsOld ($_ + '.vsz') } | Where-Object { Test-Path $_ })
+Check 'own legacy item registrations reclaimed and the empty folder removed' `
+      (($leftOldItems.Count -eq 0) -and -not (Test-Path $vsItemsOld)) ($leftOldItems -join ', ')
+Check 'still nothing of this line lands in the VS tree' (-not (Test-Path $vsItemsNew))
+Start-Process -FilePath (Join-Path $appDir 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
+Wait-Gone $appDir
+Remove-Item -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Recurse -Force -ErrorAction SilentlyContinue
 
 # ---------------------------------------------------------------- remembered install folder
 # The registry value is what makes the folder survive a switch between the two installers: with no

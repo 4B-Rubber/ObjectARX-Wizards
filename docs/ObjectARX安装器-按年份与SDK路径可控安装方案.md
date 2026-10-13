@@ -10,7 +10,7 @@
 两个痛点：
 
 - **安装不可选**：所有 props 挤在一个 `<Component Id="C_OBJARX_PROPS_GLOBAL">`（[directory.wxi](../ObjectARXWizardsInstaller/directory.wxi) L528-593，62 个 File），只有单一 `Complete` Feature（[feature.wxi](../ObjectARXWizardsInstaller/feature.wxi)），无法"只装 2018–2027"。
-- **路径写死**：17 个含路径的 props 把 `ArxSdkDir`/`AcadDir` **无条件硬编码**（如 [Autodesk.arx-2027.props](../_Installs/ObjectARX%20Props/Autodesk.arx-2027.props) L13/L16），没有任何判空或回退，装在别的根目录时外部覆盖会被**无条件覆盖**，直接导致找不到头文件。
+- **路径写死**：17 个含路径的 props 把 `ArxSdkDir`/`AcadDir` **无条件硬编码**（如 Autodesk.arx-2027.props（当年 `_Installs\ObjectARX Props\` 载荷，该目录现已移除）L13/L16），没有任何判空或回退，装在别的根目录时外部覆盖会被**无条件覆盖**，直接导致找不到头文件。
 
 **v2 的核心决策（用户已定）**：这 33 个文件结构基本一致，**改为安装时由自定义动作程序化生成，不再作为 MSI 载荷拷贝**。仓库里只保留「模板 + 年份表」，安装界面让用户给出 SDK / AutoCAD 根目录并勾选年份，CA 按结果生成文件；同时生成一个可手改的覆盖文件，使日后换路径不必重装。
 

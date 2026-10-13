@@ -1,6 +1,6 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.9。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 状态：**0.2.10。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"。0.2.10 起本分支不再携带经典 `.vsz` 向导源码与 `_Installs` 载荷（仅 `classic-wizards` 分支保留）；安装器不再盲删 VS 共享目录，对 0.2.4 及更早版本留下的旧注册只在 `.vsz` 内容确认指向本产品目录时回收，官方年份向导沿用同名文件也不受影响。见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
 > 最后更新：2026-10-10
 
 ---
@@ -178,7 +178,7 @@ NewProjectDialog.TemplateSelectionChangedDelayed → ApplyTemplateSelection
 ### P2 — 杂项
 - [ArxWizard.cs](ArxWizard.cs) 是空 IWizard 骨架残留，删除。
 - csproj 中 `<BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>` 是排查时加的，无用可删；真正防止把 TemplateSmokeTest 源码 glob 进主项目的是下面的 `<Compile Remove="TemplateSmokeTest\**"/>` 一组，保留。
-- ~~`Packaging/ProjectTemplates/VC/1033/*/*.ico` 是 60 字节占位 ICO，换成正式图标。~~（**已完成**：0.1.5 起 7 个项图标取自 `_Installs\VC\VCAddClass\ObjectARX`，2 个项目图标取自 `_Installs\VC\vcprojects\Autodesk` 的多尺寸 ICO；冒烟测试加了"图标必须大于占位桩"的断言。）
+- ~~`Packaging/ProjectTemplates/VC/1033/*/*.ico` 是 60 字节占位 ICO，换成正式图标。~~（**已完成**：0.1.5 起图标随 VSIX 一起提交在 `Packaging/` 各模板目录（7 个项图标 + 2 个项目图标，源自经典向导的多尺寸 ICO）；冒烟测试有"图标必须大于占位桩"的断言。）
 - 已删除 vcxproj 里的 `/Wv:17.00.61030`（老模板为压 VS2015 警告所加）：低版本工具集会报"无效的数值参数"，高版本也不需要。OMF 骨架保留了同行的 `$ArxOmfZm$`（`-Zm1000`），只去掉 `/Wv:`。
 - VSTHRD010 警告：IWizard 回调本就在 UI 线程，可在方法入口加 `ThreadHelper.ThrowIfNotOnUIThread()` 明示。
 - 模板源文件为 Windows-1252 编码，渲染器按 1252 解码；P0 修法落盘时建议对 cpp/h/rc 保持与老向导一致的 ANSI 写出（vcxproj/filters 用 UTF-8 无 BOM），避免 .rc 中扩展字符乱码。
@@ -209,4 +209,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.9，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.10，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

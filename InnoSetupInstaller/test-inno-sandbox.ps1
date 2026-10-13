@@ -8,11 +8,15 @@
       PrivilegesRequired=admin            -> lowest
       HKLM64                              -> HKCU
       ArchitecturesInstallIn64BitMode     -> (dropped; it needs admin)
-  Everything else - the [Files] set, the whole [Code] section, the patches and the props
-  generation - is byte-identical to the shipped script.
+  Everything else - the [Files] set, the patches and the props generation - is byte-identical to
+  the shipped script.
 
   Every machine path is redirected into a scratch directory through the script's own silent
-  switches, then the install is verified and uninstalled again.
+  switches, then the install is verified and uninstalled again. One part is not switchable: the
+  uninstaller's RemoveVsRegistrations() / RefreshVsCache() / RemoveVsix() re-enumerate the machine's
+  own Visual Studio instances (FindVsRootByMajor reads %ProgramData%), so the derived copy disables
+  all three - a sandbox run must never delete files from, refresh or uninstall anything in the real
+  Visual Studio.
 #>
 [CmdletBinding()]
 param(
@@ -44,6 +48,17 @@ $test = $test.Replace('#define VsixSource RepoRoot + "\ObjectARXMultiVersionWiza
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
+# The uninstaller's VS steps are not switch-redirectable: RemoveVsRegistrations() / RefreshVsCache()
+# / RemoveVsix() all re-enumerate the machine's own Visual Studio instances (FindVsRootByMajor reads
+# %ProgramData%\Microsoft\VisualStudio\Packages\_Instances). Blank them out in the copy - a sandbox
+# run must never delete files from, refresh or uninstall anything in the real Visual Studio. Inno's
+# own uninstall still removes what the install copied into the redirected root.
+$test = $test.Replace("  RemoveVsRegistrations();", "  // sandbox: the real VS roots are off limits")
+$test = $test.Replace("  RefreshVsCache();", "  // sandbox: never run devenv on the real VS")
+$test = $test.Replace("  RemoveVsix();", "  // sandbox: never uninstall the real VS extension")
+foreach ($call in @("  RemoveVsRegistrations();", "  RefreshVsCache();", "  RemoveVsix();")) {
+  if ($test.Contains($call)) { throw ('sandbox: could not disable ' + $call.Trim()) }
+}
 $test = $test.Replace('OutputBaseFilename=ObjectARXMultiVersionWizards-dev', 'OutputBaseFilename=InnoSandboxTest')
 if ($test -ceq $text) { throw 'no substitution applied - the .iss changed shape' }
 

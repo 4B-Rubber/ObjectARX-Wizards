@@ -2,14 +2,11 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
   <Feature Id="Complete" Absent="disallow" AllowAdvertise="system" Level="1" Title="Complete">
-    <ComponentRef Id="C__2C63244EA9004D42B1A8ED79330F5B73" />
     <!-- Global multi-year MSBuild props -->
     <ComponentRef Id="C_OBJARX_PROPS_GLOBAL" />
     <!-- Records the props folder location for the wizards -->
     <ComponentRef Id="C_ARXPROPS_REG" />
 
-    <!-- ObjectARX -->
-    <ComponentRef Id="C__3CB44E97F42E46E887E1610C0898A33F" />
     <!-- The classic wizard payload (ArxWizCommon, the two project wizards, the seven item wizards
          and the vcprojectitems registration files) used to be referenced here, with a Visual Studio
          2022 only feature for the registration files. This line installs none of it - the VSIX is

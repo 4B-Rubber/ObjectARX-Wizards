@@ -2,22 +2,6 @@
 <Include xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<Directory Id="TARGETDIR" Name="SourceDir" FileSource="..\">
-		<Component Id="C__2C63244EA9004D42B1A8ED79330F5B73" Guid="{3B873C54-A059-4F3A-BCC7-850B09D86DCF}" KeyPath="yes">
-			<File Id="_40710A89F7F94DB2AA13FB5F2A201C82" Name="rxsdk_common.props" Vital="yes" DiskId="1" Source="..\_Installs\rxsdk_common.props" />
-			<File Id="_AEB19F421DAF4198A890D52FD5219690" Name="crx.props" Vital="yes" DiskId="1" Source="..\_Installs\crx.props" />
-		</Component>
-
-		<!-- ObjectARX -->
-		<Directory Id="ARXPATH">
-			<Directory Id="D__573C8AF8D15B4114B7BF7F056D74ED13" Name="inc">
-				<Component Id="C__3CB44E97F42E46E887E1610C0898A33F" Guid="{A486B74C-A95D-4B75-91EF-3B3141044A87}" Permanent="yes" KeyPath="yes">
-					<File Id="_3CB44E97F42E46E887E1610C0898A33F" Name="rxsdk_common.props" Vital="yes" DiskId="1" Source="..\_Installs\rxsdk_common.props" />
-					<File Id="_6B5A09110102454B841E6D746D2BD1FD" Name="crx.props" Vital="yes" DiskId="1" Source="..\_Installs\crx.props" />
-					<File Id="_848601E0FB77432AB8747350CD7AA9E4" Name="arxEntryPoint.h" Vital="yes" DiskId="1" Source="..\_Installs\arxEntryPoint.h"/>
-				</Component>
-			</Directory>
-		</Directory>
-
 
 		<!-- The property sheet folder. Multi-year generated projects import Autodesk.arx-YYYY.props
 		     from here. ARXPROPSDIR is a directory id that CA_DefaultPropsDir seeds with TARGETDIR, so

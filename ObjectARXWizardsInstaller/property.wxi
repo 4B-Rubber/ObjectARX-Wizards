@@ -45,7 +45,6 @@
     <CustomAction Id="CA_DefaultPropsDir" Property="ARXPROPSDIR" Value="[TARGETDIR]" Execute="firstSequence" />
     <CustomAction Id="CA_DefaultPropsDirAuto" Property="ARXPROPSDIR_AUTO" Value="[TARGETDIR]" Execute="firstSequence" />
     <CustomAction Id="CA_DefaultArxRoot" Property="ARXROOT" Value="[ARXROOT_PROBE]" Execute="firstSequence" />
-    <Property Id="ARXPATH" Value="C:\ObjectARX" Secure="yes"/>
     <!-- Optional: an empty RDS leaves the ADSK placeholder in the HTML wizard alone. That is exactly
          what PatchHTMLWizFiles does with an empty value (ADSK -> ADSK), so an empty default is safe
          and nothing is deleted from the shipped HTML pages. -->

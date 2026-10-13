@@ -370,10 +370,10 @@
                 <Control Id="Control278" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif16.0_1_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
             </Dialog>
 
-		<!-- The paths. Same three fields, same order and the same captions as the Inno line's paths
-		     page (Autodesk root -> SDK -> property sheet folder), so both lines ask for the paths on
+		<!-- The paths. Same fields, same order and the same captions as the Inno line's paths
+		     page (Autodesk root -> property sheet folder), so both lines ask for the paths on
 		     one page between RDS and the target years: the root is the parent of the SDK and AutoCAD
-		     folders, the SDK folder gets its inc files written into it, and the property sheet folder
+		     folders, and the property sheet folder
 		     follows the install folder unless it is changed here. -->
 		<Dialog Id="PathsForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
@@ -399,15 +399,9 @@
 				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
-			<Control Id="SdkLabel" Type="Text" X="18" Y="152" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK 位置（会往它的 inc 目录写文件）(&amp;O)：" TabSkip="no" />
-			<Control Id="SdkEdit" Type="PathEdit" X="18" Y="164" Width="252" Height="18" Property="ARXPATH" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseSdk" Type="PushButton" X="275" Y="164" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ARXPATH">1</Publish>
-				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
-			</Control>
-			<Control Id="PropsLabel" Type="Text" X="18" Y="192" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用）(&amp;P)：" TabSkip="no" />
-			<Control Id="PropsEdit" Type="PathEdit" X="18" Y="204" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseProps" Type="PushButton" X="275" Y="204" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+			<Control Id="PropsLabel" Type="Text" X="18" Y="152" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用）(&amp;P)：" TabSkip="no" />
+			<Control Id="PropsEdit" Type="PathEdit" X="18" Y="164" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseProps" Type="PushButton" X="275" Y="164" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
 				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>

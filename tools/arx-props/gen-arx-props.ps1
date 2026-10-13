@@ -91,7 +91,11 @@ function New-TokenMap {
   } else { '' }
   $map.SDKINCS_WIN32 = if ($y.hasWin32) { "`t`t<ArxSdkIncs Condition=`"'`$(Platform)'=='Win32'`">`$(ArxSdkDir)\inc;`$(ArxSdkDir)\inc-win32</ArxSdkIncs>`n" } else { '' }
   $map.SDKLIBSS_WIN32 = if ($y.hasWin32) { "`t`t<ArxSdkLibs Condition=`"'`$(Platform)'=='Win32'`">`$(ArxSdkDir)\lib-win32</ArxSdkLibs>`n" } else { '' }
-  $map.CRXIMPORT = if ($y.hasCrx) { "`t`t<Import Condition=`"'`$(ArxAppType)'=='crx' or '`$(ArxAppType)'=='crxnet'`" Project=`"`$(ArxSdkDir)\inc\crx.props`" />`n" } else { '' }
+  # crx 不再走 SDK 的 inc\crx.props —— 2022/2027 的 SDK 根本没有这个文件。基础库直接借 inc\dbx.props，
+  # crx.props 原本补的两点（输出扩展名 .crx、核心库 accore.lib）改由下面两个键直接表达。
+  $map.CRXIMPORT = if ($y.hasCrx) { "`t`t<Import Condition=`"'`$(ArxAppType)'=='crx' or '`$(ArxAppType)'=='crxnet'`" Project=`"`$(ArxSdkDir)\inc\dbx.props`" />`n" } else { '' }
+  $map.CRXTARGETEXT = if ($y.hasCrx) { "`t`t<TargetExt Condition=`"'`$(ArxAppType)'=='crx' or '`$(ArxAppType)'=='crxnet'`">.crx</TargetExt>`n" } else { '' }
+  $map.CRXLIB = if ($y.hasCrx) { "`t`t`t<AdditionalDependencies Condition=`"'`$(ArxAppType)'=='crx' or '`$(ArxAppType)'=='crxnet'`">accore.lib;%(AdditionalDependencies)</AdditionalDependencies>`n" } else { '' }
   $map.TF35BLOCK = if ($y.legacyV35) {
     "`t<PropertyGroup>`n`t`t<TargetFrameworkVersion>v3.5</TargetFrameworkVersion> <!-- That will force Platform Toolset to vc9 in Visual Studio 2010 -->`n`t</PropertyGroup>`n"
   } else { '' }

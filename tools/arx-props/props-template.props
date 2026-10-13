@@ -34,6 +34,7 @@
 		<ArxAtilLibs>$(ArxSdkDir)\utils\Atil\Lib-$(Platform)</ArxAtilLibs>
 		<ArxSDKVersion>@@SDKVERSION@@</ArxSDKVersion>
 		<ArxSDKPlatform>@@TOOLSET@@</ArxSDKPlatform>
+@@CRXTARGETEXT@@
 	</PropertyGroup>
 
 	<ImportGroup Label="PropertySheets">
@@ -89,6 +90,7 @@
 			     it up as soon as the installer regenerates the sheet. Keyed on the file itself - the
 			     older SDKs do not have it and must not link it. -->
 			<AdditionalDependencies Condition="Exists('$(ArxSdkLibs)\acgeoment.lib')">acgeoment.lib;%(AdditionalDependencies)</AdditionalDependencies>
+@@CRXLIB@@
 			<AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 @@TMWIN32@@
 			<TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>

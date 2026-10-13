@@ -77,12 +77,11 @@
 
 ### 第 3 页：ObjectARX SDK 与目标位置
 
-三个路径，**SDK 和 AutoCAD 装在默认位置时整页都不用改**：
+两个路径，**装在默认位置时整页都不用改**：
 
 | 字段 | 含义 | 默认值 |
 |---|---|---|
 | Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
-| ObjectARX SDK 位置 | 安装器会向其 `inc` 子目录写入 3 个公共文件 | `C:\ObjectARX` |
 | 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取 | 跟随安装文件夹 |
 
 ### 第 4 页：目标 AutoCAD 版本
@@ -96,7 +95,7 @@
 
 确认页面列出以上全部选择。点击安装后：
 
-1. 复制向导文件、生成勾选年份的属性表、向 ObjectARX SDK 的 `inc` 目录写入公共文件；
+1. 生成勾选年份的属性表；
 2. 自动为当前用户把 Visual Studio 扩展注册到本机所有受支持的 VS 实例（2022 与 2026）。每个 VS 实例大约需要 1–2 分钟，属正常现象。
 
 看到“安装完成”后，**重新启动 Visual Studio**。
@@ -117,7 +116,6 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 | `ArxYears=2020,2024,2026` | 预设勾选的年份（逗号分隔，不要加空格） |
 | `ArxRds=符号` | RDS 前缀；省略则使用 ADSK |
 | `ArxRoot=路径` | Autodesk 根目录 |
-| `ArxSdkPath=路径` | ObjectARX SDK 位置 |
 | `ArxPropsDir=路径` | 属性表目录；省略则跟随安装目录 |
 | `ArxSkipVsix=1` | 只装文件和属性表，不安装 VS 扩展 |
 | `ArxSkipVsCheck=1` | Visual Studio 正在运行也继续安装（不推荐） |

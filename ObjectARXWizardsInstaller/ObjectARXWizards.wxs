@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.2.6"?>
+	<?define ProductVersion = "0.2.9"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
 	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
@@ -40,7 +40,13 @@
 <!--ProductCode for 0.2.6. It exists because the bundle got a fixed Id (see Bundle.wxs): rebuilding the
 	bundle no longer produces a new identity, so this is the release that replaces the 0.2.4/0.2.5 rows
 	instead of adding another one. The version and the code move together, as always.-->
-<?define ProductCode= "{8D2A5F47-6C1E-4B93-A072-5F3E9D81C4B6}"?>
+<!--<?define ProductCode= "{8D2A5F47-6C1E-4B93-A072-5F3E9D81C4B6}"?>-->
+<!--ProductCode for 0.2.9, which drops the ObjectARX SDK location: the installer no longer
+    writes into the SDK's inc folder (the year sheets import the SDK's own inc\dbx.props and
+    carry the two CRX pieces crx.props used to add). The ARXPATH field, its property, the
+    permanent inc component and the two dead payload copies in the install folder go with it.
+    The version and the code move together, as always.-->
+<?define ProductCode= "{4F2ADFF1-6B7E-4E10-BC73-E65E2B4F3B54}"?>
   
 
   <Product

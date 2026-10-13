@@ -18,7 +18,7 @@
        that fails to uninstall leaves its entry behind - the related bundles are removed during the
        upgrade, so their uninstall commands have to tolerate whatever the new MSI already took away. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          Version="0.2.8"
+          Version="0.2.9"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
@@ -34,14 +34,13 @@
            ObjectARXMultiVersionWizardsSetup.exe ArxQuiet=1 ArxSkipVsix=1 ArxRds=ACME ArxRoot=D:\Autodesk
          They are declared without a default on purpose: Burn only lets the command line set
          variables that have no value of their own, and an empty value means "behave as before".
-         They mirror the Inno line's /RDS=, /ARXROOT=, /ARXSDKPATH=, /PROPSDIR=, /YEARS=, /SKIPVSIX=1
+         They mirror the Inno line's /RDS=, /ARXROOT=, /PROPSDIR=, /YEARS=, /SKIPVSIX=1
          and /SKIPVSCHECK=1 one for one (that line's /DIR= is Burn's own InstallFolder). -->
     <Variable Name="ArxQuiet" />        <!-- 1: hand msiexec /qn, no MSI UI -->
     <Variable Name="ArxSkipVsix" />     <!-- 1: do not install the extension at all -->
     <Variable Name="ArxSkipVsCheck" />  <!-- 1: install even while Visual Studio is running -->
     <Variable Name="ArxRds" />          <!-- registered developer symbol; empty keeps ADSK -->
     <Variable Name="ArxRoot" />         <!-- Autodesk root folder -->
-    <Variable Name="ArxSdkPath" />      <!-- ObjectARX SDK path (its inc folder is populated) -->
     <Variable Name="ArxPropsDir" />     <!-- property sheet folder; empty follows the install folder -->
     <Variable Name="ArxYears" />        <!-- e.g. 2020,2024,2026,2027: the year selection to start from -->
 
@@ -81,8 +80,8 @@
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
                   DetectCondition="ARXWIZARD_MSI_INSTALLED"
                   Vital="yes"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
-                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --arxsdk="[ArxSdkPath]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
+                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
                   UninstallCommand='/uninstall --quiet=1'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>

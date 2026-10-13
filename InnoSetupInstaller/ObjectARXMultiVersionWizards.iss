@@ -50,7 +50,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.8"
+#define AppVersion "0.2.9"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -213,6 +213,9 @@ Name: "{code:GetPropsDir}"; Flags: uninsneveruninstall
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "PropsDir"; ValueData: "{code:GetPropsDir}"; Flags: uninsdeletekey
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "ArxRoot"; ValueData: "{code:GetArxRoot}"
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "AcadRoot"; ValueData: "{code:GetArxRoot}"
+; The RDS the user picked, for the VSIX project wizard: it starts its RDS field from this value (an
+; empty value keeps the built-in ADSK). The classic line patches its HTML wizard with the same answer.
+Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "RDS"; ValueData: "{code:GetRds}"
 ; The install folder, so the next install pre-fills it instead of resetting to the shipped default.
 ; The MSI line writes and reads the same value, so the two remember each other's choice.
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"

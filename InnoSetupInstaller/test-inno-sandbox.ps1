@@ -151,6 +151,8 @@ Check 'classic item wizard folder removed from the VS tree' (-not (Test-Path $cl
 Check 'classic wizard tree removed from the install folder' (-not (Test-Path $classicAppTree))
 $k0 = Get-ItemProperty $regKey -ErrorAction SilentlyContinue
 Check 'registry PropsDir follows the install folder' ($k0 -and ($k0.PropsDir -eq $appDir)) ($(if ($k0) { $k0.PropsDir } else { 'missing' }))
+Check 'empty RDS is recorded as an empty value (the wizard then keeps ADSK)' `
+      ($k0 -and ($null -ne $k0.PSObject.Properties['RDS']) -and ([string]$k0.RDS -eq '')) ([string]$k0.RDS)
 Start-Process -FilePath (Join-Path $appDir 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
 Wait-Gone (Join-Path $appDir 'Autodesk.arx-2020.props')
 Check 'uninstall clears the generated props from the install folder' (-not (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')))
@@ -222,6 +224,7 @@ Check 'registry PropsDir written' ($k -and ($k.PropsDir -eq $propsDir)) ($(if ($
 # ARXROOT_PROBE default was "C:\Program Files\Autodesk\" for the same reason)
 Check 'registry ArxRoot written (with trailing backslash)' ($k -and ($k.ArxRoot -eq ($sdkDir + '\'))) ($(if ($k) { $k.ArxRoot } else { 'missing' }))
 Check 'registry AcadRoot written (with trailing backslash)' ($k -and ($k.AcadRoot -eq ($sdkDir + '\'))) ($(if ($k) { $k.AcadRoot } else { 'missing' }))
+Check 'registry RDS written (the VSIX wizard starts from it)' ($k -and ($k.RDS -eq 'ABC')) ([string]$k.RDS)
 
 # ---- re-run over the same install (upgrade path: years detected, no duplicate work) ----
 $p = Start-Process -FilePath $setup -ArgumentList $installArgs -NoNewWindow -Wait -PassThru

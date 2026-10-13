@@ -18,7 +18,9 @@ namespace ArxVsixWizard.UI
         {
             _kind = kind;
             Options.Kind = kind;
-            Options.Rds = kind == WizardKind.OmfApp ? "asdk" : "ADSK";
+            // The installer records the RDS it was given; start the field from it. Left empty, the
+            // wizard keeps its own default, exactly like the classic line keeps ADSK.
+            Options.Rds = ArxVersionTable.InstalledRds ?? (kind == WizardKind.OmfApp ? "asdk" : "ADSK");
 
             InitializeComponent();
             Title = kind == WizardKind.OmfApp

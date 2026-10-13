@@ -85,7 +85,7 @@ namespace ArxVsixWizard
             var defaults = new WizardOptions
             {
                 Kind = _kind,
-                Rds = _kind == WizardKind.OmfApp ? "asdk" : "ADSK",
+                Rds = ArxVersionTable.InstalledRds ?? (_kind == WizardKind.OmfApp ? "asdk" : "ADSK"),
                 // The page clears both AutoCAD extension flags while MFC/COM stand at "none",
                 // which is the state it opens in.
                 AcadMfcExtension = false,

@@ -31,6 +31,7 @@ namespace ArxVsixWizard.Models
 
         const string PropsDirRegKey = @"SOFTWARE\Autodesk\ObjectARX Wizards";
         const string PropsDirRegValue = "PropsDir";
+        const string RdsRegValue = "RDS";
 
         /// <summary>
         /// The installer lets the user choose the props folder and records the result in HKLM, so read
@@ -52,6 +53,30 @@ namespace ArxVsixWizard.Models
                 }
                 catch { }
                 return PropsDirDefault;
+            }
+        }
+
+        /// <summary>
+        /// The RDS prefix the installer was given, recorded next to the props folder - or null when it
+        /// was left empty. The wizards start their RDS field from it, so a project created right after
+        /// installing starts from the symbol that was typed into the setup; the classic line does the
+        /// same by patching its HTML wizard's pages with the same answer.
+        /// </summary>
+        public static string InstalledRds
+        {
+            get
+            {
+                try
+                {
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    using (var key = hklm.OpenSubKey(PropsDirRegKey))
+                    {
+                        var value = key == null ? null : key.GetValue(RdsRegValue) as string;
+                        if (!string.IsNullOrWhiteSpace(value)) return value.Trim();
+                    }
+                }
+                catch { }
+                return null;
             }
         }
 

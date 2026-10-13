@@ -35,6 +35,10 @@
 					     and the generated sheets append the year themselves. -->
 					<RegistryValue Id="RV_ARXROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="ArxRoot" Type="string" Value="[ARXROOT]" />
 					<RegistryValue Id="RV_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="string" Value="[ARXROOT]" />
+					<!-- The RDS the user picked, for the VSIX project wizard: it starts its RDS field from
+					     this value (an empty value keeps the built-in ADSK). The Inno line records the same
+					     value for the same reader. -->
+					<RegistryValue Id="RV_RDS" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="RDS" Type="string" Value="[RDS]" />
 				</Component>
 			</Directory>
 		</Directory>

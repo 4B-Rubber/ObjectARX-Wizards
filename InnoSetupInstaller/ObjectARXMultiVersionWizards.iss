@@ -405,7 +405,7 @@ end;
 function GetPropsDir(Param: string): string;
 begin
   // The property sheet folder defaults to the install folder.
-  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[2], PropsDefault)
+  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[1], PropsDefault)
   else Result := PropsDefault;
 end;
 
@@ -840,8 +840,8 @@ begin
   PropsDefault := App;
   if PropsPinned or (CurPageID <> PagePaths.ID) then Exit;
   // Still on the value we put there ourselves, so keep it in step with the install folder.
-  if TrimTrailingSlash(PagePaths.Values[2]) = TrimTrailingSlash(PropsAuto) then begin
-    PagePaths.Values[2] := App;
+  if TrimTrailingSlash(PagePaths.Values[1]) = TrimTrailingSlash(PropsAuto) then begin
+    PagePaths.Values[1] := App;
     PropsAuto := App;
   end;
 end;

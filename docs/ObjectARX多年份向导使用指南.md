@@ -65,7 +65,7 @@
 
 ### 第 1 页：选择安装文件夹
 
-- 向导文件的安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，一般无需修改；
+- 安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，一般无需修改；
 - **属性表目录默认跟随安装文件夹**（下一页可单独改）；
 - 再次安装时会自动回填上次使用的目录。
 
@@ -77,7 +77,7 @@
 
 ### 第 3 页：ObjectARX SDK 与目标位置
 
-两个路径，**装在默认位置时整页都不用改**：
+两个路径，**SDK 和 AutoCAD 装在默认位置时整页都不用改**。本版安装器**不会向 SDK 安装目录写入或修改任何文件**（属性表里引用的 SDK 目录由 Autodesk 根目录加年份自动拼出）：
 
 | 字段 | 含义 | 默认值 |
 |---|---|---|
@@ -271,15 +271,15 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 | 选项 | 作用 |
 |---|---|
-| **修复 ObjectARX Multi-Version Wizards** | 重新写入全部文件并重新注册扩展。Visual Studio 大版本更新后模板“消失”时，用它恢复 |
+| **修复 ObjectARX Multi-Version Wizards** | 重新生成年份属性表并重新注册扩展。Visual Studio 大版本更新后模板“消失”时，用它恢复 |
 | **更改目标 AutoCAD 版本并重新安装** | 重新进入年份勾选页：新勾的年份补生成属性表，取消的年份会被清理。换了新 SDK、想支持新年份时用它 |
-| **删除 ObjectARX Multi-Version Wizards** | 卸载向导文件与 VS 扩展 |
+| **删除 ObjectARX Multi-Version Wizards** | 卸载产品与 VS 扩展 |
 
 也可以在 **设置 → 应用 → 已安装的应用**（或“程序和功能”）中找到 **ObjectARX Multi-Version Wizards** 进行卸载。
 
 说明：
 
-- 写入 ObjectARX SDK `inc` 目录的 3 个公共文件（`rxsdk_common.props`、`crx.props`、`arxEntryPoint.h`）和属性表文件夹在卸载后会保留，这是有意设计（Autodesk SDK 自身的安装器可能共用这些位置）；
+- 属性表文件夹在卸载后会保留，这是有意设计（Autodesk SDK 自身的安装器可能共用这些位置）；本版安装器不会向 ObjectARX SDK 目录写入任何文件；
 - 卸载后重新安装不影响已有工程，工程文件始终保存在您自己选择的目录中。
 
 ---

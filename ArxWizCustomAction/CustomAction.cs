@@ -32,10 +32,6 @@ namespace ArxWizCustomAction
     public static class CustomActions
     {
 
-        // (PatchVSFiles used to rewrite [TARGETDIR] in the nine classic .vsz files, driven by the
-        //  ArxWizList property. This line installs no classic wizard payload any more, so there is
-        //  nothing left to rewrite.)
-
         /// <summary>
         /// Visual Studio installs this machine can see, newest first. The version comes from
         /// devenv.exe rather than the folder name, so 2022 (17.x) and 18 (18.x) order alike, and the
@@ -107,75 +103,8 @@ namespace ArxWizCustomAction
 
         // (DeployWizardsToOtherVS used to mirror vcprojects\Autodesk and vcprojectitems\ObjectARX
         //  into every other Visual Studio and rewrite their engine ProgID. This line installs no
-        //  classic wizard payload any more, so there is nothing left to mirror. The helpers below
-        //  - FindVsInstalls / RefreshVsWizardCache / CopyFolder / PatchWizardFiles - stay: they are
-        //  what a future registration deployment would build on.)
-
-        /// <summary>
-        /// Visual Studio caches its wizard and project list, so the files this action just copied are
-        /// not visible in New Project until the IDE rebuilds that cache. The same step the Inno line
-        /// runs, for the same reason: the classic project entries only ever appeared after a VSIX
-        /// install had triggered the rebuild.
-        /// </summary>
-        static void RefreshVsWizardCache(string root, Session session)
-        {
-            string devenv = Path.Combine(root, @"Common7\IDE\devenv.exe");
-            if (!File.Exists(devenv))
-            {
-                session.Log(" >> RefreshVsWizardCache: no devenv.exe under " + root);
-                return;
-            }
-            try
-            {
-                using (var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(devenv, "/updateconfiguration")
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }))
-                {
-                    p.WaitForExit();
-                    session.Log(" >> RefreshVsWizardCache: " + root + " -> devenv /updateconfiguration exit " + p.ExitCode);
-                }
-            }
-            catch (Exception ex)
-            {
-                session.Log(" >> RefreshVsWizardCache: " + root + " -> " + ex.Message);
-            }
-        }
-
-        static void CopyFolder(string source, string target)
-        {
-            Directory.CreateDirectory(target);
-            foreach (string file in Directory.GetFiles(source))
-                File.Copy(file, Path.Combine(target, Path.GetFileName(file)), true);
-            foreach (string folder in Directory.GetDirectories(source))
-                CopyFolder(folder, Path.Combine(target, Path.GetFileName(folder)));
-        }
-
-        /// <summary>
-        /// [TARGETDIR] is what the shipped .vsz files use for the wizard root and PatchVSFiles replaces
-        /// it for the primary Visual Studio; repeating it here is the safety net for the copies. The
-        /// engine ProgID is versioned - VsWizard.VsWizardEngine.17.0 - and has to match the Visual
-        /// Studio that reads the file.
-        /// </summary>
-        static void PatchWizardFiles(string folder, int major, string targetDir, Session session)
-        {
-            foreach (string file in Directory.GetFiles(folder, "*.vsz", SearchOption.AllDirectories))
-            {
-                string data = File.ReadAllText(file);
-                string patched = data.Replace("[TARGETDIR]", targetDir ?? string.Empty);
-                patched = Regex.Replace(patched, @"VsWizard\.VsWizardEngine\.\d+\.0",
-                                        "VsWizard.VsWizardEngine." + major + ".0");
-                if (patched == data) continue;
-                File.WriteAllText(file, patched);
-                session.Log(" >> patched " + file);
-            }
-        }
-
-
-        // (PatchHTMLWizFiles rewrote ADSK to the chosen RDS in the classic HTML pages, and
-        //  PatchArxCommonJsFiles pointed arxCommon.js at the chosen props folder. Both files belong
-        //  to the classic line, which this line does not install.)
+        //  classic wizard payload and writes nothing into the Visual Studio folders any more, so the
+        //  RefreshVsWizardCache / CopyFolder / PatchWizardFiles helpers that backed it are gone too.)
 
     }
 

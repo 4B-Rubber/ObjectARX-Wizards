@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
 	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.2.10"?>
+	<?define ProductVersion = "0.2.11"?>
     <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
 	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
@@ -50,7 +50,12 @@
 <!--ProductCode for 0.2.10, which records the RDS the setup was given so the VSIX project
     wizard can start from it (it reads HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\RDS). The
     version and the code move together, as always.-->
-<?define ProductCode= "{C555DCC8-44C8-490D-9A8A-3CF8EEBC5B93}"?>
+<!--<?define ProductCode= "{C555DCC8-44C8-490D-9A8A-3CF8EEBC5B93}"?>-->
+<!--ProductCode for 0.2.11, which drops the classic wizard sources and _Installs payload from
+    the branch and the CA helpers that only patched them; the MSI still ships only the generated
+    props and the VSIX is still the whole Visual Studio integration. The version and the code
+    move together, as always.-->
+<?define ProductCode= "{17F6C7D0-89F3-43B8-8640-E2B386775EA1}"?>
   
 
   <Product
@@ -75,7 +80,7 @@
 	/>
 
 	<Media Id="1" Cabinet="ObjectARXWizards.cab" EmbedCab="yes" CompressionLevel="high" VolumeLabel="DISK #1'" />
-	<Icon Id="ObjectARXWizards.ico" SourceFile="..\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico" />
+	<Icon Id="ObjectARXWizards.ico" SourceFile="Installerbitmaps\SetupWizard.ico" />
 	
 	<?include directory.wxi ?>
 	<?include feature.wxi ?>
@@ -96,8 +101,8 @@
 	<CustomAction Id="CA_FindVsRootFolder" BinaryKey="ID_CABinary" DllEntry="FindVsRootFolder" Execute="immediate" Return="check" />
 	<!-- (CA_PatchVSFiles / CA_PatchHTMLWizFiles / CA_PatchArxCommonJs / CA_DeployWizardsToOtherVS,
 	     and the VSList / ArxWizList properties they used, are gone: they only ever touched the
-	     classic wizard payload, which this line no longer installs. The CA dll keeps the helper
-	     code - FindVsRootFolder still walks the same machines.) -->
+	     classic wizard payload, which this line no longer installs. FindVsRootFolder is the only
+	     custom action left that walks the machine's Visual Studio installs.) -->
 	
 	<!-- Install-time generation of Autodesk.arx-<year>.props. A deferred custom action only receives
 	     CustomActionData, and a type-51 property-set action is capped at 255 characters in the MSI

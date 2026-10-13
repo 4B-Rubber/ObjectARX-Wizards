@@ -1,6 +1,6 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.7。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。
+> 状态：**0.2.8。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。0.2.8 起经典向导的 VS 注册全部改用自有名称（`ArxAppWizMV.*`、`ArxAppWizOMFMV.*`、项向导目录 `vcprojectitems\ObjectARXMV`），与官方年份向导（沿用旧名）可以共存、互删互不影响；0.2.7 及更早版本留下的旧名文件只在内容确认属于本产品时才回收。
 >
 > 0.2.6 修好三处向导行为：**上一步/下一步**不再听框架的 `getNextPage()/getPrevPage()`（它们按左栏 DIV 的**下标**算下一页，而这台机器上 MSHTML 把导航 DIV 交了两遍 —— MFC Support 那页是 `0,1,2,2,2,2,3,4,5` —— 于是"上一步"从 MFC Support 跳到 .NET Options），改为按页面自己声明的 `tab_array` 顺序 + 当前页文件名推算，并直接把两个按钮接过来；**目标版本页**把安装器没写属性表的年份**灰掉且不可勾选**（按 `Autodesk.arx-<year>.props` 判断，注册表 `PropsDir` 优先、否则安装目录；一个 props 都找不到时保持原样，不乱禁）；**Custom Object / COM Wrapper**不再弹 "should be implemented in .DBX project" 这类确认框（ARX 里做自定义对象本来就可以，只记日志）。
 

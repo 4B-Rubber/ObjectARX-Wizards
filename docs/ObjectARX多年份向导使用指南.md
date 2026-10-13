@@ -278,10 +278,10 @@ ObjectARXMultiVersionWizards-classic.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=20
 
 ### 7.1 操作方式
 
-在“解决方案资源管理器”中**右键工程 → 添加 → 类**（也可以用“添加 → 新建项”），在弹出的 Visual Studio 向导中找到 **ObjectARX** 分类，下面列出 7 个向导（列表中显示的是英文内部名，与中文含义的对照见 [7.3](#73-七个类向导分别做什么)），选择后点击“添加/打开”。
+在“解决方案资源管理器”中**右键工程 → 添加 → 类**（也可以用“添加 → 新建项”），在弹出的 Visual Studio 向导中找到 **ObjectARXMV** 分类（0.2.8 起为本产品专用分类名，不会与官方 AutoCAD 年份向导的 **ObjectARX** 分类互相覆盖），下面列出 7 个向导（列表中显示的是英文内部名，与中文含义的对照见 [7.3](#73-七个类向导分别做什么)），选择后点击“添加/打开”。
 
-> 📷 **【图 15 · 截图占位】“添加类”中的 ObjectARX 分类**
-> 应截取：VS“添加类”（或添加新项）对话框，左侧/上方类别树选中 **ObjectARX**，右侧模板列表中可见 7 个向导（ArxWizCustomObject、ArxWizReactors、ArxWizJig、ArxWizMFCSupport、ArxWizNETWrapper、ArxAtlWizComWrapper、ArxAtlWizDynProp）及其图标。
+> 📷 **【图 15 · 截图占位】“添加类”中的 ObjectARXMV 分类**
+> 应截取：VS“添加类”（或添加新项）对话框，左侧/上方类别树选中 **ObjectARXMV**，右侧模板列表中可见 7 个向导（ArxWizCustomObject、ArxWizReactors、ArxWizJig、ArxWizMFCSupport、ArxWizNETWrapper、ArxAtlWizComWrapper、ArxAtlWizDynProp）及其图标。
 > 文件名：`images/vs-add-class-list.png`
 
 每个类向导同样是英文 HTML 选项界面，按页选择后点击完成即可。例如：

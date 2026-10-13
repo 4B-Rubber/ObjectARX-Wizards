@@ -50,7 +50,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.7"
+#define AppVersion "0.2.8"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -64,10 +64,13 @@
 ; the entries - installing the extension is what makes it rebuild that list - and it is built without
 ; any template definition (the Content Exclude in ArxVsixWizard\ArxVsixWizard.csproj), so New Project
 ; lists the two classic entries and nothing from the VSIX line.
+; The registration files carry MV-suffixed names (ArxAppWizMV.*, the vcprojectitems\ObjectARXMV
+; folder), so they never overwrite - and are never mistaken for - the official yearly ObjectARX
+; wizard registrations, which keep the legacy names in the same Visual Studio folders.
 ; The setup asks every Visual Studio to rebuild its wizard list (RefreshVsCache) as well.
 ; Set this to 0 to try the shape without the VSIX at all.
 #define InstallVsix 1
-#define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWiz.ico"
+#define AppIconSource RepoRoot + "\_Installs\VC\vcprojects\Autodesk\ArxAppWizMV.ico"
 
 [Setup]
 AppId={#AppId}
@@ -190,14 +193,14 @@ Source: "{#RepoRoot}\ArxWizReactors\*"; DestDir: "{app}\ArxWizReactors"; Flags: 
 ; ---- Visual Studio 2022 integration. The MSI guards these with
 ;      <Condition>VS2022_ROOT_FOLDER &lt;&gt; TARGETDIR</Condition>. ----
 Source: "{#RepoRoot}\_Installs\VC\vcprojects\Autodesk\*"; DestDir: "{code:GetVsVcProjectsDir}"; Flags: ignoreversion; Check: VsAvailable
-Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAvailable
+Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARXMV\*"; DestDir: "{code:GetVsVcProjectItemsDir}"; Flags: ignoreversion; Check: VsAvailable
 
 ; The second Visual Studio (2026 when the primary is 2022, and the other way round): the classic
 ; .vsz wizards are installed into both. The engine ProgID is not version-stamped in practice - both
 ; VS2022 and VS2026 register VsWizard.VsWizardEngine.17.0 - so the patch step below reads the id out
 ; of whichever VS it is writing into (see ReadWizardEngineId) instead of assuming one.
 Source: "{#RepoRoot}\_Installs\VC\vcprojects\Autodesk\*"; DestDir: "{code:GetVsAltVcProjectsDir}"; Flags: ignoreversion; Check: VsAltAvailable
-Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARX\*"; DestDir: "{code:GetVsAltVcProjectItemsDir}"; Excludes: "Maya*"; Flags: ignoreversion; Check: VsAltAvailable
+Source: "{#RepoRoot}\_Installs\VC\VCAddClass\ObjectARXMV\*"; DestDir: "{code:GetVsAltVcProjectItemsDir}"; Flags: ignoreversion; Check: VsAltAvailable
 
 ; ---- used from [Code] only (extracted with ExtractTemporaryFile when needed) ----
 Source: "{#GenExeSource}"; Flags: dontcopy
@@ -454,7 +457,7 @@ end;
 
 function GetVsAltVcProjectItemsDir(Param: string): string;
 begin
-  Result := TrimTrailingSlash(VsAltRoot) + VsVcRelPath + '\vcprojectitems\ObjectARX';
+  Result := TrimTrailingSlash(VsAltRoot) + VsVcRelPath + '\vcprojectitems\ObjectARXMV';
 end;
 
 function VsAltAvailable(): Boolean;
@@ -464,7 +467,7 @@ end;
 
 function GetVsVcProjectItemsDir(Param: string): string;
 begin
-  Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojectitems\ObjectARX';
+  Result := TrimTrailingSlash(VsRoot) + VsVcRelPath + '\vcprojectitems\ObjectARXMV';
 end;
 
 function VsAvailable(): Boolean;
@@ -940,7 +943,8 @@ begin
   Alog('patched ' + Path + ' (' + FromStr + ' -> ' + ToStr + ')');
 end;
 
-/// <summary>CA_PatchVSFiles: the [TARGETDIR] placeholder in the nine project wizards.</summary>
+/// <summary>CA_PatchVSFiles: the [TARGETDIR] placeholder in the nine registration files (the two
+/// MV-suffixed project .vsz plus the seven item .vsz under vcprojectitems\ObjectARXMV).</summary>
 procedure PatchVsFiles(const AppDir: string);
 var
   Vc: string;
@@ -949,17 +953,17 @@ begin
   if not VsFound then Exit;
   Vc := TrimTrailingSlash(VsRoot) + VsVcRelPath;
   Target := AddBackslash(AppDir);
-  // Add-project wizards (MSI: _Installs\VC\vcprojects\Autodesk)
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', '[TARGETDIR]', Target);
-  // Add-class / add-object wizards (MSI: _Installs\VC\VCAddClass\ObjectARX)
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', '[TARGETDIR]', Target);
+  // Add-project wizards (payload: _Installs\VC\vcprojects\Autodesk)
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizMV.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMFMV.vsz', '[TARGETDIR]', Target);
+  // Add-class / add-object wizards (payload: _Installs\VC\VCAddClass\ObjectARXMV)
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizJig.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizReactors.vsz', '[TARGETDIR]', Target);
 end;
 
 /// <summary>
@@ -1030,24 +1034,24 @@ begin
   Target := AddBackslash(AppDir);
   EngineId := ReadWizardEngineId(VsRootArg);
   Alog('patching ' + Vc + ' (engine ' + EngineId + ')');
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizJig.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', '[TARGETDIR]', Target);
-  PatchFile(Vc + '\vcprojectitems\ObjectARX\ArxWizReactors.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizMV.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizMV.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMFMV.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMFMV.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizComWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizComWrapper.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizDynProp.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxAtlWizDynProp.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizCustomObject.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizCustomObject.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizJig.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizJig.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizMFCSupport.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizMFCSupport.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizNETWrapper.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizNETWrapper.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizReactors.vsz', '[TARGETDIR]', Target);
+  PatchFile(Vc + '\vcprojectitems\ObjectARXMV\ArxWizReactors.vsz', VsWizardEngineProgId + ShippedWizardEngineId, VsWizardEngineProgId + EngineId);
 end;
 
 /// <summary>CA_PatchHTMLWizFiles: ADSK -> the chosen RDS, in the AppWiz HTML pages only.</summary>
@@ -1127,6 +1131,69 @@ begin
 #endif
 end;
 
+// ---------------------------------------------------------------------------------------------
+// legacy registrations (0.2.7 and earlier): the same names the official yearly ObjectARX wizards
+// use. They are removed ONLY when the file on disk is one of ours, i.e. its ABSOLUTE_PATH points
+// at this product's install folder. The official wizard's files are left exactly as found.
+// ---------------------------------------------------------------------------------------------
+
+function IsOwnedLegacyVsz(const Path: string): Boolean;
+var
+  S: string;
+begin
+  Result := False;
+  if not FileExists(Path) then Exit;
+  if not ReadTextFile(Path, S) then Exit;
+  Result := Pos('{#AppName}', S) > 0;
+end;
+
+procedure DeleteOwnedLegacyTriple(const Dir, BaseName: string);
+var
+  Vsz: string;
+begin
+  Vsz := AddBackslash(Dir) + BaseName + '.vsz';
+  if not IsOwnedLegacyVsz(Vsz) then Exit;
+  DeleteFile(Vsz);
+  DeleteFile(AddBackslash(Dir) + BaseName + '.vsdir');
+  DeleteFile(AddBackslash(Dir) + BaseName + '.ico');
+  Alog('removed own legacy project registration: ' + Vsz);
+end;
+
+procedure DeleteOwnedLegacyItemWizards(const ItemsDir: string);
+var
+  Names: array of String;
+  i: Integer;
+  Vsz: string;
+begin
+  // The seven item wizards this product shipped under vcprojectitems\ObjectARX up to 0.2.7.
+  Names := ['ArxAtlWizComWrapper', 'ArxAtlWizDynProp', 'ArxWizCustomObject',
+            'ArxWizJig', 'ArxWizMFCSupport', 'ArxWizNETWrapper', 'ArxWizReactors'];
+  for i := 0 to GetArrayLength(Names) - 1 do begin
+    Vsz := AddBackslash(ItemsDir) + Names[i] + '.vsz';
+    if IsOwnedLegacyVsz(Vsz) then begin
+      DeleteFile(Vsz);
+      DeleteFile(AddBackslash(ItemsDir) + Names[i] + '.ico');
+      Alog('removed own legacy item registration: ' + Vsz);
+    end;
+  end;
+  // Take the folder with us only when nothing is left - the official wizard's files
+  // (for example its Maya wizards) keep it alive.
+  RemoveDir(ItemsDir);
+end;
+
+/// <summary>One Visual Studio root: legacy project triples in vcprojects\Autodesk and the legacy
+/// vcprojectitems\ObjectARX folder, reclaimed only when the files identify this product.</summary>
+procedure CleanupLegacyRegistrations(const VsRootArg: string);
+var
+  Vc: string;
+begin
+  if not DirExists(VsRootArg) then Exit;
+  Vc := TrimTrailingSlash(VsRootArg) + VsVcRelPath;
+  DeleteOwnedLegacyTriple(Vc + '\vcprojects\Autodesk', 'ArxAppWiz');
+  DeleteOwnedLegacyTriple(Vc + '\vcprojects\Autodesk', 'ArxAppWizOMF');
+  DeleteOwnedLegacyItemWizards(Vc + '\vcprojectitems\ObjectARX');
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppDir, Props, Root, Selected: string;
@@ -1150,6 +1217,11 @@ begin
   RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Root) +
          ' --acad-root ' + QuoteArg(Root) + ' --years ' + Selected);
   RunGen('cleanup --props-dir ' + QuoteArg(Props) + ' --keep ' + Selected);
+
+  // Reclaim this product's 0.2.7-and-earlier registrations under the names the official wizard
+  // also uses (guarded by ABSOLUTE_PATH), before the new MV-suffixed files are patched in.
+  CleanupLegacyRegistrations(VsRoot);
+  if VsAltFound then CleanupLegacyRegistrations(VsAltRoot);
 
   PatchVsFiles(AppDir);
   // Same for every VS the classic wizards went into, including the engine ProgID per VS version.
@@ -1193,28 +1265,41 @@ end;
 /// <summary>
 /// The uninstaller takes away what the setup copied, but the .vsz files in the Visual Studio folders
 /// were rewritten in place afterwards (the wizard root and the engine id), so they look modified and
-/// are left behind - and with them the IDE keeps offering the ObjectARX wizards. Delete them for
-/// every Visual Studio by major version, whether it is the one this setup targeted or the other.
+/// are left behind - and with them the IDE keeps offering the ObjectARX wizards. Delete this line's
+/// own registrations for every Visual Studio by major version: the MV-suffixed project files and the
+/// ObjectARXMV item folder. Anything under the legacy names is only touched when it identifies this
+/// product (its ABSOLUTE_PATH points at our install folder), so an official yearly wizard sharing the
+/// Visual Studio folders survives install and uninstall untouched.
 /// </summary>
 procedure RemoveVsRegistrations();
 var
-  Vc: string;
+  Vc, Projects, ItemsLegacy, ItemsOwned: string;
   Major: Integer;
 begin
   for Major := 17 to 18 do begin
     Vc := FindVsRootByMajor(Major);
     if Vc = '' then Continue;
     Vc := TrimTrailingSlash(Vc) + '\Common7\IDE\VC';
-    if DirExists(Vc + '\vcprojectitems\ObjectARX') then begin
-      DelTree(Vc + '\vcprojectitems\ObjectARX', True, True, True);
-      Alog('uninstall: removed ' + Vc + '\vcprojectitems\ObjectARX');
+    Projects := Vc + '\vcprojects\Autodesk';
+    ItemsOwned := Vc + '\vcprojectitems\ObjectARXMV';
+    ItemsLegacy := Vc + '\vcprojectitems\ObjectARX';
+
+    if DirExists(ItemsOwned) then begin
+      DelTree(ItemsOwned, True, True, True);
+      Alog('uninstall: removed ' + ItemsOwned);
     end;
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsz');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.vsdir');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWiz.ico');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsz');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.vsdir');
-    DeleteFile(Vc + '\vcprojects\Autodesk\ArxAppWizOMF.ico');
+    DeleteFile(Projects + '\ArxAppWizMV.vsz');
+    DeleteFile(Projects + '\ArxAppWizMV.vsdir');
+    DeleteFile(Projects + '\ArxAppWizMV.ico');
+    DeleteFile(Projects + '\ArxAppWizOMFMV.vsz');
+    DeleteFile(Projects + '\ArxAppWizOMFMV.vsdir');
+    DeleteFile(Projects + '\ArxAppWizOMFMV.ico');
+
+    // 0.2.7 and earlier used the names the official wizard also uses; reclaim those copies only
+    // when they are really ours.
+    DeleteOwnedLegacyTriple(Projects, 'ArxAppWiz');
+    DeleteOwnedLegacyTriple(Projects, 'ArxAppWizOMF');
+    DeleteOwnedLegacyItemWizards(ItemsLegacy);
   end;
 end;
 

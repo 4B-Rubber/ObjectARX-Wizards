@@ -24,13 +24,17 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 
 The same wizards also exist as a modern **VSIX** (`ArxVsixWizard`) for Visual Studio 2022 (17.x) and 2026 (18.x). This branch installs it without its template definitions - the install is what makes Visual Studio rebuild the list the classic entries live in - so the wizards listed above stay the only ones on offer; see [ArxVsixWizard/README.md](ArxVsixWizard/README.md).
 
-> **Status (0.2.7).** Two lines are buildable here - the VSIX and the Inno single-file installer, both
-> at 0.2.7 (the MSI/Burn tree lives on `main`) - and **this branch ships the classic line**: New
+> **Status (0.2.8).** Two lines are buildable here - the VSIX and the Inno single-file installer, both
+> at 0.2.8 (the MSI/Burn tree lives on `main`) - and **this branch ships the classic line**: New
 > Project lists the two `.vsz/.vsdir` entries the installer copies into `vcprojects\Autodesk`
 > (*ObjectARX/DBX/CRX Application (Multi-Version)* and *ObjectARX/DBX Application with OMF Support
 > (Multi-Version)* - the same names the VSIX line's templates carry), and **Add → Class** lists
-> the item wizards it copies into
-> `VCAddClass`. The installer still deploys the VSIX, because that install is what makes Visual
+> the item wizards it copies into the `vcprojectitems\ObjectARXMV` category. Since 0.2.8 every
+> registration this line writes uses its own name (`ArxAppWizMV.*`, `ArxAppWizOMFMV.*`, the
+> `ObjectARXMV` item folder), so installing or uninstalling it never overwrites or removes the
+> official yearly ObjectARX wizard's entries, which keep their legacy names in the same Visual
+> Studio folders; a guarded cleanup still reclaims this product's own 0.2.7-and-earlier files. The
+> installer still deploys the VSIX, because that install is what makes Visual
 > Studio rebuild the wizard list those `.vsdir` entries live in - but the VSIX is built without any
 > template definition, so nothing from the VSIX line is listed (dev and main ship the VSIX line
 > instead). This line has no **Add ObjectARX Class...** command either: classes are added with the

@@ -81,10 +81,51 @@ $arxSdk = Join-Path $work 'ObjectARX'
 $vsRoot = Join-Path $work 'vs2022'
 # {$appDir} is deliberately NOT created here: Inno only removes a directory it created itself,
 # so the uninstall checks below need the installer to make it.
-foreach ($d in @($propsDir,
-                 (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk'),
-                 (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX'))) {
+$vsVc        = Join-Path $vsRoot 'Common7\IDE\VC'
+$vsProjects  = Join-Path $vsVc 'vcprojects\Autodesk'
+$vsItemsOld  = Join-Path $vsVc 'vcprojectitems\ObjectARX'
+$vsItemsNew  = Join-Path $vsVc 'vcprojectitems\ObjectARXMV'
+foreach ($d in @($propsDir, $vsProjects, $vsItemsOld)) {
   New-Item -ItemType Directory -Force $d | Out-Null
+}
+
+# --------------------------------------------------------------- official wizard placeholders
+# The official yearly ObjectARX wizard ships the very names this line used up to 0.2.7: the two
+# project triples in vcprojects\Autodesk and its item wizards under vcprojectitems\ObjectARX
+# (including the two Maya entries). Their ABSOLUTE_PATH points at the official install folder, so
+# the guarded legacy cleanup must leave every one of these files alone through install AND
+# uninstall - this line only owns the MV-suffixed names and the ObjectARXMV folder.
+function Set-OfficialPlaceholder([string]$path, [string]$wizard) {
+  Set-Content -Path $path -Encoding ASCII -Value @(
+    'VSWIZARD 7.0',
+    'Wizard=VsWizard.VsWizardEngine.17.0',
+    ('Param="WIZARD_NAME = ' + $wizard + '"'),
+    ('Param="ABSOLUTE_PATH = C:\Program Files\Autodesk\ObjectARX 2026 Wizards\' + $wizard + '"'),
+    'Param="FALLBACK_LCID = 1033"'
+  )
+}
+Set-OfficialPlaceholder (Join-Path $vsProjects 'ArxAppWiz.vsz') 'ArxAppWiz'
+Set-OfficialPlaceholder (Join-Path $vsProjects 'ArxAppWizOMF.vsz') 'ArxAppWiz182'
+Set-Content (Join-Path $vsProjects 'ArxAppWiz.vsdir') 'ArxAppWiz.vsz| |ARX/DBX Project For AutoCAD 2026' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWiz.ico') 'official-icon-1' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWizOMF.vsdir') 'ArxAppWizOMF.vsz| |OMF Project For AutoCAD 2026' -Encoding ASCII
+Set-Content (Join-Path $vsProjects 'ArxAppWizOMF.ico') 'official-icon-2' -Encoding ASCII
+Set-OfficialPlaceholder (Join-Path $vsItemsOld 'ArxWizCustomObject.vsz') 'ArxWizCustomObject'
+Set-Content (Join-Path $vsItemsOld 'ArxWizCustomObject.ico') 'official-icon-3' -Encoding ASCII
+Set-Content (Join-Path $vsItemsOld 'MayaCommand.vsz') 'official maya wizard' -Encoding ASCII
+Set-Content (Join-Path $vsItemsOld 'MayaCustomNode.vsz') 'official maya wizard' -Encoding ASCII
+$officialSurvivors = @(
+  (Join-Path $vsProjects 'ArxAppWiz.vsz'), (Join-Path $vsProjects 'ArxAppWiz.vsdir'),
+  (Join-Path $vsProjects 'ArxAppWiz.ico'), (Join-Path $vsProjects 'ArxAppWizOMF.vsz'),
+  (Join-Path $vsProjects 'ArxAppWizOMF.vsdir'), (Join-Path $vsProjects 'ArxAppWizOMF.ico'),
+  (Join-Path $vsItemsOld 'ArxWizCustomObject.vsz'), (Join-Path $vsItemsOld 'ArxWizCustomObject.ico'),
+  (Join-Path $vsItemsOld 'MayaCommand.vsz'), (Join-Path $vsItemsOld 'MayaCustomNode.vsz')
+)
+function Assert-OfficialSurvivors([string]$stage) {
+  $lost = @($officialSurvivors | Where-Object { -not (Test-Path $_) })
+  Check ('official wizard files survive ' + $stage) ($lost.Count -eq 0) ($lost -join ', ')
+  $stillOurs = (Get-Content (Join-Path $vsProjects 'ArxAppWiz.vsz') -Raw) -match [regex]::Escape('ObjectARX 2026 Wizards')
+  Check ('official wizard content untouched after ' + $stage) ($stillOurs)
 }
 
 $years = '2020,2024,2026,2027'
@@ -148,24 +189,35 @@ $expectApp = @(
 $missing = @($expectApp | Where-Object { -not (Test-Path (Join-Path $appDir $_)) })
 Check 'install folder payload present' ($missing.Count -eq 0) ($missing -join ', ')
 
-# ---- patch 1: [TARGETDIR] in the VS project wizards ----
+# ---- the line's own registrations live under MV-suffixed names / the ObjectARXMV folder ----
+$mvProject = @('ArxAppWizMV.vsz','ArxAppWizMV.vsdir','ArxAppWizMV.ico',
+               'ArxAppWizOMFMV.vsz','ArxAppWizOMFMV.vsdir','ArxAppWizOMFMV.ico')
+$missingProject = @($mvProject | Where-Object { -not (Test-Path (Join-Path $vsProjects $_)) })
+Check 'six MV project registrations present' ($missingProject.Count -eq 0) ($missingProject -join ', ')
+$mvItemCount = @(Get-ChildItem $vsItemsNew -File -ErrorAction SilentlyContinue).Count
+Check 'ObjectARXMV holds exactly the fourteen owned item files' ($mvItemCount -eq 14) ("$mvItemCount files")
+
+# ---- patch 1: [TARGETDIR] in the nine owned .vsz files ----
 $vsz = @(
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWizOMF.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizJig.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizReactors.vsz')
+  (Join-Path $vsProjects 'ArxAppWizMV.vsz'),
+  (Join-Path $vsProjects 'ArxAppWizOMFMV.vsz'),
+  (Join-Path $vsItemsNew 'ArxAtlWizComWrapper.vsz'),
+  (Join-Path $vsItemsNew 'ArxAtlWizDynProp.vsz'),
+  (Join-Path $vsItemsNew 'ArxWizCustomObject.vsz'),
+  (Join-Path $vsItemsNew 'ArxWizJig.vsz'),
+  (Join-Path $vsItemsNew 'ArxWizMFCSupport.vsz'),
+  (Join-Path $vsItemsNew 'ArxWizNETWrapper.vsz'),
+  (Join-Path $vsItemsNew 'ArxWizReactors.vsz')
 )
 $badVsz = @($vsz | Where-Object {
   (-not (Test-Path $_)) -or ((Get-Content $_ -Raw) -match '\[TARGETDIR\]') -or
   ((Get-Content $_ -Raw) -notmatch [regex]::Escape($appDir + '\'))
 })
-Check 'nine .vsz files carry the real TARGETDIR' ($badVsz.Count -eq 0) (($badVsz | ForEach-Object { Split-Path $_ -Leaf }) -join ', ')
-Check 'no Maya wizard dropped into VS' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\MayaCommand.vsz')))
+Check 'nine owned .vsz files carry the real TARGETDIR' ($badVsz.Count -eq 0) (($badVsz | ForEach-Object { Split-Path $_ -Leaf }) -join ', ')
+Check 'no Maya wizard dropped into ObjectARXMV' (-not (Test-Path (Join-Path $vsItemsNew 'MayaCommand.vsz')))
+
+# ---- coexistence: the official wizard's legacy-named files stay untouched next to ours ----
+Assert-OfficialSurvivors 'install'
 
 # ---- patch 2: ADSK -> RDS ----
 $html = Get-Content (Join-Path $appDir 'ArxAppWiz\HTML\1033\default.htm') -Raw
@@ -265,7 +317,47 @@ Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $p
 Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
 
 Check 'install folder removed' (-not (Test-Path $appDir))
-Check 'VS wizard files removed' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz')))
+Check 'MV project registrations removed' (-not (Test-Path (Join-Path $vsProjects 'ArxAppWizMV.vsz')))
+Check 'ObjectARXMV item folder removed' (-not (Test-Path $vsItemsNew))
+# The official wizard, sitting in the same Visual Studio folders under the legacy names, must
+# survive this line's uninstall as untouched as it survived the install.
+Assert-OfficialSurvivors 'uninstall'
+
+# ------------------------------------------------- upgrade path: this product's own 0.2.7 files
+# Simulate the pre-0.2.8 layout of THIS product: legacy names, but ABSOLUTE_PATH pointing at our
+# install folder. The next install must reclaim exactly these (content-guarded), while the
+# official placeholders (recreated here, they shared the names) stay afterwards.
+$ownItemNames = @('ArxAtlWizComWrapper','ArxAtlWizDynProp','ArxWizCustomObject',
+                  'ArxWizJig','ArxWizMFCSupport','ArxWizNETWrapper','ArxWizReactors')
+function Set-OwnLegacy([string]$path, [string]$wizard) {
+  Set-Content -Path $path -Encoding ASCII -Value @(
+    'VSWIZARD 7.0',
+    'Wizard=VsWizard.VsWizardEngine.17.0',
+    ('Param="WIZARD_NAME = ' + $wizard + '"'),
+    ('Param="ABSOLUTE_PATH = C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\' + $wizard + '"')
+  )
+}
+Remove-Item (Join-Path $vsProjects '*') -Force
+foreach ($pair in @(@('ArxAppWiz.vsz','ArxAppWiz'), @('ArxAppWizOMF.vsz','ArxAppWiz182'))) {
+  Set-OwnLegacy (Join-Path $vsProjects $pair[0]) $pair[1]
+  Set-Content (Join-Path $vsProjects ($pair[0] -replace '\.vsz$','.vsdir')) 'own legacy' -Encoding ASCII
+  Set-Content (Join-Path $vsProjects ($pair[0] -replace '\.vsz$','.ico')) 'own legacy icon' -Encoding ASCII
+}
+Remove-Item (Join-Path $vsItemsOld '*') -Force
+foreach ($n in $ownItemNames) {
+  Set-OwnLegacy (Join-Path $vsItemsOld ($n + '.vsz')) $n
+  Set-Content (Join-Path $vsItemsOld ($n + '.ico')) 'own legacy icon' -Encoding ASCII
+}
+$p = Start-Process -FilePath $setup -ArgumentList $installArgs -NoNewWindow -Wait -PassThru
+Check 'upgrade over own 0.2.7 layout exited 0' ($p.ExitCode -eq 0) ('exit=' + $p.ExitCode)
+$leftOldProject = @($mvProject | ForEach-Object { Join-Path $vsProjects ($_ -replace 'MV','') } | Where-Object { Test-Path $_ })
+Check 'own legacy project registrations reclaimed' ($leftOldProject.Count -eq 0) ($leftOldProject -join ', ')
+$leftOldItems = @($ownItemNames | ForEach-Object { Join-Path $vsItemsOld ($_ + '.vsz') } | Where-Object { Test-Path $_ })
+Check 'own legacy item registrations reclaimed and the empty folder removed' `
+      (($leftOldItems.Count -eq 0) -and -not (Test-Path $vsItemsOld)) ($leftOldItems -join ', ')
+Check 'new MV registrations land next to the upgrade cleanup' ((Test-Path (Join-Path $vsProjects 'ArxAppWizMV.vsz')) -and (Test-Path $vsItemsNew))
+Start-Process -FilePath (Join-Path $appDir 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
+Wait-Gone $appDir
 $k = Get-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -ErrorAction SilentlyContinue
 Check 'registry key removed on uninstall' ($null -eq $k)
 

@@ -17,6 +17,10 @@
   own Visual Studio instances (FindVsRootByMajor reads %ProgramData%), so the derived copy disables
   all three - a sandbox run must never delete files from, refresh or uninstall anything in the real
   Visual Studio.
+
+  This branch installs no classic wizard payload at all: the VSIX is the whole Visual Studio
+  integration, and [InstallDelete] takes the classic line's files out of the VS folders and {app}
+  on the way in. The rounds below check that, plus the props generation and the VSIX step.
 #>
 [CmdletBinding()]
 param(
@@ -45,6 +49,21 @@ $test = $test.Replace('#define RepoRoot ".."', '#define RepoRoot "' + $repo + '"
 $vsix = Join-Path $work 'ObjectARXMultiVersionWizards.vsix'
 Set-Content -Path $vsix -Value 'sandbox stand-in' -Encoding ASCII
 $test = $test.Replace('#define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"', '#define VsixSource "' + $vsix + '"')
+# The props generator is built by tools\build-and-pack.ps1 into the *build root*'s mirror (the source
+# tree stays free of build outputs), and this test compiles the .iss straight from the tree - so take
+# the tree copy when a local build left one, else the mirror (set ARX_BUILD_ROOT). Unlike the VSIX
+# stand-in this has to be a real exe: the rounds below assert the sheets it generates.
+$genExe = Join-Path $repo 'tools\arx-genprops\bin\Release\arx-genprops.exe'
+if (-not (Test-Path $genExe) -and $env:ARX_BUILD_ROOT) {
+  $genExe = Join-Path $env:ARX_BUILD_ROOT 'src\tools\arx-genprops\bin\Release\arx-genprops.exe'
+}
+if (-not (Test-Path $genExe)) {
+  throw ('arx-genprops.exe not found - build it via tools\build-and-pack.ps1 or set ARX_BUILD_ROOT: ' + $genExe)
+}
+$test = $test.Replace('#define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"', '#define GenExeSource "' + $genExe + '"')
+if ($test.Contains('RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"')) {
+  throw 'the GenExeSource define changed shape - the sandbox would fall back to the tree copy'
+}
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
@@ -79,13 +98,22 @@ $propsDir = Join-Path $work 'props'
 $sdkDir = Join-Path $work 'sdkroot\Autodesk'
 $arxSdk = Join-Path $work 'ObjectARX'
 $vsRoot = Join-Path $work 'vs2022'
-# {$appDir} is deliberately NOT created here: Inno only removes a directory it created itself,
-# so the uninstall checks below need the installer to make it.
+# The classic line's files, as an older install would have left them: [InstallDelete] has to take
+# them away again the moment this line is installed. This branch ships no wizard payload of its own.
+# {$appDir} is normally NOT created here (Inno only removes a directory it created itself), but this
+# pre-seeded leftover needs a home; the round below drops the folder by hand afterwards.
+$classicProjectWizard = Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz'
+$classicItemWizards = Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX'
+$classicAppTree = Join-Path $appDir 'ArxWizCommon'
 foreach ($d in @($propsDir,
-                 (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk'),
-                 (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX'))) {
+                 (Split-Path $classicProjectWizard),
+                 $classicItemWizards,
+                 $classicAppTree)) {
   New-Item -ItemType Directory -Force $d | Out-Null
 }
+Set-Content -Path $classicProjectWizard -Value 'classic leftover' -Encoding ASCII
+Set-Content -Path (Join-Path $classicItemWizards 'ArxWizReactors.vsz') -Value 'classic leftover' -Encoding ASCII
+Set-Content -Path (Join-Path $classicAppTree 'arxCommon.js') -Value 'classic leftover' -Encoding ASCII
 
 $years = '2020,2024,2026,2027'
 $installArgs = @(
@@ -108,10 +136,9 @@ function Wait-Gone([string]$Path) {
 }
 
 # ---------------------------------------------------------------- fresh install
-# With no /PROPSDIR and an empty registry the property sheet folder must follow the install
-# folder; this round also proves the generated sheets are cleared from it on uninstall, and that
-# an omitted (empty) RDS leaves the ADSK placeholder in the HTML wizard untouched - the MSI
-# substituted ADSK with ADSK in that case, so deleting it here would diverge.
+# With no /PROPSDIR and an empty registry the property sheet folder must follow the install folder.
+# This round also proves the generated sheets are cleared from it on uninstall and that
+# [InstallDelete] takes the classic line's leftovers away on the way in.
 Remove-Item $regKey -Recurse -Force -ErrorAction SilentlyContinue
 $argsFresh = ($installArgs -replace ' /PROPSDIR="[^"]*"', '') -replace ' /RDS=ABC', ''
 $p = Start-Process -FilePath $setup -ArgumentList $argsFresh -NoNewWindow -Wait -PassThru
@@ -119,16 +146,17 @@ Check 'fresh install exits 0 (property sheet folder follows the install folder)'
 Check 'generated props land in the install folder' (
   (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')) -and
   (Test-Path (Join-Path $appDir 'ObjectARX.User.props')))
+Check 'classic project wizard removed from the VS folder' (-not (Test-Path $classicProjectWizard))
+Check 'classic item wizard folder removed from the VS tree' (-not (Test-Path $classicItemWizards))
+Check 'classic wizard tree removed from the install folder' (-not (Test-Path $classicAppTree))
 $k0 = Get-ItemProperty $regKey -ErrorAction SilentlyContinue
 Check 'registry PropsDir follows the install folder' ($k0 -and ($k0.PropsDir -eq $appDir)) ($(if ($k0) { $k0.PropsDir } else { 'missing' }))
-$jsHtml = Get-Content (Join-Path $appDir 'ArxAppWiz\HTML\1033\default.htm') -Raw
-Check 'empty RDS leaves the ADSK placeholder alone' ($jsHtml -match 'ADSK')
-Check 'empty RDS does not inject a value' ($jsHtml -notmatch 'ABC')
 Start-Process -FilePath (Join-Path $appDir 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
 Wait-Gone (Join-Path $appDir 'Autodesk.arx-2020.props')
 Check 'uninstall clears the generated props from the install folder' (-not (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')))
-# Back to a clean slate for the rounds below. The install folder stays because the shared sheets
-# are permanent by design, so drop it by hand.
+# Back to a clean slate for the rounds below: the registry, and the install folder by hand. The
+# folder exists because this round pre-seeded a leftover in it, and Inno does not remove a
+# directory it did not create itself. The props folder inside stays by design (uninsneveruninstall).
 Remove-Item $regKey -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $appDir -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -136,53 +164,24 @@ Remove-Item $appDir -Recurse -Force -ErrorAction SilentlyContinue
 $p = Start-Process -FilePath $setup -ArgumentList $installArgs -NoNewWindow -Wait -PassThru
 Check 'installer exited 0' ($p.ExitCode -eq 0) ('exit=' + $p.ExitCode)
 
-# ---- install folder ----
-$expectApp = @(
-
-  'ArxWizCommon\arxCommon.js', 'ArxAppWiz\1033\styles.css', 'ArxAppWiz182\1033\styles.css',
-  'ArxAtlWizComWrapper\Templates\1033\object.h', 'ArxAtlWizDynProp\Templates\1033\dynprop.h',
-  'ArxWizCustomObject\Templates\1033\object.h', 'ArxWizJig\Templates\1033\Jig.h',
-  'ArxWizMFCSupport\Templates\1033\Palette.h', 'ArxWizNETWrapper\Templates\1033\managedWrapper.h',
-  'ArxWizReactors\Templates\1033\AcEditorReactor_tmpl.h'
+# ---- no wizard payload: the VSIX is the Visual Studio integration on this line ----
+$leftovers = @(
+  (Join-Path $appDir 'ArxWizCommon'), (Join-Path $appDir 'ArxAppWiz'), (Join-Path $appDir 'ArxAppWiz182'),
+  (Join-Path $appDir 'ArxAtlWizComWrapper'), (Join-Path $appDir 'ArxAtlWizDynProp'),
+  (Join-Path $appDir 'ArxWizCustomObject'), (Join-Path $appDir 'ArxWizJig'),
+  (Join-Path $appDir 'ArxWizMFCSupport'), (Join-Path $appDir 'ArxWizNETWrapper'),
+  (Join-Path $appDir 'ArxWizReactors'),
+  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX')
 )
-$missing = @($expectApp | Where-Object { -not (Test-Path (Join-Path $appDir $_)) })
-Check 'install folder payload present' ($missing.Count -eq 0) ($missing -join ', ')
+$kept = @($leftovers | Where-Object { Test-Path $_ })
+Check 'no classic wizard tree landed in the install folder or the VS tree' ($kept.Count -eq 0) ($kept -join ', ')
+Check 'no classic project wizard landed in the VS folder' (-not (Test-Path $classicProjectWizard))
 
-# ---- patch 1: [TARGETDIR] in the VS project wizards ----
-$vsz = @(
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWizOMF.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxAtlWizComWrapper.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxAtlWizDynProp.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizCustomObject.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizJig.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizMFCSupport.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizNETWrapper.vsz'),
-  (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\ArxWizReactors.vsz')
-)
-$badVsz = @($vsz | Where-Object {
-  (-not (Test-Path $_)) -or ((Get-Content $_ -Raw) -match '\[TARGETDIR\]') -or
-  ((Get-Content $_ -Raw) -notmatch [regex]::Escape($appDir + '\'))
-})
-Check 'nine .vsz files carry the real TARGETDIR' ($badVsz.Count -eq 0) (($badVsz | ForEach-Object { Split-Path $_ -Leaf }) -join ', ')
-Check 'no Maya wizard dropped into VS' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojectitems\ObjectARX\MayaCommand.vsz')))
-
-# ---- patch 2: ADSK -> RDS ----
-$html = Get-Content (Join-Path $appDir 'ArxAppWiz\HTML\1033\default.htm') -Raw
-Check 'default.htm ADSK replaced by the RDS' (($html -match 'ABC') -and ($html -notmatch 'ADSK')) ''
-
-# No shipped Autodesk.arx-<year>.props: the only sheets in the install folder are the ones the
-# generator just produced for the ticked years, so a single-year payload cannot linger stale.
-Check 'no single-year props template ships as payload' (
-  -not (Test-Path (Join-Path $repo '_Installs\Autodesk.arx-2026.props')) -and
-  -not (Test-Path (Join-Path $appDir 'ArxAppWiz\Templates\1033\Autodesk.arx-2026.props')))
-
-# ---- patch 4: arxCommon.js props folder ----
-$js = Get-Content (Join-Path $appDir 'ArxWizCommon\arxCommon.js') -Raw
-$jsExpect = $propsDir.Replace('\', '\\') + '\\'
-$jsLine = (($js -split "`n") | Where-Object { $_ -match 'var ARX_PROPS_DIR =' } | Select-Object -First 1)
-Check 'arxCommon.js points at the props folder' `
-      ($null -ne $jsLine -and $jsLine.Contains('var ARX_PROPS_DIR ="' + $jsExpect + '" ;')) $jsLine
+# No shipped Autodesk.arx-<year>.props anywhere: arx-genprops generates the ticked years at install
+# time, so a hard-wired single-year sheet would only go stale (or collide with the generated one,
+# the property sheet folder being the install folder by default).
+Check 'no property sheet template ships as payload' `
+      (@(Get-ChildItem (Join-Path $repo '_Installs') -Filter 'Autodesk.arx-*.props' -ErrorAction SilentlyContinue).Count -eq 0)
 
 # ---- the SDK folder is never touched ----
 Check 'the installer leaves the SDK folder alone' (-not (Test-Path $arxSdk))
@@ -265,7 +264,6 @@ Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $p
 Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
 
 Check 'install folder removed' (-not (Test-Path $appDir))
-Check 'VS wizard files removed' (-not (Test-Path (Join-Path $vsRoot 'Common7\IDE\VC\vcprojects\Autodesk\ArxAppWiz.vsz')))
 $k = Get-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -ErrorAction SilentlyContinue
 Check 'registry key removed on uninstall' ($null -eq $k)
 
@@ -280,7 +278,7 @@ Set-ItemProperty -Path 'HKCU:\SOFTWARE\Autodesk\ObjectARX Wizards' -Name 'Instal
 $argsRemembered = ($installArgs -replace ' /DIR="[^"]*"', '') -replace ' /PROPSDIR="[^"]*"', ''
 $p = Start-Process -FilePath $setup -ArgumentList $argsRemembered -NoNewWindow -Wait -PassThru
 Check 'install folder defaults to the remembered folder' `
-      ($p.ExitCode -eq 0 -and (Test-Path (Join-Path $remembered 'ArxWizCommon\arxCommon.js'))) ('exit=' + $p.ExitCode)
+      ($p.ExitCode -eq 0 -and (Test-Path (Join-Path $remembered 'unins000.exe'))) ('exit=' + $p.ExitCode)
 Check 'its props folder follows it' (Test-Path (Join-Path $remembered 'Autodesk.arx-2020.props'))
 Start-Process -FilePath (Join-Path $remembered 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
 Wait-Gone $remembered

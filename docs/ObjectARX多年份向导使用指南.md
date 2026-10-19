@@ -76,7 +76,7 @@
 ### 第 2 页：选择安装位置
 
 - 向导文件的安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，可点击“浏览…”自行选择；
-- **属性表目录默认自动跟随安装目录**（下一页可单独修改）；
+- **属性表目录默认自动跟随安装目录**；
 - 如果本机以前安装过，这里会自动回填上次的目录。
 
 > 📷 **【图 1 · 截图占位】选择安装位置**
@@ -95,15 +95,17 @@
 
 ### 第 4 页：ObjectARX SDK 与目标位置
 
-两个路径，**SDK 和 AutoCAD 装在默认位置时整页都不用改**。本版安装器**不会向 SDK 安装目录写入或修改任何文件**（属性表里引用的 SDK 目录由 Autodesk 根目录加年份自动拼出）：
+两个目录，**AutoCAD 和 SDK 装在默认位置时整页都不用改**。本版安装器**不会向 SDK 安装目录写入或修改任何文件**：
 
 | 字段 | 含义 | 默认值 |
 |---|---|---|
-| Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
-| 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取；只要不手动改，它会一直跟随第 2 页的安装目录 | 跟随安装目录 |
+| Autodesk CAD 目录 | AutoCAD 所在的根目录，年份由属性表自动拼接（`$(AcadRoot)AutoCAD <年份>\`） | `C:\Program Files\Autodesk\` |
+| ObjectARX SDK 目录 | ObjectARX SDK 所在的根目录，年份由属性表自动拼接（`$(ArxSdkRoot)ObjectARX <年份>\`） | `C:\Program Files\Autodesk\` |
+
+> 属性表目录不在这里选：它恒等于安装目录。
 
 > 📷 **【图 3 · 截图占位】ObjectARX SDK 与目标位置页**
-> 应截取：第 4 页完整窗口，两个带“浏览…”按钮的路径输入框（Autodesk 根目录、属性表目录）及各自默认值清晰可读。
+> 应截取：第 4 页完整窗口，两个带“浏览…”按钮的路径输入框（Autodesk CAD 目录、ObjectARX SDK 目录）及各自默认值清晰可读。
 > 文件名：`images/setup-04-paths.png`
 
 ### 第 5 页：目标 AutoCAD 版本
@@ -119,10 +121,10 @@
 
 ### 第 6 页：准备安装
 
-本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份），确认无误后点击“安装”。
+本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk CAD 目录、ObjectARX SDK 目录、目标年份），确认无误后点击“安装”。
 
 > 📷 **【图 5 · 截图占位】准备安装页（设置汇总清单）**
-> 应截取：第 6 页完整窗口，清单中五项设置（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份）全部可见，目标年份显示为 2020, 2024, 2026, 2027。
+> 应截取：第 6 页完整窗口，清单中五项设置（安装目录、RDS、Autodesk CAD 目录、ObjectARX SDK 目录、目标年份）全部可见，目标年份显示为 2020, 2024, 2026, 2027。
 > 文件名：`images/setup-06-ready.png`
 
 ### 安装过程中
@@ -151,7 +153,8 @@ ObjectARXMultiVersionWizards-classic.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=20
 | `/RDS=符号` | RDS 前缀；省略则使用 ADSK |
 | `/DIR=路径` | 安装目录 |
 | `/PROPSDIR=路径` | 属性表目录；省略则跟随安装目录 |
-| `/ARXROOT=路径` | Autodesk 根目录（SDK 与 AutoCAD 的共同上级） |
+| `/ACADROOT=路径` | Autodesk CAD 根目录（AutoCAD 所在根目录） |
+| `/ARXROOT=路径` | ObjectARX SDK 根目录（SDK 所在根目录） |
 | `/VSROOT=路径` | 手工指定 Visual Studio 安装根目录（自动检测不到时使用） |
 | `/SKIPVSIX=1` | 只装文件和属性表，跳过扩展组件（此时需自行让 VS 刷新向导列表） |
 | `/SKIPVSCHECK=1` | Visual Studio 正在运行也继续安装（不推荐） |

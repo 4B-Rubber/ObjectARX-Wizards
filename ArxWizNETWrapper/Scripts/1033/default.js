@@ -144,25 +144,143 @@ function ArxItemSizeSettled (strPath) {
 //- 2026-10-12, when the project was saved - and that late write appends, so the retry that had
 //- already written the file produced a second copy. The target is removed first so the call
 //- always starts from nothing.
-function ArxItemRenderWith (strTemplateFull, strFull) {
-	ArxItemLog ("wizard.RenderTemplate (\"" + strTemplateFull + "\", \"" + strFull + "\")") ;
-	var oFso =ArxItemFsoOrNull () ;
-	if ( oFso != null ) {
-		try { oFso.DeleteFile (strFull) ; } catch (e) { }
-	}
-	wizard.RenderTemplate (strTemplateFull, strFull) ;
-	return (ArxItemSizeSettled (strFull) > 0) ;
+//- The host renderer (wizard.RenderTemplate) reports "rendered nothing" for these templates even
+//- though the template file is on disk and the wizard symbols are set (Visual Studio 2022/2026),
+//- so the templates are expanded here instead: the file is read with the FileSystemObject, the
+//- four directives the templates use are evaluated against the wizard symbols, and the result is
+//- written back. Nothing about the render then depends on the host.
+//- The directives are [!if X] / [!else] / [!endif] / [!output X]; a condition is a bare symbol,
+//- "!<symbol>", "<a> != <b>" or "<a> || <b>" (that is all the seven item template trees use).
+function ArxItemReadAll (strPath) {
+	var oFso =ArxItemFso () ;
+	var oStream =oFso.OpenTextFile (strPath, 1, false, -2) ;
+	var strText =oStream.ReadAll () ;
+	oStream.Close () ;
+	return (strText) ;
 }
 
-//- Renders one template into the project folder and adds the file to the project.
+//- ANSI first, Unicode on failure: the classic item templates are ASCII today, but a localized
+//- one would not fit ANSI and the framework's own writer retries in Unicode the same way.
+function ArxItemWriteAll (strPath, strText) {
+	var oFso =ArxItemFso () ;
+	try {
+		var oAnsi =oFso.CreateTextFile (strPath, true, false) ;
+		oAnsi.Write (strText) ;
+		oAnsi.Close () ;
+		return ;
+	} catch (e) {
+		var oUni =oFso.CreateTextFile (strPath, true, -1) ;
+		oUni.Write (strText) ;
+		oUni.Close () ;
+	}
+}
+
+//- A wizard symbol as a string; a missing one reads as "" (that is what [!output] wants).
+function ArxItemSym (strName) {
+	var v =null ;
+	try { v =wizard.FindSymbol (strName) ; } catch (e) { v =null ; }
+	if ( v == null || typeof (v) == "undefined" )
+		return ("") ;
+	return (ArxItemStr (v)) ;
+}
+
+//- The truth of a condition operand: a boolean symbol is used as it is, and a symbol that arrives
+//- as a string counts as set while it is neither empty nor "false"/"0". An unknown symbol is false.
+function ArxItemTruthy (strName) {
+	var v =null ;
+	try { v =wizard.FindSymbol (strName) ; } catch (e) { v =null ; }
+	if ( v == null || typeof (v) == "undefined" )
+		return (false) ;
+	if ( typeof (v) == "boolean" )
+		return (v) ;
+	var strS =ArxItemStr (v) ;
+	return (strS != "" && strS != "0" && strS.toLowerCase () != "false") ;
+}
+
+function ArxItemTrim (strS) {
+	return (strS.replace (/^\s+|\s+$/g, "")) ;
+}
+
+//- One side of a "<a> != <b>" comparison. The templates write the bare class name on the right
+//- (CLASS_NAME != CAdUiFileDialog), so a name that is not a wizard symbol is taken as that literal
+//- text rather than read as an empty symbol.
+function ArxItemOperand (strName) {
+	var strTrimmed =ArxItemTrim (strName) ;
+	var v =null ;
+	try { v =wizard.FindSymbol (strTrimmed) ; } catch (e) { v =null ; }
+	if ( v == null || typeof (v) == "undefined" )
+		return (strTrimmed) ;
+	return (ArxItemStr (v)) ;
+}
+
+function ArxItemEvalCond (strCond) {
+	strCond =ArxItemTrim (strCond) ;
+	if ( strCond.indexOf ("||") >= 0 ) {
+		var rgOr =strCond.split ("||") ;
+		for ( var nOr =0 ; nOr < rgOr.length ; nOr++ ) {
+			if ( ArxItemEvalCond (rgOr[nOr]) )
+				return (true) ;
+		}
+		return (false) ;
+	}
+	if ( strCond.indexOf ("!=") >= 0 ) {
+		var rgNe =strCond.split ("!=") ;
+		return (ArxItemOperand (rgNe[0]) != ArxItemOperand (rgNe[1])) ;
+	}
+	if ( strCond.charAt (0) == "!" )
+		return (!ArxItemTruthy (ArxItemTrim (strCond.substring (1)))) ;
+	return (ArxItemTruthy (strCond)) ;
+}
+
+//- Expands one template body. The directives are inline as well as line-based (object.h and the
+//- .idl templates keep them inside a line), so the text is scanned token by token, not by line.
+function ArxItemExpand (strText) {
+	var rgFrames =[] ;
+	var rgOut =[] ;
+	var reTok =/\[!(if\s+[^\]]*|else|endif|output\s+[A-Za-z0-9_]+)\]/g ;
+	var nLast =0 ;
+	var m =null ;
+
+	function ArxItemEmitting () {
+		return (rgFrames.length == 0 ? true : rgFrames[rgFrames.length - 1].emitting) ;
+	}
+
+	while ( (m =reTok.exec (strText)) != null ) {
+		if ( ArxItemEmitting () )
+			rgOut.push (strText.substring (nLast, m.index)) ;
+		var strBody =ArxItemTrim (m[1]) ;
+		if ( strBody.indexOf ("if") == 0 && (strBody.length == 2 || /\s/.test (strBody.charAt (2))) ) {
+			var bParent =ArxItemEmitting () ;
+			var bCond =bParent && ArxItemEvalCond (strBody.substring (2)) ;
+			rgFrames.push ({ parentEmitting: bParent, emitting: bCond, taken: bCond }) ;
+		} else if ( strBody == "else" ) {
+			if ( rgFrames.length > 0 ) {
+				var oTop =rgFrames[rgFrames.length - 1] ;
+				oTop.emitting =oTop.parentEmitting && !oTop.taken ;
+				oTop.taken =true ;
+			}
+		} else if ( strBody == "endif" ) {
+			if ( rgFrames.length > 0 )
+				rgFrames.pop () ;
+		} else if ( strBody.indexOf ("output") == 0 ) {
+			if ( ArxItemEmitting () )
+				rgOut.push (ArxItemSym (ArxItemTrim (strBody.substring (6)))) ;
+		}
+		nLast =reTok.lastIndex ;
+	}
+	if ( ArxItemEmitting () )
+		rgOut.push (strText.substring (nLast)) ;
+	return (rgOut.join ("")) ;
+}
+
+//- Renders one template into the target path (in script) and adds the file to the project.
 //-
-//- Two things are deliberate here, both from the failures reported 2026-10-11 (template on disk and
-//- readable, target file created in the right folder, generated class still 0 bytes):
-//-  * the host call is the bare two argument form, the one the DEFFile, PropertySheet and RCFile
-//-    item wizards shipping with Visual Studio use; see ArxItemRenderWith for why there is no
-//-    retry spelling behind it.
-//-  * the target is an absolute path (ITEM_PATH / PROJECT_PATH + name), the spelling those item
-//-    wizards use as well.
+//- Two things are deliberate here, both from the failures reported 2026-10-11 (template on disk
+//- and readable, target file created in the right folder, generated class still 0 bytes):
+//-  * the target is an absolute path (ITEM_PATH / PROJECT_PATH + name), the spelling the item
+//-    wizards shipping with Visual Studio use;
+//-  * the rendering itself is done in script, so the host call that wrote nothing is out of the
+//-    picture entirely.
 //- A target that stays empty is deleted and reported, never left in the project as an empty class.
 function ArxItemRender (strTemplate, strTarget, oParent, bOpen) {
 	var oFso =ArxItemFsoOrNull () ;
@@ -181,18 +299,23 @@ function ArxItemRender (strTemplate, strTarget, oParent, bOpen) {
 		if ( strTargetDir != "" )
 			strFull =strTargetDir + "\\" + strFull ;
 	}
-	ArxItemRenderWith (strTemplateFull, strFull) ;
+	if ( oFso != null ) {
+		try { oFso.DeleteFile (strFull) ; } catch (eDel) { }
+	}
+	ArxItemLog ("render (in script) \"" + strTemplateFull + "\" -> \"" + strFull + "\"") ;
+	ArxItemWriteAll (strFull, ArxItemExpand (ArxItemReadAll (strTemplateFull))) ;
 	var nSize =ArxItemSizeSettled (strFull) ;
 	if ( oFso == null )
 		nSize =1 ;
-	if ( nSize == 0 || nSize == -1 ) {
-		try { oFso.DeleteFile (strFull) ; } catch (e) { }
+	if ( nSize <= 0 ) {
+		try { oFso.DeleteFile (strFull) ; } catch (eDel2) { }
 		throw new Error ("'" + strTemplateFull + "' rendered nothing into " + strFull) ;
 	}
 	ArxItemLog ("rendered '" + strTemplateFull + "' -> '" + strFull + "' (" + nSize + " bytes)") ;
 	if ( oParent )
 		AddFileToProject (strFull, oParent, bOpen) ;
 }
+
 
 function ArxItemOnFinishImpl (selProj, selObj) {
 	var oCM ;

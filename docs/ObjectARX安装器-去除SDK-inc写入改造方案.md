@@ -66,7 +66,7 @@ Autodesk.arx-<年份>.props                 ← 安装时由本安装器生成
 
 - 删除 `[Files]` 中写入 SDK `inc` 的 3 行与安装目录根的 2 个死载荷；
 - 删除 `GetArxSdkPath` / `GetArxSdkIncDir` 函数、`FallbackArxSdkPath` 常量、`InitArxSdkPath` 变量；
-- 路径页由 3 个字段减为 2 个（Autodesk 根目录、属性表目录），删除中英两套 `PathsSdkPrompt` / `ReadySdk` 文案与就绪页 SDK 行；
+- 路径页由 3 个字段减为 2 个（当时为 Autodesk 根目录、属性表目录），删除中英两套 `PathsSdkPrompt` / `ReadySdk` 文案与就绪页 SDK 行；
 - 删除静默参数 `/ARXSDKPATH`（含头部注释的参数说明）；
 - 删除 4 个载荷源文件：`_Installs/rxsdk_common.props`、`_Installs/crx.props`、`_Installs/arxEntryPoint.h`、`ArxAppWiz/Templates/1033/crx.props`。
 

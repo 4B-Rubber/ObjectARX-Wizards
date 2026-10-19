@@ -235,7 +235,7 @@
 											<td colspan="3" id="ABOUTVERSION">Version: </td>
 										</tr>
 										<tr height="12">
-											<td colspan="3">Copyright ù Autodesk, Inc. All rights reserved.</td>
+											<td colspan="3">Copyright ÔøΩ Autodesk, Inc. All rights reserved.</td>
 										</tr>
 										<tr>
 											<td colspan="3" height="25"><IMG SRC="../../Images/spacer.gif" WIDTH="1" HEIGHT="1"></td>
@@ -513,21 +513,17 @@ function GetAttribute (msBaseClass, msAttribute) {
 }
 
 function OnClass () {
+	//- The typed name is used as it is: a leading "C" is no longer read as a class prefix, so a
+	//- class the user calls "CCustoment" keeps that spelling in the DXF record and the file names.
 	var strClassName =CLASS_NAME.value ;
-	if ( strClassName.length == 0 || (strClassName.length == 1 && (strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c")) ){
+	if ( strClassName.length == 0 ){
 		HEADER_FILE.value ="" ;
 		IMPL_FILE.value ="" ;
 		DXFNAME.value ="" ;
 	} else {
-		if ( strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c" ) {
-			HEADER_FILE.value =strClassName.substr (1) + ".h" ;
-			IMPL_FILE.value =strClassName.substr (1) + ".cpp" ;
-			DXFNAME.value =strClassName.substr (1).toUpperCase () ;
-		} else {
-			HEADER_FILE.value =strClassName + ".h" ;
-			IMPL_FILE.value =strClassName + ".cpp" ;
-			DXFNAME.value=strClassName.toUpperCase () ;
-		}
+		HEADER_FILE.value =strClassName + ".h" ;
+		IMPL_FILE.value =strClassName + ".cpp" ;
+		DXFNAME.value =strClassName.toUpperCase () ;
 	}
 }
 
@@ -551,8 +547,6 @@ function SetSymbols () {
 
 	var strClassName =CLASS_NAME.value ;
 	var strSafeClassName =CreateSafeName (strClassName) ;
-	if ( strSafeClassName.substr (0, 1) == "C" )
-		strSafeClassName =strSafeClassName.substr (1, strSafeClassName.length) ;
 	window.external.AddSymbol ("CLASS_NAME_ROOT", strSafeClassName) ;
 }
 

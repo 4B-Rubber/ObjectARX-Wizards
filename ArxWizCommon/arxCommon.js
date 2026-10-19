@@ -215,6 +215,25 @@ function GetRDSValue () {
 //-   it has the .arx extension
 //- * a ObjectDBX host application can either be a .dll/.exe
 //-   it links to rcexeobj.obj
+//- CodeClass.IsDerivedFrom raises "access denied" on the C++ code model of VS2022/VS2026. The
+//- wizard page's InitDocument then aborted before it set the field defaults (reported 2026-10-20:
+//- the Jig / Reactors / .NET Wrapper pages came up empty). Probing defensively keeps the page
+//- alive: true / false when the code model answered, and null when it could not - the class's
+//- direct Bases are tried second to recover the answer, but a base that is not listed there does
+//- not mean "not derived" (the relation is transitive), so that case stays null.
+function ArxIsDerivedFrom (cls, strBase) {
+	try {
+		return (cls.IsDerivedFrom (strBase) ? true : false) ;
+	} catch (e) { }
+	try {
+		for ( var i =1 ; i <= cls.Bases.Count ; i++ ) {
+			if ( "" + cls.Bases.Item (i).Name == strBase )
+				return (true) ;
+		}
+	} catch (e1) { }
+	return (null) ;
+}
+
 function IsDbxProject (prj) {
 	//- Verify it is a C++ project
 	if ( prj.Kind != '{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}' )
@@ -238,9 +257,9 @@ function IsDbxProject (prj) {
 	}
 	for ( var j =1 ; j <= codeModel.Classes.Count ; j++ ) {
 		var cls =codeModel.Classes.Item (j) ;
-		if ( cls.IsDerivedFrom ('AcRxArxApp') )
+		if ( ArxIsDerivedFrom (cls, 'AcRxArxApp') )
 			return (false) ;
-		if ( cls.IsDerivedFrom ('AcRxDbxApp') )
+		if ( ArxIsDerivedFrom (cls, 'AcRxDbxApp') )
 			break ;
 	}
 	if ( i > codeModel.Functions.Count && j > codeModel.Classes.Count )
@@ -292,9 +311,9 @@ function IsDbxHostproject (prj) {
 	}
 	for ( var j =1 ; j <= codeModel.Classes.Count ; j++ ) {
 		var cls =codeModel.Classes.Item (j) ;
-		if ( cls.IsDerivedFrom ('AcRxArxApp') )
+		if ( ArxIsDerivedFrom (cls, 'AcRxArxApp') )
 			return (false) ;
-		if ( cls.IsDerivedFrom ('AcRxDbxApp') )
+		if ( ArxIsDerivedFrom (cls, 'AcRxDbxApp') )
 			break ;
 	}
 	if ( i > codeModel.Functions.Count && j > codeModel.Classes.Count )
@@ -348,7 +367,7 @@ function IsCrxProject (prj) {
 	}
 	for ( var j =1 ; j <= codeModel.Classes.Count ; j++ ) {
 		var cls =codeModel.Classes.Item (j) ;
-		if ( cls.IsDerivedFrom ('AcRxArxApp') )
+		if ( ArxIsDerivedFrom (cls, 'AcRxArxApp') )
 			break ;
 	}
 	if ( i > codeModel.Functions.Count && j > codeModel.Classes.Count )
@@ -386,20 +405,28 @@ function IsArxProject (prj) {
 		&& outputName.substr (outputName.lastIndexOf ('.')).toLowerCase () != '.dll'
 	)
 		return (false) ;
-	//- Verify it has an acrxEntryPoint function or an AcRxDbxApp class
-	var codeModel =prj.CodeModel ;
-	for ( var i =1 ; i <= codeModel.Functions.Count ; i++ ) {
-		var fct =codeModel.Functions.Item (i) ;
-		if ( fct.Name == 'acrxEntryPoint' )
-			break ;
+	//- Verify it has an acrxEntryPoint function or a class derived from AcRxArxApp. The code model
+	//- probe is wrapped: CodeClass.IsDerivedFrom raises "access denied" on VS2022/VS2026 and that
+	//- throw propagated out of the wizard page's InitDocument, so the fields came up with no values
+	//- (reported 2026-10-20: the Jig / Reactors / .NET Wrapper pages). When the code model cannot
+	//- answer, the project is accepted on the checks above rather than failing the wizard.
+	try {
+		var codeModel =prj.CodeModel ;
+		var bEntry =false ;
+		for ( var i =1 ; i <= codeModel.Functions.Count ; i++ ) {
+			if ( codeModel.Functions.Item (i).Name == 'acrxEntryPoint' ) { bEntry =true ; break ; }
+		}
+		var bApp =false ;
+		for ( var j =1 ; j <= codeModel.Classes.Count ; j++ ) {
+			var oDerived =ArxIsDerivedFrom (codeModel.Classes.Item (j), 'AcRxArxApp') ;
+			if ( oDerived == true ) { bApp =true ; break ; }
+			if ( oDerived == null ) { bApp =true ; break ; }	//- the code model cannot answer
+		}
+		if ( !bEntry && !bApp )
+			return (false) ;
+	} catch (e) {
+		//- code model unavailable: keep the verdict from the checks above
 	}
-	for ( var j =1 ; j <= codeModel.Classes.Count ; j++ ) {
-		var cls =codeModel.Classes.Item (j) ;
-		if ( cls.IsDerivedFrom ('AcRxArxApp') )
-			break ;
-	}
-	if ( i > codeModel.Functions.Count && j > codeModel.Classes.Count )
-		return (false) ;
 
 	return (true) ;
 }
@@ -438,7 +465,7 @@ function IsValidAdeskProject (prj, level) {
 
 //- Is that class derived at least from AcDbObject
 function IsDbxObject(cls) {
-    return (cls.IsDerivedFrom('AcDbObject'));
+    return (ArxIsDerivedFrom (cls, 'AcDbObject'));
 }
 
 //- Calling ARX Wizard's help
@@ -1052,20 +1079,23 @@ function ArxResNextValue (strHeaderText) {
 }
 
 //- Header text with "#define <id> <value>" in it and _APS_NEXT_RESOURCE_VALUE moved past it.
+//- The new id goes above the resource editor's bookkeeping block, anchored on the "// Next default
+//- values for new objects" comment (else on "#ifdef APSTUDIO_INVOKED"). Everything from that block
+//- down is the editor's own _APS_NEXT_* bookkeeping, and a normal build skips the APSTUDIO_INVOKED
+//- region - so a define placed inside that region leaves the id undefined for the generated code
+//- (reported 2026-10-19: "IDD_<class>" landed inside the block and the dialog class would not
+//- compile - the id was "gone" again; the VSIX line was fixed for exactly this on 2026-10-08).
 function ArxResDefineId (strHeaderText, strId, nValue) {
 	var strText =strHeaderText ;
 	var strDefine ="#define " + strId + " " + nValue ;
 	if ( !(new RegExp ("^[ \\t]*#define[ \\t]+" + strId + "\\b", "mi")).test (strText) ) {
-		var aAnchor =/^([ \t]*#define[ \t]+_APS_NEXT_RESOURCE_VALUE.*)$/mi.exec (strText) ;
+		var aAnchor =/^[ \t]*\/\/ Next default values for new objects/mi.exec (strText) ;
+		if ( aAnchor == null )
+			aAnchor =/^[ \t]*#ifdef APSTUDIO_INVOKED/mi.exec (strText) ;
 		if ( aAnchor != null )
-			strText =strText.substring (0, aAnchor.index) + strDefine + "\r\n" + strText.substring (aAnchor.index) ;
-		else {
-			var aBlock =/^(#ifdef APSTUDIO_INVOKED[ \t]*)$/mi.exec (strText) ;
-			if ( aBlock != null )
-				strText =strText.substring (0, aBlock.index) + strDefine + "\r\n\r\n" + strText.substring (aBlock.index) ;
-			else
-				strText =strText.replace (/[ \t\r\n]+$/, "") + "\r\n" + strDefine + "\r\n" ;
-		}
+			strText =strText.substring (0, aAnchor.index).replace (/[ \t\r\n]+$/, "") + "\r\n" + strDefine + "\r\n\r\n" + strText.substring (aAnchor.index) ;
+		else
+			strText =strText.replace (/[ \t\r\n]+$/, "") + "\r\n" + strDefine + "\r\n" ;
 	}
 	//- aValue.length is the *array* length (full match + groups), aValue [0].length the match text.
 	var aValue =/(#define[ \t]+_APS_NEXT_RESOURCE_VALUE[ \t]+)([0-9]+)/i.exec (strText) ;

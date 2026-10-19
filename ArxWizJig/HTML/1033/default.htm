@@ -194,7 +194,7 @@
 																<td colspan="3" id="ABOUTVERSION">Version: </td>
 															</tr>
 															<tr height="12">
-																<td colspan="3">Copyright © Autodesk, Inc. All rights reserved.</td>
+																<td colspan="3">Copyright ï¿½ Autodesk, Inc. All rights reserved.</td>
 															</tr>
 															<tr>
 																<td colspan="3" height="25"><IMG SRC="../../Images/spacer.gif" WIDTH="1" HEIGHT="1"></td>
@@ -393,21 +393,14 @@ function InitDocument (document) {
 }
 
 function OnClass () {
+	//- The typed name is used as it is: a leading "C" is no longer read as a class prefix.
 	var strClassName =CLASS_NAME.value ;	
-	if (   strClassName.length == 0
-		|| (strClassName.length == 1 && (strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c"))
-	) {
+	if ( strClassName.length == 0 ) {
 		HEADER_FILE.value ="" ;
 		IMPL_FILE.value ="" ;		
 	} else {
-		var strSafeProjName =window.external.FindSymbol ("SAFE_PROJECT_NAME") ;
-		if ( strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c" ) {
-			HEADER_FILE.value =strClassName.substr(1) + ".h" ;
-			IMPL_FILE.value =strClassName.substr(1) + ".cpp" ;
-		} else {
-			HEADER_FILE.value =strClassName + ".h" ;
-			IMPL_FILE.value =strClassName + ".cpp" ;
-		}
+		HEADER_FILE.value =strClassName + ".h" ;
+		IMPL_FILE.value =strClassName + ".cpp" ;
 	}
 }
 

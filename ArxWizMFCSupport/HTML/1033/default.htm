@@ -547,11 +547,8 @@ function OnClass () {
 	//- If dockcontrol bar with a resource Id then we have to create a child dialog
 	window.external.AddSymbol ("CHILDCLASS_NAME", strClassName + "ChildDlg") ;
 	
-	if (   strClassName.length == 0
-		|| (   strClassName.length == 1
-			&& (strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c")
-		)
-	) {
+	//- The typed name is used as it is: a leading "C" is no longer read as a class prefix.
+	if ( strClassName.length == 0 ) {
 		if ( DialogList.ListIndex == -1 )
 			DialogList.Value ="" ;
 		HEADER_FILE.value ="" ;
@@ -561,25 +558,13 @@ function OnClass () {
 		window.external.AddSymbol ("CHILDHEADER_FILE", "") ;
 		window.external.AddSymbol ("CHILDIMPL_FILE", "") ;
 	} else {
-		var strSafeProjName = window.external.FindSymbol("SAFE_PROJECT_NAME");
-
-		if ( strClassName.charAt (0) == "C" || strClassName.charAt (0) == "c" ) {
-			if ( DialogList.ListIndex == -1 )
-				DialogList.Value ="IDD_" + strClassName.substr (1).toUpperCase () ;
-			HEADER_FILE.value =strClassName.substr(1) + ".h" ;
-			IMPL_FILE.value =strClassName.substr(1) + ".cpp" ;
-			//- If dockcontrol bar with a resource Id then we have to create a child dialog
-			window.external.AddSymbol ("CHILDHEADER_FILE",strClassName.substr (1) + "ChildDlg.h") ;
-			window.external.AddSymbol ("CHILDIMPL_FILE", strClassName.substr (1) + "ChildDlg.cpp") ;
-		} else {
-			if ( DialogList.ListIndex == -1 )
-				DialogList.Value ="IDD_" + strClassName.toUpperCase () ;
-			HEADER_FILE.value =strClassName + ".h" ;
-			IMPL_FILE.value =strClassName + ".cpp" ;
-			//- If dockcontrol bar with a resource Id then we have to create a child dialog
-			window.external.AddSymbol ("CHILDHEADER_FILE",strClassName + "ChildDlg.h") ;
-			window.external.AddSymbol ("CHILDIMPL_FILE", strClassName + "ChildDlg.cpp") ;
-		}
+		if ( DialogList.ListIndex == -1 )
+			DialogList.Value ="IDD_" + strClassName.toUpperCase () ;
+		HEADER_FILE.value =strClassName + ".h" ;
+		IMPL_FILE.value =strClassName + ".cpp" ;
+		//- If dockcontrol bar with a resource Id then we have to create a child dialog
+		window.external.AddSymbol ("CHILDHEADER_FILE",strClassName + "ChildDlg.h") ;
+		window.external.AddSymbol ("CHILDIMPL_FILE", strClassName + "ChildDlg.cpp") ;
 	}
 }
 
@@ -691,8 +676,6 @@ function SetSymbols () {
 	
 	var strClassName =CLASS_NAME.value ;
 	var strSafeClassName =CreateSafeName (strClassName) ;
-	if ( strSafeClassName.substr (0, 1) == "C" )
-		strSafeClassName =strSafeClassName.substr (1, strSafeClassName.length) ;
 	window.external.AddSymbol ("CLASS_NAME_ROOT", strSafeClassName) ;
 }
 

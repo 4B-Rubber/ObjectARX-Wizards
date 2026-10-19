@@ -1,11 +1,11 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.8。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。0.2.8 起经典向导的 VS 注册全部改用自有名称（`ArxAppWizMV.*`、`ArxAppWizOMFMV.*`、项向导目录 `vcprojectitems\ObjectARXMV`），与官方年份向导（沿用旧名）可以共存、互删互不影响；0.2.7 及更早版本留下的旧名文件只在内容确认属于本产品时才回收。
+> 状态：**0.2.9。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。0.2.8 起经典向导的 VS 注册全部改用自有名称（`ArxAppWizMV.*`、`ArxAppWizOMFMV.*`、项向导目录 `vcprojectitems\ObjectARXMV`），与官方年份向导（沿用旧名）可以共存、互删互不影响；0.2.7 及更早版本留下的旧名文件只在内容确认属于本产品时才回收。
 >
 > 0.2.6 修好三处向导行为：**上一步/下一步**不再听框架的 `getNextPage()/getPrevPage()`（它们按左栏 DIV 的**下标**算下一页，而这台机器上 MSHTML 把导航 DIV 交了两遍 —— MFC Support 那页是 `0,1,2,2,2,2,3,4,5` —— 于是"上一步"从 MFC Support 跳到 .NET Options），改为按页面自己声明的 `tab_array` 顺序 + 当前页文件名推算，并直接把两个按钮接过来；**目标版本页**把安装器没写属性表的年份**灰掉且不可勾选**（按 `Autodesk.arx-<year>.props` 判断，注册表 `PropsDir` 优先、否则安装目录；一个 props 都找不到时保持原样，不乱禁）；**Custom Object / COM Wrapper**不再弹 "should be implemented in .DBX project" 这类确认框（ARX 里做自定义对象本来就可以，只记日志）。
 
 > 0.2.5 修好经典项向导的三个连在一起的故障（RC1015 / "Cannot access resource information" / 结束时的"缺少对象"）：对话框与 REGISTRY 资源不再向宿主的资源服务索取（它会用工程**活动配置**编译 .rc，配置是 v141 时必然 `fatal error RC1015`，随后 `AddResource` 返回 null 被脚本解引用），改由向导页按文本写进 `.rc`/`Resource.h`；项模板的渲染改传**绝对**目标路径（`ITEM_PATH`/`PROJECT_PATH` + 名字，VS 自带项向导就是这么写的，传裸文件名时宿主只建文件不写内容），并在渲染出 0 字节时报错而不是把空类留在工程里。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
-> 最后更新：2026-10-10
+> 最后更新：2026-10-13
 >
 > **本分支（`classic-wizards`）例外**：这条线交付的是经典向导（`.vsz/.vsdir` + `VCAddClass`），所以 VSIX **编译时不再带模板定义**——`ArxVsixWizard.csproj` 的两条 `Content` 用 `Exclude="…\*.vstemplate"` 把 9 个 `.vstemplate` 挡在容器外（`ProjectTemplates`/`ItemTemplates` 目录与 manifest 资产仍在，只是没有可注册的模板），VSIX 在这里只承担"让 VS 重建向导列表"的触发器角色。上一条"2 个项目模板 + 7 个项模板真机可见"说的是 dev/main 两条线；在本分支里加类走经典 **添加 → 类**，`Add ObjectARX Class...` 命令连同它的选择器与模板目录扫描器（`Commands/AddArxItemCommand.cs`、`UI/AddItemDialog.xaml(.cs)`、`Commands/ArxItemTemplateCatalog.cs`）都已删除，命令表 `ArxWizardCommands.vsct` 为空，包里也不再注册任何命令。
 

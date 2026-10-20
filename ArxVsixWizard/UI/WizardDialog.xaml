@@ -43,8 +43,10 @@
           <StackPanel Margin="8">
             <WrapPanel Name="YearsPanel"/>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-              <Button Name="AllYearsButton" Content="Select all" Width="80" Height="24" Margin="0,0,8,0" Click="OnSelectAllYears"/>
-              <Button Name="NoYearsButton" Content="Clear" Width="80" Height="24" Click="OnClearYears"/>
+              <Button Name="AllYearsButton" Content="All" Width="80" Height="24" Margin="0,0,8,0" Click="OnSelectAllYears"/>
+              <Button Name="NoYearsButton" Content="None" Width="80" Height="24" Margin="0,0,8,0" Click="OnClearYears"/>
+              <Button Name="InvertYearsButton" Content="Invert" Width="80" Height="24" Margin="0,0,8,0" Click="OnInvertYears"/>
+              <Button Name="CompatYearsButton" Content="Compatible" Width="88" Height="24" Click="OnCompatibleYears"/>
               <TextBlock Name="DefaultYearsLabel" Margin="12,4,0,0" VerticalAlignment="Center" Foreground="Gray"/>
             </StackPanel>
           </StackPanel>

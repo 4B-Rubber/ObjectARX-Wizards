@@ -51,7 +51,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".h",
-                StripLeadingC = true,
                 ToolTip = "Header file where the class is declared.",
             });
             AddField(new ItemField
@@ -62,7 +61,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".cpp",
-                StripLeadingC = true,
                 ToolTip = "Implementation file for the class.",
             });
 

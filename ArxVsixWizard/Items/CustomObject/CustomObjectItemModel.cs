@@ -52,7 +52,6 @@ namespace ArxVsixWizard.Items
                 Label = "DXF name",
                 Required = true,
                 DerivedFrom = "CLASS_NAME",
-                StripLeadingC = true,
                 Uppercase = true,
                 ToolTip = "DXF record name registered by ACRX_DXF_DEFINE_MEMBERS.",
             });
@@ -71,7 +70,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".h",
-                StripLeadingC = true,
                 ToolTip = "Header file where the class is declared.",
             });
             AddField(new ItemField
@@ -82,7 +80,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".cpp",
-                StripLeadingC = true,
                 ToolTip = "Implementation file for the class.",
             });
 

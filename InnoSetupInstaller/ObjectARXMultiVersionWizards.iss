@@ -12,9 +12,11 @@
 ;  Where it deliberately differs from the MSI (all of it is a UI simplification):
 ;    * the install folder is user-selectable, and the property sheet folder follows it by
 ;      default (the MSI's TARGETDIR was fixed and its props folder was a separate fixed one);
-;    * one "Autodesk root" field instead of the MSI's four SDK/AutoCAD path fields. This is a
-;      multi-year product, so the root is the prefix the generator appends the year to
-;      (<root>ObjectARX 2026\, <root>AutoCAD 2026\) - nothing here appends a year itself;
+;    * the paths page asks for two roots - the Autodesk CAD root and the ObjectARX SDK root - and
+;      nothing else. The MSI asks for the same two on its paths page; the property sheet folder is
+;      never asked for (it always follows the install folder). This is a multi-year product, so each
+;      root is a prefix the generator appends the year to (<cadRoot>AutoCAD 2026\,
+;      <sdkRoot>ObjectARX 2026\) - nothing here appends a year itself;
 ;    * the UI is Chinese-first with English as fallback.
 ;
 ;  The behaviour matrix and the MSI quirks this avoids were documented in the (now deleted)
@@ -40,8 +42,8 @@
 ;                             ADSK placeholder alone, like the MSI custom action does
 ;     /DIR=<dir>              install folder (Inno's own switch)
 ;     /PROPSDIR=<dir>         property sheet folder (HKLM PropsDir); defaults to /DIR
-;     /ARXROOT=<dir>          Autodesk root: the prefix the generated sheets use for the SDK and
-;                             AutoCAD, and the value patched into the shipped 2026 template
+;     /ACADROOT=<dir>         Autodesk CAD root: the prefix the generated sheets use for AutoCAD
+;     /ARXROOT=<dir>          ObjectARX SDK root: the prefix the generated sheets use for the SDK
 ;     /VSROOT=<dir>           override the detected Visual Studio root (2022 or 2026)
 ;     /SKIPVSIX=1             do not install the VSIX
 ;     /SKIPVSCHECK=1          install even while Visual Studio is running
@@ -50,7 +52,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.10"
+#define AppVersion "0.2.15"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -113,8 +115,8 @@ chinese.RdsPrompt=注册开发者符号 (RDS)（可留空）(&R)：
 chinese.PathsCaption=ObjectARX SDK 与目标位置
 chinese.PathsDesc=安装向导会把这套向导写到本机，并按勾选的 AutoCAD 年份各生成一份属性表。
 chinese.PathsSubCaption=SDK 或 AutoCAD 不在默认位置时才需要修改。
-chinese.PathsRootPrompt=Autodesk 根目录（SDK 与 AutoCAD 都在它下面）(&A)：
-chinese.PathsPropsPrompt=属性表目录（与 VS 向导共用）(&P)：
+chinese.PathsAcadPrompt=Autodesk CAD 目录（AutoCAD 所在根目录）(&C)：
+chinese.PathsSdkPrompt=ObjectARX SDK 目录（SDK 所在根目录）(&S)：
 chinese.YearsCaption=目标 AutoCAD 版本
 chinese.YearsDesc=勾选的年份各生成一份属性表，未勾选的不生成；勾了一个没装的年份没有副作用。
 chinese.YearsLabel=AutoCAD 版本：
@@ -124,8 +126,8 @@ chinese.BtnInvert=反选(&I)
 chinese.BtnCompatible=兼容(&C)
 chinese.ReadyInstallFolder=安装目录：
 chinese.ReadyRds=注册开发者符号 (RDS)：
-chinese.ReadyRoot=Autodesk 根目录：
-chinese.ReadyProps=属性表目录：
+chinese.ReadyAcad=Autodesk CAD 目录：
+chinese.ReadySdk=ObjectARX SDK 目录：
 chinese.ReadyYears=目标 AutoCAD 版本：
 chinese.NoneSelected=无。不生成任何属性表，并且会把以前生成的清掉。
 chinese.VsMissing=本机必须安装 Microsoft Visual Studio 2022 或 2026（Professional/Enterprise/Community）。
@@ -138,8 +140,8 @@ english.RdsPrompt=&Registered Developer Symbol (RDS) (optional):
 english.PathsCaption=ObjectARX SDK and Target Locations
 english.PathsDesc=The installer writes its wizards to this computer and generates one property sheet per ticked AutoCAD year.
 english.PathsSubCaption=Only change these when the SDK or AutoCAD is not in the default location.
-english.PathsRootPrompt=&Autodesk root folder (the SDK and AutoCAD live under it):
-english.PathsPropsPrompt=&Property sheet folder (shared with the VS wizard):
+english.PathsAcadPrompt=&Autodesk CAD folder (the AutoCAD root):
+english.PathsSdkPrompt=&ObjectARX SDK folder (the SDK root):
 english.YearsCaption=Target AutoCAD Versions
 english.YearsDesc=One property sheet per ticked year is generated; unticked years are not created, and ticking a year you do not have installed is harmless.
 english.YearsLabel=AutoCAD versions:
@@ -149,8 +151,8 @@ english.BtnInvert=&Invert
 english.BtnCompatible=&Compatible
 english.ReadyInstallFolder=Install folder:
 english.ReadyRds=Registered developer symbol (RDS):
-english.ReadyRoot=Autodesk root folder:
-english.ReadyProps=Property sheet folder:
+english.ReadyAcad=Autodesk CAD folder:
+english.ReadySdk=ObjectARX SDK folder:
 english.ReadyYears=Target AutoCAD versions:
 english.NoneSelected=None. No property sheet is generated, and any generated earlier is removed.
 english.VsMissing=Microsoft Visual Studio 2022 or 2026 (Professional/Enterprise/Community) must be present on the target machine.
@@ -203,12 +205,11 @@ Name: "{code:GetPropsDir}"; Flags: uninsneveruninstall
 
 [Registry]
 ; The registry contract the VSIX wizard reads back (ArxVsixWizard\Models\ArxVersion.cs).
-; ArxRoot and AcadRoot carry the
-; same value on purpose: this is a multi-year product, so both point at the Autodesk root and the
-; generated sheets append the year themselves.
+; ArxRoot records the ObjectARX SDK root and AcadRoot the Autodesk CAD root. This is a multi-year
+; product, so each is a parent and the generated sheets append the year themselves.
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "PropsDir"; ValueData: "{code:GetPropsDir}"; Flags: uninsdeletekey
-Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "ArxRoot"; ValueData: "{code:GetArxRoot}"
-Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "AcadRoot"; ValueData: "{code:GetArxRoot}"
+Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "ArxRoot"; ValueData: "{code:GetSdkRoot}"
+Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "AcadRoot"; ValueData: "{code:GetAcadRoot}"
 ; The RDS the user picked, for the VSIX project wizard: it starts its RDS field from this value (an
 ; empty value keeps the built-in ADSK).
 Root: HKLM64; Subkey: "SOFTWARE\Autodesk\ObjectARX Wizards"; ValueType: string; ValueName: "RDS"; ValueData: "{code:GetRds}"
@@ -223,7 +224,7 @@ const
   CsvYearsRight = '2020,2021,2022,2023,2024,2025,2026,2027';
   CsvDefaultYears = '2020,2024,2026,2027';
   CsvCompatibleYears = '2014,2016,2018,2020,2024,2026,2027';
-  FallbackArxRoot = 'C:\Program Files\Autodesk\';
+  FallbackRoot = 'C:\Program Files\Autodesk\';
   GenExeName = 'arx-genprops.exe';
   VsixName = 'ObjectARXMultiVersionWizards.vsix';
   VsVcRelPath = '\Common7\IDE\VC';
@@ -243,15 +244,11 @@ var
   UninstallPropsDir: string;
   LogFile: string;
 
-  InitRds, InitArxRoot, InitPropsDir: string;
+  InitRds, InitAcadRoot, InitSdkRoot, InitPropsDir: string;
   // The install folder, tracked from the wizard's own directory edit. {app} cannot be used here:
-  // it is not initialized yet while the wizard is being built.
+  // it is not initialized yet while the wizard is being built. The property sheet folder always
+  // follows it (the page does not offer the folder any more); /PROPSDIR still overrides it.
   PropsDefault: string;
-  // The property sheet folder follows the install folder until the user types into that field or
-  // passes /PROPSDIR. PropsAuto holds the value we last put there ourselves, so a value that still
-  // equals it counts as "untouched"; PropsPinned means /PROPSDIR already decided.
-  PropsAuto: string;
-  PropsPinned: Boolean;
 
 // ---------------------------------------------------------------------------------------------
 // small helpers
@@ -288,8 +285,9 @@ begin
 end;
 
 /// <summary>
-/// The Autodesk root and the SDK path are used as *prefixes*: the shipped 2026 template and the
-/// generated sheets concatenate them with the year ("$(ArxSdkRoot)ObjectARX <year>\"). A trailing
+/// The CAD root and the SDK root are used as *prefixes*: the shipped 2026 template and the
+/// generated sheets concatenate them with the year ("$(AcadRoot)AutoCAD <year>\",
+/// "$(ArxSdkRoot)ObjectARX <year>\"). A trailing
 /// backslash is part of the value, but the directory wizard trims it - without this normalisation
 /// the generated sheets would read "C:\Program Files\AutodeskObjectARX 2020\".
 /// </summary>
@@ -403,15 +401,21 @@ end;
 
 function GetPropsDir(Param: string): string;
 begin
-  // The property sheet folder defaults to the install folder.
-  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[1], PropsDefault)
-  else Result := PropsDefault;
+  // The property sheet folder always follows the install folder; /PROPSDIR overrides it.
+  Result := PropsDefault;
 end;
 
-function GetArxRoot(Param: string): string;
+function GetAcadRoot(Param: string): string;
 begin
-  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[0], InitArxRoot)
-  else Result := InitArxRoot;
+  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[0], InitAcadRoot)
+  else Result := InitAcadRoot;
+  Result := EnsureTrailingSlash(Result);
+end;
+
+function GetSdkRoot(Param: string): string;
+begin
+  if Assigned(PagePaths) then Result := Pick(PagePaths.Values[1], InitSdkRoot)
+  else Result := InitSdkRoot;
   Result := EnsureTrailingSlash(Result);
 end;
 
@@ -597,14 +601,17 @@ begin
   // RDS - it substitutes ADSK with ADSK. Substituting an empty string instead would delete text
   // the MSI never touches.
   InitRds := ExpandConstant('{param:RDS|}');
-  InitArxRoot := ExpandConstant('{param:ARXROOT|}');
-  if InitArxRoot = '' then
-    if not RegQueryStringValue(HKLM64, RegKey, 'ArxRoot', InitArxRoot) then InitArxRoot := FallbackArxRoot;
-  // Empty means "follow the install folder"; InitializeWizard fills the field in. The property
-  // sheet folder is not remembered across installs on purpose - it belongs to the install folder,
-  // and Inno already remembers that one.
+  // An explicit switch wins, then the previous install, then the shipped default. ArxRoot is the
+  // ObjectARX SDK root and AcadRoot the Autodesk CAD root; both default to the Autodesk root.
+  InitSdkRoot := ExpandConstant('{param:ARXROOT|}');
+  if InitSdkRoot = '' then
+    if not RegQueryStringValue(HKLM64, RegKey, 'ArxRoot', InitSdkRoot) then InitSdkRoot := FallbackRoot;
+  InitAcadRoot := ExpandConstant('{param:ACADROOT|}');
+  if InitAcadRoot = '' then
+    if not RegQueryStringValue(HKLM64, RegKey, 'AcadRoot', InitAcadRoot) then InitAcadRoot := FallbackRoot;
+  // /PROPSDIR still works for unattended runs. Empty means "follow the install folder"; the page
+  // does not offer the folder any more, and Inno already remembers the install folder.
   InitPropsDir := ExpandConstant('{param:PROPSDIR|}');
-  PropsPinned := InitPropsDir <> '';
 
   VsRoot := ExpandConstant('{param:VSROOT|}');
   if VsRoot = '' then VsRoot := FindVs2022Root();
@@ -777,11 +784,10 @@ begin
   PagePaths := CreateInputDirPage(PageRds.ID,
     Cm('PathsCaption'), Cm('PathsDesc'), Cm('PathsSubCaption'),
     False, '');
-  PagePaths.Add(Cm('PathsRootPrompt'));
-  PagePaths.Add(Cm('PathsPropsPrompt'));
-  PagePaths.Values[0] := InitArxRoot;
-  PagePaths.Values[1] := Pick(InitPropsDir, PropsDefault);
-  PropsAuto := PagePaths.Values[1];
+  PagePaths.Add(Cm('PathsAcadPrompt'));
+  PagePaths.Add(Cm('PathsSdkPrompt'));
+  PagePaths.Values[0] := InitAcadRoot;
+  PagePaths.Values[1] := InitSdkRoot;
 
   PageYears := CreateCustomPage(PagePaths.ID, Cm('YearsCaption'), Cm('YearsDesc'));
 
@@ -818,16 +824,10 @@ procedure CurPageChanged(CurPageID: Integer);
 var
   App: string;
 begin
-  if (PagePaths = nil) then Exit;
+  // The property sheet folder always follows the install folder, and {app} is not initialized yet
+  // while the wizard is being built, so track it from the wizard's own directory edit.
   App := TrimTrailingSlash(WizardForm.DirEdit.Text);
-  if App = '' then Exit;
-  PropsDefault := App;
-  if PropsPinned or (CurPageID <> PagePaths.ID) then Exit;
-  // Still on the value we put there ourselves, so keep it in step with the install folder.
-  if TrimTrailingSlash(PagePaths.Values[1]) = TrimTrailingSlash(PropsAuto) then begin
-    PagePaths.Values[1] := App;
-    PropsAuto := App;
-  end;
+  if App <> '' then PropsDefault := App;
 end;
 
 function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo, MemoTypeInfo,
@@ -836,8 +836,8 @@ begin
   Result :=
     Cm('ReadyInstallFolder') + NewLine + Space + PropsDefault + NewLine + NewLine +
     Cm('ReadyRds') + NewLine + Space + GetRds('') + NewLine + NewLine +
-    Cm('ReadyRoot') + NewLine + Space + GetArxRoot('') + NewLine + NewLine +
-    Cm('ReadyProps') + NewLine + Space + GetPropsDir('') + NewLine + NewLine +
+    Cm('ReadyAcad') + NewLine + Space + GetAcadRoot('') + NewLine + NewLine +
+    Cm('ReadySdk') + NewLine + Space + GetSdkRoot('') + NewLine + NewLine +
     Cm('ReadyYears') + NewLine + Space + CsvToDisplay(GetSelectedYearsCsv()) + NewLine;
 end;
 
@@ -1015,15 +1015,16 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  AppDir, Props, Root, Selected: string;
+  AppDir, Props, Acad, Sdk, Selected: string;
 begin
   if CurStep <> ssPostInstall then Exit;
 
   AppDir := ExpandConstant('{app}');
   Props := GetPropsDir('');
-  Root := GetArxRoot('');
+  Acad := GetAcadRoot('');
+  Sdk := GetSdkRoot('');
   Selected := GetSelectedYearsCsv();
-  Alog('ssPostInstall: app=' + AppDir + ' props=' + Props + ' root=' + Root +
+  Alog('ssPostInstall: app=' + AppDir + ' props=' + Props + ' acad=' + Acad + ' sdk=' + Sdk +
        ' years=[' + Selected + ']');
 
   // The previous install may have used another props folder. Its generated sheets are unknown to
@@ -1033,8 +1034,8 @@ begin
     RunGen('remove --props-dir ' + QuoteArg(PrevPropsDir));
   end;
 
-  RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Root) +
-         ' --acad-root ' + QuoteArg(Root) + ' --years ' + Selected);
+  RunGen('generate --props-dir ' + QuoteArg(Props) + ' --sdk-root ' + QuoteArg(Sdk) +
+         ' --acad-root ' + QuoteArg(Acad) + ' --years ' + Selected);
   RunGen('cleanup --props-dir ' + QuoteArg(Props) + ' --keep ' + Selected);
 
   // Reclaim this product's own 0.2.4-and-earlier registrations from the Visual Studio folders,

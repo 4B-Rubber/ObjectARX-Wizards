@@ -80,7 +80,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".h",
-                StripLeadingC = true,
                 ToolTip = "Header file where the class is declared.",
             });
             AddField(new ItemField
@@ -91,19 +90,8 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "CLASS_NAME",
                 DerivedSuffix = ".cpp",
-                StripLeadingC = true,
                 ToolTip = "Implementation file for the class.",
             });
-            AddField(new ItemField
-            {
-                Symbol = "CREATE_DIALOG",
-                Label = "Create dialog resource in the project",
-                Kind = ItemFieldKind.Bool,
-                ToolTip = "Adds the dialog resource to the project's .rc and Resource.h files. The "
-                        + "wizard does this automatically when the id is not defined yet, so the "
-                        + "generated class always compiles.",
-            });
-
             // Order matters: it must match the <ProjectItem> order in MfcSupport.vstemplate.
             AddSymbolicFile("Wrap0.txt", "TEMPLATE_HEADER", "Dialog.h", "HEADER_FILE");
             AddSymbolicFile("Wrap1.txt", "TEMPLATE_IMPL", "Dialog.cpp", "IMPL_FILE");
@@ -191,8 +179,6 @@ namespace ArxVsixWizard.Items
                               || string.Equals(flag, "RCW", StringComparison.OrdinalIgnoreCase);
             if (resourceBased && !hasId)
                 return "Dialog ID is required for this base class.";
-            if (Symbols.GetBool("CREATE_DIALOG") && !hasId)
-                return "Enter a dialog ID so the resource can be created.";
             return null;
         }
 

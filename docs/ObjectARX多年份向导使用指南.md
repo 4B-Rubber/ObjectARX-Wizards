@@ -70,7 +70,7 @@
 ### 第 2 页：选择安装位置
 
 - 安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，可点击“浏览…”自行选择；
-- **属性表目录默认自动跟随安装目录**（下一页可单独修改）；
+- **属性表目录默认自动跟随安装目录**；
 - 如果本机以前安装过，这里会自动回填上次的目录。
 
 ### 第 3 页：注册开发者符号（RDS）
@@ -81,12 +81,14 @@
 
 ### 第 4 页：ObjectARX SDK 与目标位置
 
-两个路径，**SDK 和 AutoCAD 装在默认位置时整页都不用改**。本版安装器**不会向 SDK 安装目录写入或修改任何文件**（属性表里引用的 SDK 目录由 Autodesk 根目录加年份自动拼出）：
+两个目录，**AutoCAD 和 SDK 装在默认位置时整页都不用改**。本版安装器**不会向 SDK 安装目录写入或修改任何文件**：
 
 | 字段 | 含义 | 默认值 |
 |---|---|---|
-| Autodesk 根目录 | SDK 与 AutoCAD 的共同上级目录，年份由属性表自动拼接 | `C:\Program Files\Autodesk\` |
-| 属性表目录 | 各年份属性表（`Autodesk.arx-<年份>.props`）的存放位置，Visual Studio 编译时读取；只要不手动改，它会一直跟随第 2 页的安装目录 | 跟随安装目录 |
+| Autodesk CAD 目录 | AutoCAD 所在的根目录，年份由属性表自动拼接（`$(AcadRoot)AutoCAD <年份>\`） | `C:\Program Files\Autodesk\` |
+| ObjectARX SDK 目录 | ObjectARX SDK 所在的根目录，年份由属性表自动拼接（`$(ArxSdkRoot)ObjectARX <年份>\`） | `C:\Program Files\Autodesk\` |
+
+> 属性表目录不在这里选：它恒等于安装目录。
 
 ### 第 5 页：目标 AutoCAD 版本
 
@@ -97,7 +99,7 @@
 
 ### 第 6 页：准备安装
 
-本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk 根目录、属性表目录、目标年份），确认无误后点击“安装”。
+本页以清单形式汇总前面的全部选择（安装目录、RDS、Autodesk CAD 目录、ObjectARX SDK 目录、目标年份），确认无误后点击“安装”。
 
 ### 安装过程中
 
@@ -125,7 +127,8 @@ ObjectARXMultiVersionWizards-dev.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=2020,2
 | `/RDS=符号` | RDS 前缀；省略则使用 ADSK |
 | `/DIR=路径` | 安装目录 |
 | `/PROPSDIR=路径` | 属性表目录；省略则跟随安装目录 |
-| `/ARXROOT=路径` | Autodesk 根目录（SDK 与 AutoCAD 的共同上级） |
+| `/ACADROOT=路径` | Autodesk CAD 根目录（AutoCAD 所在根目录） |
+| `/ARXROOT=路径` | ObjectARX SDK 根目录（SDK 所在根目录） |
 | `/VSROOT=路径` | 手工指定 Visual Studio 安装根目录（自动检测不到时使用） |
 | `/SKIPVSIX=1` | 只装文件和属性表，不安装 VS 扩展 |
 | `/SKIPVSCHECK=1` | Visual Studio 正在运行也继续安装（不推荐） |
@@ -198,7 +201,7 @@ ObjectARXMultiVersionWizards-dev.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=2020,2
 
 1. 在弹出的列表中选择需要的类模板；
 2. 类名已自动填好默认值，可自行修改；
-3. 点击确认，部分模板还会再弹一个选项窗口（例如 MFC 类要选基类和是否插入对话框资源），按提示选择即可。
+3. 点击确认，部分模板还会再弹一个选项窗口（例如 MFC 类要选基类），按提示选择即可。
 
 **为什么推荐这种方式**：这个入口不经过 Visual Studio 自带的“添加新项”对话框，在任何时候都稳定可用（它绕开了 VS 自身的一个已知缺陷，见[第 11.4 节](#114-新建工程后立即添加新项时-vs-闪退或对话框消失)）。该菜单项只在 ObjectARX 工程上出现，普通工程上自动隐藏。
 
@@ -213,7 +216,7 @@ ObjectARXMultiVersionWizards-dev.exe /VERYSILENT /SUPPRESSMSGBOXES /YEARS=2020,2
 | **ObjectDBX Custom Object Class** | 从 ObjectDBX 基类派生的自定义类（自定义实体） | 需要在 DWG 中保存自己的图形对象 |
 | **ObjectARX/DBX Transient Reactors Class** | 瞬态反应器类（编辑器、文档、数据库、事件等 30 余种基类可选） | 响应 AutoCAD 的各类事件（图形修改、命令开始、打印等） |
 | **ObjectARX Jig Class** | `AcEdJig` 派生类 | 实体绘制过程中的鼠标交互/动态拖拽预览 |
-| **ObjectARX MFC Class** | AdUi/AcUi MFC 派生类（对话框、停靠栏、选项板、字段对话框、文件对话框等），可选注入对话框资源 | 做模态/非模态对话框、停靠面板、属性选项板界面 |
+| **ObjectARX MFC Class** | AdUi/AcUi MFC 派生类（对话框、停靠栏、选项板、字段对话框、文件对话框等），自动注入对话框资源（工程里已有该 id 时不重复添加） | 做模态/非模态对话框、停靠面板、属性选项板界面 |
 | **ObjectARX .NET Wrapper Class** | C++ 类的 C++/CLI 托管包装 | 让 ObjectARX .NET (C#/VB.NET) 代码调用原生 ObjectARX 类 |
 | **AutoCAD COM Wrapper Object** | ATL COM coclass 包装 | 向 VBA、.NET COM 互操作等自动化客户端暴露对象 |
 | **AutoCAD Object Dynamic Property** | 实现 `IDynamicProperty2` 的 ATL COM 对象 | 在 AutoCAD“特性”选项板中为对象增加自定义动态特性 |

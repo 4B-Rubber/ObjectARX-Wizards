@@ -135,14 +135,10 @@ namespace ArxVsixWizard.Items
         /// <summary>Port of OnClass() from the old wizards' default.htm.</summary>
         public static string Derive(ItemField field, string source)
         {
+            // The typed name is used as it is: a leading "C" is no longer read as a class prefix,
+            // so a class the user calls "CCustoment" keeps that spelling in the derived name.
             source = (source ?? "").Trim();
             if (source.Length == 0) return "";
-            bool leadingC = source[0] == 'C' || source[0] == 'c';
-            if (field.StripLeadingC)
-            {
-                if (source.Length == 1 && leadingC) return "";
-                if (leadingC) source = source.Substring(1);
-            }
             return field.Uppercase ? source.ToUpperInvariant() + field.DerivedSuffix
                                    : source + field.DerivedSuffix;
         }

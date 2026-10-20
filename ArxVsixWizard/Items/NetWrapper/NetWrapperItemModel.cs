@@ -60,7 +60,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "MANAGED_WRAPPER_NAME",
                 DerivedSuffix = ".h",
-                StripLeadingC = true,
                 ToolTip = "Header file where the wrapper class is declared.",
             });
             AddField(new ItemField
@@ -71,7 +70,6 @@ namespace ArxVsixWizard.Items
                 ValidateAsFileName = true,
                 DerivedFrom = "MANAGED_WRAPPER_NAME",
                 DerivedSuffix = ".cpp",
-                StripLeadingC = true,
                 ToolTip = "Implementation file for the wrapper class.",
             });
 

@@ -5,8 +5,8 @@
 
 		<!-- The property sheet folder. Multi-year generated projects import Autodesk.arx-YYYY.props
 		     from here. ARXPROPSDIR is a directory id that CA_DefaultPropsDir seeds with TARGETDIR, so
-		     the folder follows the install folder by default (the Inno line does the same) and SdkForm
-		     can point it somewhere else.
+		     the folder always follows the install folder (the Inno line does the same); the paths page
+		     does not offer it.
 		     Nothing ships in it: Autodesk.arx-<year>.props / -net.props are generated at install time
 		     from the year table + skeleton (see the CreateArxProps custom action), and every other
 		     .props file that used to travel here was an experiment of the authoring machine, never
@@ -29,12 +29,12 @@
 					     shipped default (read back by INSTALLDIR_PROBE). The Inno line writes and reads the
 					     same value, so the two remember each other's choice. -->
 					<RegistryValue Id="RV_INSTALLDIR" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="InstallDir" Type="string" Value="[TARGETDIR]" />
-					<!-- Remembered so the next install pre-fills the dialog instead of resetting to the
-					     shipped default (read back by ARXROOT_PROBE). ArxRoot and AcadRoot carry the same
-					     value on purpose: this is a multi-year product, so both point at the Autodesk root
-					     and the generated sheets append the year themselves. -->
+					<!-- Remembered so the next install pre-fills the dialogs instead of resetting to the
+					     shipped defaults (read back by ARXROOT_PROBE / ACADROOT_PROBE). ArxRoot carries the
+					     ObjectARX SDK root, AcadRoot the Autodesk CAD root: this is a multi-year product, so
+					     each is a parent and the generated sheets append the year themselves. -->
 					<RegistryValue Id="RV_ARXROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="ArxRoot" Type="string" Value="[ARXROOT]" />
-					<RegistryValue Id="RV_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="string" Value="[ARXROOT]" />
+					<RegistryValue Id="RV_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="string" Value="[ACADROOT]" />
 					<!-- The RDS the user picked, for the VSIX project wizard: it starts its RDS field from
 					     this value (an empty value keeps the built-in ADSK). The Inno line records the same
 					     value for the same reader. -->

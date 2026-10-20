@@ -25,11 +25,13 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 
 The modern **VSIX** (`ArxVsixWizard`) *is* the product on this branch, in Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md). The classic `.vsz` wizard sources and the `_Installs` payload live on the `classic-wizards` branch only; this branch no longer carries them.
 
-> **Status (0.2.11).** The VSIX and the MSI/Burn bundle are built from this tree. This is the original
+> **Status (0.2.12).** The VSIX and the MSI/Burn bundle are built from this tree. This is the original
 > line: the Inno single-file installer lives on the `dev` branch and the classic-wizard shape (the two
 > `.vsz` project wizards) on `classic-wizards`, so no Inno setup script exists here. The MSI installs
 > only the generated multi-year property sheets; it writes nothing into Visual Studio's wizard
-> folders - the VSIX (chained by the bundle) is the whole Visual Studio integration.
+> folders - the VSIX (chained by the bundle) is the whole Visual Studio integration. 0.2.12 splits
+> the one "Autodesk root" the paths page used to ask for into two: the Autodesk CAD root and the
+> ObjectARX SDK root, and drops the property-sheet field (that folder always follows the install one).
 >
 > Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
 > that pre-fills the name can take `devenv` down while a freshly created project is still being
@@ -59,7 +61,7 @@ cd ObjectARX-Wizards
 
 ### 🔨 Build Instructions
 
-This branch (VSIX + MSI/Burn bundle) is at version **0.2.11**; the `dev` branch is at **0.2.10** and `classic-wizards` at **0.2.8**.
+This branch (VSIX + MSI/Burn bundle) is at version **0.2.12**; the `dev` branch is at **0.2.11** and `classic-wizards` at **0.2.9**.
 
 | Line | Command | Output |
 |---|---|---|

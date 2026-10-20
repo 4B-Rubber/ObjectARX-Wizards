@@ -1,6 +1,6 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.11。** 本分支（`main`，原始线）交付 VSIX 与 MSI + Burn bundle；Inno 单文件线在 `dev` 分支、经典向导线在 `classic-wizards` 分支。2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。0.2.11 起本分支不再携带经典 `.vsz` 向导源码与 `_Installs` 载荷（仅 `classic-wizards` 分支保留），安装器图标迁入 `ObjectARXWizardsInstaller\Installerbitmaps\`，CA 中只修补经典载荷的死代码一并删除。
+> 状态：**0.2.12。** 本分支（`main`，原始线）交付 VSIX 与 MSI + Burn bundle；Inno 单文件线在 `dev` 分支、经典向导线在 `classic-wizards` 分支。2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"，见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。0.2.11 起本分支不再携带经典 `.vsz` 向导源码与 `_Installs` 载荷（仅 `classic-wizards` 分支保留），安装器图标迁入 `ObjectARXWizardsInstaller\Installerbitmaps\`，CA 中只修补经典载荷的死代码一并删除。
 > 最后更新：2026-10-11
 
 ---
@@ -211,4 +211,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.11，约 240 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.12，约 240 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

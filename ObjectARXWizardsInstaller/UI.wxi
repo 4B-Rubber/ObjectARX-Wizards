@@ -294,8 +294,8 @@
 		<Dialog Id="InstallDirForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<!-- Keep the property sheet folder in step with the install folder, but only while it still
-				     holds the value we put there ourselves (ARXPROPSDIR_AUTO): once the user typed a
-				     folder of their own on SdkForm - or passed ARXPROPSDIR=... - the two differ and this
+				     holds the value we put there ourselves (ARXPROPSDIR_AUTO): once a command line
+				     ARXPROPSDIR=... set a folder of its own, the two differ and this
 				     is skipped, so coming Back and pressing Next again cannot silently discard it. The
 				     second publish records the new auto value; it has to come after the first, because
 				     publishes run in order and this one would otherwise already move the target. -->
@@ -319,7 +319,7 @@
 			<!-- The welcome text and the copyright notice used to be a page of their own; both live on
 			     this one now, so the wizard opens straight on the page that asks for something. -->
 			<Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="28" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装程序将引导您完成在本机安装 [ProductName] 所需的步骤。" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="BodyText" Type="Text" X="9" Y="95" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择安装这套向导的文件夹。属性表目录默认跟随它，稍后也可以在下一页单独指定。" TabSkip="yes" NoPrefix="yes" />
+			<Control Id="BodyText" Type="Text" X="9" Y="95" Width="354" Height="30" Text="{\VSI_MS_Sans_Serif13.0_0_0}请选择安装这套向导的文件夹。属性表目录默认跟随它。" TabSkip="yes" NoPrefix="yes" />
 			<Control Id="DirLabel" Type="Text" X="18" Y="136" Width="340" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装目录(&amp;D)：" TabSkip="no" />
 			<Control Id="DirEdit" Type="PathEdit" X="18" Y="148" Width="252" Height="18" Property="TARGETDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
 			<Control Id="BrowseDir" Type="PushButton" X="275" Y="148" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
@@ -371,10 +371,10 @@
             </Dialog>
 
 		<!-- The paths. Same fields, same order and the same captions as the Inno line's paths
-		     page (Autodesk root -> property sheet folder), so both lines ask for the paths on
-		     one page between RDS and the target years: the root is the parent of the SDK and AutoCAD
-		     folders, and the property sheet folder
-		     follows the install folder unless it is changed here. -->
+		     page (Autodesk CAD root -> ObjectARX SDK root), so both lines ask for the two roots on
+		     one page between RDS and the target years. Each root is a *parent*: the generated sheets
+		     append the year themselves ($(AcadRoot)AutoCAD <year>\, $(ArxSdkRoot)ObjectARX <year>\).
+		     The property sheet folder is not asked for - it always follows the install folder. -->
 		<Dialog Id="PathsForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
 			<Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}下一步(&amp;N) &gt;" TabSkip="no" Default="yes">
 				<Publish Event="EndDialog" Value="Return"><![CDATA[PathsForm_NextArgs=""]]></Publish>
@@ -393,16 +393,16 @@
 			<Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
 			<Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}ObjectARX SDK 与目标位置" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
 			<Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}安装向导会把这套向导写到本机，并按勾选的 AutoCAD 年份各生成一份属性表。SDK 或 AutoCAD 不在默认位置时才需要修改。" TabSkip="yes" NoPrefix="yes" />
-			<Control Id="RootLabel" Type="Text" X="18" Y="112" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Autodesk 根目录（SDK 与 AutoCAD 都在它下面）(&amp;A)：" TabSkip="no" />
-			<Control Id="RootEdit" Type="PathEdit" X="18" Y="124" Width="252" Height="18" Property="ARXROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseRoot" Type="PushButton" X="275" Y="124" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
+			<Control Id="AcadLabel" Type="Text" X="18" Y="112" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Autodesk CAD 目录（AutoCAD 所在根目录）(&amp;C)：" TabSkip="no" />
+			<Control Id="AcadEdit" Type="PathEdit" X="18" Y="124" Width="252" Height="18" Property="ACADROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseAcad" Type="PushButton" X="275" Y="124" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="ACADROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
-			<Control Id="PropsLabel" Type="Text" X="18" Y="152" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}属性表目录（与 VS 向导共用）(&amp;P)：" TabSkip="no" />
-			<Control Id="PropsEdit" Type="PathEdit" X="18" Y="164" Width="252" Height="18" Property="ARXPROPSDIR" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
-			<Control Id="BrowseProps" Type="PushButton" X="275" Y="164" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
-				<Publish Property="SelectFolderDialog_Property" Value="ARXPROPSDIR">1</Publish>
+			<Control Id="SdkLabel" Type="Text" X="18" Y="152" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}ObjectARX SDK 目录（SDK 所在根目录）(&amp;S)：" TabSkip="no" />
+			<Control Id="SdkEdit" Type="PathEdit" X="18" Y="164" Width="252" Height="18" Property="ARXROOT" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiPathEdit" TabSkip="no" Sunken="yes" />
+			<Control Id="BrowseSdk" Type="PushButton" X="275" Y="164" Width="90" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}浏览(&amp;R)..." TabSkip="no">
+				<Publish Property="SelectFolderDialog_Property" Value="ARXROOT">1</Publish>
 				<Publish Event="SpawnDialog" Value="SelectFolderDialog">1</Publish>
 			</Control>
 		</Dialog>

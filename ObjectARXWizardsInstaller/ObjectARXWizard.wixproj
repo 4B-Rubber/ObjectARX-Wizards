@@ -29,6 +29,7 @@
     <Content Include="directory.wxi" />
     <Content Include="feature.wxi" />
     <Content Include="property.wxi" />
+    <Content Include="version.wxi" />
     <Content Include="UI.wxi" />
   </ItemGroup>
   <ItemGroup>

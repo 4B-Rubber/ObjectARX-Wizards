@@ -143,7 +143,7 @@ class Program
         Check(ref failures, jigCpp.Contains("CMyJig::CMyJig ()"), "Jig -> class name substituted");
         string jigH = TemplateRenderer.Render(ReadResource(asm, jig.ResourceNameOf(jig.Files[0])), jig.Symbols);
         Check(ref failures, jigH.Contains("class CMyJig : public AcEdJig"), "Jig -> header declares the class");
-        Check(ref failures, jigH.Contains("//- MyJig.h"), "Jig -> derived header file name");
+        Check(ref failures, jigH.Contains("//- CMyJig.h"), "Jig -> derived header file name");
 
         var jigClamped = new ArxVsixWizard.Items.JigItemModel("CMyJig");
         jigClamped.Symbols.Set("NUMBER_OF_INPUTS", "99");
@@ -206,8 +206,6 @@ class Program
         Check(ref failures, mfc.Files.Count == 4, "MfcSupport -> four planned files");
 
         mfc.Symbols.Set("BASE_CLASS", "CAdUiDockControlBar");
-        // The bool overload, exactly like the dialog's CollectValues() does for a checkbox.
-        mfc.Symbols.Set("CREATE_DIALOG", true);
         mfc.Symbols.Set("IDD_DIALOG", "IDD_MYDLG");
         mfc.OnFieldsChanged();
         Check(ref failures, mfc.Symbols.GetBool("CHILD_DIALOG_NEEDED"),
@@ -455,6 +453,16 @@ class Program
         string root = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."));
         string comDir = Path.Combine(root, "ArxAtlWizComWrapper", "Templates", "1033");
         string dynDir = Path.Combine(root, "ArxAtlWizDynProp", "Templates", "1033");
+
+        // Phase 0 renders the classic ATL wizards' own templates, which only the classic line ships:
+        // main and dev dropped those sources in 0.2.11. Reading them blind threw a
+        // FileNotFoundException before Phase 1 (the item model cross check) ever ran, so this phase
+        // steps aside when the templates are not in this line.
+        if (!File.Exists(Path.Combine(comDir, "object.h")) || !File.Exists(Path.Combine(dynDir, "dynprop.h")))
+        {
+            Console.WriteLine("SKIP  phase 0: the classic ATL wizard templates are not in this line");
+            return 0;
+        }
 
         // --- object.h / dynprop.h: inline "[!if X]\tdual,[!endif]" triple + nested inline ---
         foreach (var pair in new[]

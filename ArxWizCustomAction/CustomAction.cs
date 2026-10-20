@@ -259,11 +259,13 @@ namespace ArxWizCustomAction
                 session["CA_CREATEARXPROPS"] =
                     "PROPSDIR=" + propsDir +
                     ";PREVDIR=" + (session["PROPSDIR_PROBE"] ?? "") +
-                    ";ARXROOT=" + Paths.EnsureTrailingSlash(session["ARXROOT"]) + ";" + years;
+                    ";ARXROOT=" + Paths.EnsureTrailingSlash(session["ARXROOT"]) +
+                    ";ACADROOT=" + Paths.EnsureTrailingSlash(session["ACADROOT"]) + ";" + years;
                 session["CA_CLEANUPUNSELECTEDARXPROPS"] = "PROPSDIR=" + propsDir + ";" + years;
                 session["CA_REMOVEARXPROPS"] = "PROPSDIR=" + propsDir;
 
-                Log(session, "PrepArxPropsData: propsDir=" + propsDir + " sdkRoot=" + session["ARXROOT"]);
+                Log(session, "PrepArxPropsData: propsDir=" + propsDir + " sdkRoot=" + session["ARXROOT"] +
+                             " acadRoot=" + session["ACADROOT"]);
                 return ActionResult.Success;
             }
             catch (Exception ex)
@@ -281,10 +283,12 @@ namespace ArxWizCustomAction
                 var data = ParseData(session["CustomActionData"]);
                 var table = PropsTable.Load();
                 string dir = Value(data, "PROPSDIR", PropsDirDefault);
-                // One Autodesk root for both: the SDK and AutoCAD live under it, and the year is
-                // appended by each generated sheet rather than by this installer.
+                // Two independent roots: the SDK folder (ArxSdkRoot) and the AutoCAD folder (AcadRoot).
+                // Each generated sheet appends the year itself, so each root is the parent of its
+                // "<Product> <year>" folders. AcadRoot falls back to the SDK root when it is not set.
                 string sdkRoot = Value(data, "ARXROOT", table.DefaultRoot);
-                string acadRoot = sdkRoot;
+                string acadRoot = Value(data, "ACADROOT", null);
+                if (string.IsNullOrEmpty(acadRoot)) acadRoot = sdkRoot;
                 var selected = SelectedYears(data, table);
 
                 if (selected.Count == 0)
@@ -311,13 +315,13 @@ namespace ArxWizCustomAction
                 {
                     if (!selected.Contains(entry.Year)) continue;
                     WriteFile(session, dir, "Autodesk.arx-" + entry.Year + ".props",
-                              Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, null)));
+                              Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, acadRoot, null)));
                     if (!string.IsNullOrEmpty(entry.CompatToolset))
                         WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-Compat.props",
-                                  Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, entry.CompatToolset)));
+                                  Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, acadRoot, entry.CompatToolset)));
                     WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-net.props",
                               Expand(ReadResource(entry.NetKind == "core" ? ResNetCore : ResNetFx),
-                                     BuildMap(table, entry, sdkRoot, null)));
+                                     BuildMap(table, entry, sdkRoot, acadRoot, null)));
                 }
 
                 WriteUserProps(session, dir, sdkRoot, acadRoot, table.DefaultRoot);
@@ -459,7 +463,7 @@ namespace ArxWizCustomAction
             return idx < 0 ? text + "\r\n" + line : text.Substring(0, idx) + line + text.Substring(idx);
         }
 
-        static Dictionary<string, string> BuildMap(PropsTable table, YearEntry y, string root, string toolsetOverride)
+        static Dictionary<string, string> BuildMap(PropsTable table, YearEntry y, string sdkRoot, string acadRoot, string toolsetOverride)
         {
             var m = new Dictionary<string, string>(StringComparer.Ordinal);
             m["YEAR"] = y.Year;
@@ -470,9 +474,9 @@ namespace ArxWizCustomAction
             m["CFGB"] = y.Year + "B";
             m["CFGS"] = y.Year + "S";
             m["CFGD"] = y.Year + "d";
-            m["SDKROOT"] = root;
-            m["ACADROOT"] = root;
-            m["WIN32ROOT"] = y.Win32X86 ? table.Win32RootX86 : root;
+            m["SDKROOT"] = sdkRoot;
+            m["ACADROOT"] = acadRoot;
+            m["WIN32ROOT"] = y.Win32X86 ? table.Win32RootX86 : acadRoot;
             m["NETTFV"] = y.NetTfVersion ?? "";
             m["NETTF"] = y.NetTargetFramework ?? "";
             m["CRXNETCOND"] = y.HasCrx ? "'$(ArxAppType)'=='crxnet' or " : "";

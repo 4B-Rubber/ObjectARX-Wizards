@@ -38,7 +38,7 @@ namespace ArxVsixWizard.UI
         public string DerivedSuffix = "";
 
         /// <summary>"CFoo" derives "Foo.h" - drop the leading C/c like the old wizard did.</summary>
-        public bool StripLeadingC;
+
 
         /// <summary>Upper-case the derived value (the DXF name is the upper-cased class name).</summary>
         public bool Uppercase;

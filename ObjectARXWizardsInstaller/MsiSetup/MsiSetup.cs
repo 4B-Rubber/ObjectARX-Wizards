@@ -14,12 +14,13 @@
 //   --quiet=1        hand msiexec /qn - no MSI UI, the built-in default years are used
 //   --skipvscheck=1  do not look for a running Visual Studio
 //   --rds=SYM        registered developer symbol    -> MSI property RDS
-//   --arxroot=DIR    Autodesk root folder           -> MSI property ARXROOT
-//   --propsdir=DIR   property sheet folder          -> MSI property ARXPROPSDIR
+//   --arxroot=DIR    ObjectARX SDK root folder       -> MSI property ARXROOT
+//   --acadroot=DIR   Autodesk CAD root folder        -> MSI property ACADROOT
+//   --propsdir=DIR   property sheet folder           -> MSI property ARXPROPSDIR
 //   --years=CSV      target years, e.g. 2020,2024   -> MSI properties YEAR_<year>
 // Installing through this launcher also hides the MSI from Settings &gt; Apps (ARPSYSTEMCOMPONENT=1):
 // the bundle is the entry the user should see, and a second identical one next to it is just noise.
-// The switches mirror the Inno line's /RDS=, /ARXROOT=, /PROPSDIR=, /YEARS=,
+// The switches mirror the Inno line's /RDS=, /ARXROOT=, /ACADROOT=, /PROPSDIR=, /YEARS=,
 // /SKIPVSIX=1 (bundle level) and /SKIPVSCHECK=1 one for one.
 using System;
 using System.Diagnostics;
@@ -173,6 +174,7 @@ static class MsiSetup
         sb.Append(" ARPSYSTEMCOMPONENT=1");
         AppendProperty(sb, "RDS", Option(args, "--rds"));
         AppendProperty(sb, "ARXROOT", Option(args, "--arxroot"));
+        AppendProperty(sb, "ACADROOT", Option(args, "--acadroot"));
         AppendProperty(sb, "ARXPROPSDIR", Option(args, "--propsdir"));
         AppendYears(sb, Option(args, "--years"));
         return sb.ToString();

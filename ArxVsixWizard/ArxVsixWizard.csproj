@@ -9,7 +9,7 @@
     <Nullable>disable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>0.2.11</Version>
+    <Version>0.2.15</Version>
     <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
     <VSSDKBuildToolsAutoSetup>true</VSSDKBuildToolsAutoSetup>
     <CreateVsixContainer>true</CreateVsixContainer>

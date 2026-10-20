@@ -1,4 +1,4 @@
-﻿// Copyright (c) Autodesk, Inc. All rights reserved.
+// Copyright (c) Autodesk, Inc. All rights reserved.
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -80,6 +80,19 @@ namespace ArxVsixWizard.UI
         void OnClearYears(object sender, RoutedEventArgs e)
         {
             foreach (var cb in _yearBoxes.Values) cb.IsChecked = false;
+        }
+
+        // All / None / Invert / Compatible - the same four presets the HTML line version page
+        // offers. A year the setup did not install is not selectable, and no preset turns it on.
+        void OnInvertYears(object sender, RoutedEventArgs e)
+        {
+            foreach (var cb in _yearBoxes.Values) if (cb.IsEnabled) cb.IsChecked = cb.IsChecked != true;
+        }
+
+        void OnCompatibleYears(object sender, RoutedEventArgs e)
+        {
+            foreach (var kv in _yearBoxes)
+                kv.Value.IsChecked = kv.Value.IsEnabled && ArxVersionTable.CompatibleYears.Contains(kv.Key);
         }
 
         void OnTypeChanged(object sender, RoutedEventArgs e) { }

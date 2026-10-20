@@ -21,6 +21,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Bundle.wxs" />
+    <!-- The bundle's own version and the product code it probes both come from this file, which the
+         MSI project includes as well. -->
+    <Content Include="version.wxi" />
     <WixLocalization Include="Bundle.zh-CN.wxl" />
   </ItemGroup>
   <ItemGroup>
@@ -28,10 +31,11 @@
       <HintPath>$(WixExtDir)WixBalExtension.dll</HintPath>
       <Name>WixBalExtension</Name>
     </WixExtension>
-    <!-- util:RegistrySearch, used in Bundle.wxs to tell the engine whether the MSI product is on the
+    <!-- util:ProductSearch, used in Bundle.wxs to tell the engine whether the MSI product is on the
          machine. Without a working DetectCondition the engine considers that package absent, so a
          bundle uninstall skipped the MSI entirely (2026-10-11: the product, its folder and the
-         generated property sheets all stayed behind). -->
+         generated property sheets all stayed behind), and with the wrong one (a versionless registry
+         key) an upgrade skipped both packages and left an old VSIX (2026-10-20). -->
     <WixExtension Include="WixUtilExtension">
       <HintPath>$(WixExtDir)WixUtilExtension.dll</HintPath>
       <Name>WixUtilExtension</Name>

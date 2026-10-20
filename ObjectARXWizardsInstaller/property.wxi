@@ -14,8 +14,9 @@
     <Property Id="InstallDirForm_NextArgs" Value="ObjectARXForm" />
     <Property Id="ObjectARXForm_PrevArgs" Value="InstallDirForm" />
     <Property Id="ObjectARXForm_NextArgs" Value="PathsForm" />
-    <!-- The paths page sits between RDS and the target years, like the Inno line: root -> SDK ->
-         property sheet folder on one page, where the root is the parent of the other two. -->
+    <!-- The paths page sits between RDS and the target years, like the Inno line: the Autodesk CAD
+         root and the ObjectARX SDK root on one page. The property sheet folder is not asked for - it
+         always follows the install folder. -->
     <Property Id="PathsForm_PrevArgs" Value="ObjectARXForm" />
     <Property Id="PathsForm_NextArgs" Value="SdkForm" />
     <Property Id="SdkForm_PrevArgs" Value="PathsForm" />
@@ -45,6 +46,7 @@
     <CustomAction Id="CA_DefaultPropsDir" Property="ARXPROPSDIR" Value="[TARGETDIR]" Execute="firstSequence" />
     <CustomAction Id="CA_DefaultPropsDirAuto" Property="ARXPROPSDIR_AUTO" Value="[TARGETDIR]" Execute="firstSequence" />
     <CustomAction Id="CA_DefaultArxRoot" Property="ARXROOT" Value="[ARXROOT_PROBE]" Execute="firstSequence" />
+    <CustomAction Id="CA_DefaultAcadRoot" Property="ACADROOT" Value="[ACADROOT_PROBE]" Execute="firstSequence" />
     <!-- Optional: an empty RDS leaves the ADSK placeholder in the HTML wizard alone. That is exactly
          what PatchHTMLWizFiles does with an empty value (ADSK -> ADSK), so an empty default is safe
          and nothing is deleted from the shipped HTML pages. -->
@@ -70,21 +72,28 @@
          ticked by default; a year whose props already exist (an upgrade) is re-ticked
          by the AppSearch results regardless of that default.
          ============================================================================ -->
-    <!-- The Autodesk root is user-selectable and remembered across installs, so an upgrade or a repair
-         does not make the user type it again. It is the single root the SDK and AutoCAD share: this is
-         a multi-year product, so the generated sheets append the year themselves
-         ($(ArxSdkRoot)ObjectARX <year>\, <AcadRoot>AutoCAD <year>\). The PROBE property carries the
-         previous value, or the default on a first install, and seeds the real property through the
-         custom action below. -->
+    <!-- Two roots, each user-selectable and remembered across installs so an upgrade or a repair does
+         not make the user type them again. This is a multi-year product, so each root is the *parent*
+         and the generated sheets append the year themselves
+         ($(ArxSdkRoot)ObjectARX <year>\, $(AcadRoot)AutoCAD <year>\):
+           ARXROOT   - the ObjectARX SDK root (registry ArxRoot, written into <ArxSdkRoot>);
+           ACADROOT  - the Autodesk CAD root (registry AcadRoot, written into <AcadRoot>).
+         The PROBE property carries the previous value, or the default on a first install, and seeds
+         the real property through the custom action above. -->
     <Property Id="ARXROOT" Secure="yes" />
     <Property Id="ARXROOT_PROBE" Value="C:\Program Files\Autodesk\" Secure="yes">
       <RegistrySearch Id="RS_ARXROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="ArxRoot" Type="raw" Win64="yes" />
     </Property>
-    <!-- The props folder itself is user-selectable: ARXPROPSDIR is the directory id that holds the
-         shared payload props, so costing resolves it and SdkForm can edit it (no <Property> needed).
+    <Property Id="ACADROOT" Secure="yes" />
+    <Property Id="ACADROOT_PROBE" Value="C:\Program Files\Autodesk\" Secure="yes">
+      <RegistrySearch Id="RS_ACADROOT" Root="HKLM" Key="SOFTWARE\Autodesk\ObjectARX Wizards" Name="AcadRoot" Type="raw" Win64="yes" />
+    </Property>
+    <!-- The props folder is not offered on the paths page: it always follows the install folder. ARXPROPSDIR
+         is the directory id that holds the generated props, so costing resolves it (no <Property> needed).
          It defaults to the install folder (CA_DefaultPropsDir); ARXPROPSDIR_AUTO is the value we last
          put there ourselves, so InstallDirForm's Next can tell "still following" from "user chose
-         something else" (see the CA_DefaultPropsDir comment).
+         something else" (see the CA_DefaultPropsDir comment), and a command line ARXPROPSDIR=... keeps
+         working.
          PROPSDIR_PROBE carries the *previous* props folder from the registry and feeds the year
          detection below, which runs before costing and therefore cannot use ARXPROPSDIR yet. -->
     <Property Id="ARXPROPSDIR_AUTO" Secure="yes" />

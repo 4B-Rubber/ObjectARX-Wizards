@@ -1,4 +1,4 @@
-﻿// Copyright (c) Autodesk, Inc. All rights reserved.
+// Copyright (c) Autodesk, Inc. All rights reserved.
 // C# port of the multi-year version table from ArxWizCommon/arxCommon.js
 using System.Collections.Generic;
 using System.IO;
@@ -105,6 +105,13 @@ namespace ArxVsixWizard.Models
         public static readonly HashSet<string> DefaultYears = new HashSet<string>
         {
             "2020", "2024", "2026", "2027"
+        };
+
+        /// <summary>The years every SDK in the range covers - the "Compatible" preset on
+        /// the version page, the same set arxCommon.js g_ArxCompatibleYears carries.</summary>
+        public static readonly HashSet<string> CompatibleYears = new HashSet<string>
+        {
+            "2014", "2016", "2018", "2020", "2024", "2026", "2027"
         };
 
         /// <summary>某年份 props 的完整路径。</summary>

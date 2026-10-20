@@ -30,7 +30,6 @@ namespace ArxVsixWizard.Items
                 // exactly like a broken wizard in the IDE.
                 Note("start: id=" + (id.Length == 0 ? "<empty>" : id)
                      + " dir=" + (string.IsNullOrEmpty(dir) ? "<unknown>" : dir)
-                     + " createDialog=" + model.Symbols.GetBool("CREATE_DIALOG")
                      + " project=" + (context.Project?.Name ?? "<null>"));
 
                 if (id.Length == 0)
@@ -53,8 +52,8 @@ namespace ArxVsixWizard.Items
                 string resPath = ResourceHeaderPath(dir);
 
                 // The decision is "does the project already know this id", which is what the old
-                // wizard's DialogList check did. The CREATE_DIALOG checkbox is only a hint - making
-                // it a hard requirement silently produced classes referencing undefined ids.
+                // wizard's DialogList check did: an id the project already defines is left alone and a
+                // new one is added, so the generated class never references an undefined id.
                 if (resPath != null && IdAlreadyDefined(resPath, id))
                 {
                     Note("dialog resource: " + id + " is already defined, nothing to add");

@@ -1,61 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-	<?define RTMProductVersion = "18.0.0"?> <!-- The first one - do not edit -->
-	<?define ProductVersion = "0.2.11"?>
-    <!--UpgradeCode GUID "{7092FED1-4FCC-4565-A8B6-44DCD4583F92}"?> from a retired per-year release-->
-	<?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
-	<!--Product GUID "{8046A89B-41DD-4779-A741-64A601603076}"?> from a retired per-year release-->
-	<!--ProductCode from a retired per-year release-->
-	<!--<?define ProductCode= "{AB65E222-EAB0-494E-AC65-07BF30A915F3}"?>-->	
-	<!--ProductCode from a retired per-year release-->
-	<!--<?define ProductCode= "{2F8A7D4E-B3C6-4E91-A8F2-7D5E9C1A6B48}"?>-->
-  <!--ProductCode for 0.1.1, the first build of the restarted numbering.-->
-  <!--<?define ProductCode= "{922142B3-22ED-4543-A8AB-E2AF5820105F}"?>-->
-  <!--ProductCode for 0.1.2, which brought the MSI in line with the Inno line: one Autodesk root
-      instead of separate SDK/AutoCAD roots and no separate AutoCAD location, a selectable 64-bit
-      install folder, the property sheet folder following it, an empty-by-default RDS, and a Chinese
-      wizard.-->
-  <!--<?define ProductCode= "{D8C4DE84-665B-4442-85C0-2DE1C293EBE0}"?>-->
-  <!--ProductCode for 0.1.3, which carries the VSIX fixes (the wizard templates named a 26.x assembly,
-      and new resource ids were defined below the resource editor's bookkeeping block).-->
-  <!--<?define ProductCode= "{2D2AA7F2-1804-4816-ADEF-1932D00CB77C}"?>-->
-  <!--ProductCode for 0.1.4, which renames the product to Multi-Version, stops shipping the
-      authoring machine's experimental property sheets, and remembers the previous install folder.-->
-  <!--<?define ProductCode= "{4E9C1F38-6A2D-4B07-9C51-83D7E0A4B6F2}"?>-->
-  <!--ProductCode for 0.1.5, which carries the real wizard icons (the VSIX shipped a 60-byte stub
-      next to every template, so the Add Class and New Project lists had no visual distinction).-->
-  <!--<?define ProductCode= "{A7F2C4E8-5D31-49B6-8E07-C62B1F4A9D53}"?>-->
-  <!--ProductCode for 0.1.6, which drops the retired "Trial" configuration from the property sheets
-      the installer generates.-->
-  <!--<?define ProductCode= "{C31D7B05-9E64-4A2F-8B7D-5F0A6E2C9D14}"?>-->
-  <!--ProductCode for 0.1.7, whose project templates set ProvideDefaultName=false so VS does not run
-      the NewProjectDialog.UpdateNameField -> GenerateItemName call that crashes the IDE (see docs 18).
-      ProductVersion and ProductCode have to move together, and both have to move for every build that
-      is meant to go on top of an existing install: reusing this code with a different version is
-      rejected by msiexec with error 1638 ("another version of this product is already installed"), and
-      reusing it with the same version can only ever be a repair of the package that is already there -
-      it would show the maintenance page instead of upgrading.-->
-  <!--<?define ProductCode= "{E8B46D29-7C15-4F83-A6E2-9D5B3C71F0A8}"?>-->
-<!--ProductCode for 0.2.6. It exists because the bundle got a fixed Id (see Bundle.wxs): rebuilding the
-	bundle no longer produces a new identity, so this is the release that replaces the 0.2.4/0.2.5 rows
-	instead of adding another one. The version and the code move together, as always.-->
-<!--<?define ProductCode= "{8D2A5F47-6C1E-4B93-A072-5F3E9D81C4B6}"?>-->
-<!--ProductCode for 0.2.9, which drops the ObjectARX SDK location: the installer no longer
-    writes into the SDK's inc folder (the year sheets import the SDK's own inc\dbx.props and
-    carry the two CRX pieces crx.props used to add). The ARXPATH field, its property, the
-    permanent inc component and the two dead payload copies in the install folder go with it.
-    The version and the code move together, as always.-->
-<!--<?define ProductCode= "{4F2ADFF1-6B7E-4E10-BC73-E65E2B4F3B54}"?>-->
-<!--ProductCode for 0.2.10, which records the RDS the setup was given so the VSIX project
-    wizard can start from it (it reads HKLM\SOFTWARE\Autodesk\ObjectARX Wizards\RDS). The
-    version and the code move together, as always.-->
-<!--<?define ProductCode= "{C555DCC8-44C8-490D-9A8A-3CF8EEBC5B93}"?>-->
-<!--ProductCode for 0.2.11, which drops the classic wizard sources and _Installs payload from
-    the branch and the CA helpers that only patched them; the MSI still ships only the generated
-    props and the VSIX is still the whole Visual Studio integration. The version and the code
-    move together, as always.-->
-<?define ProductCode= "{17F6C7D0-89F3-43B8-8640-E2B386775EA1}"?>
+	<!-- The product version, the product code and the upgrade code come from version.wxi, which
+	     Bundle.wxs includes as well, so the bundle's own version can never drift from the Identity
+	     it chains; the history of the retired codes is recorded there too. -->
+	<?include version.wxi?>
   
 
   <Product
@@ -135,6 +84,7 @@
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" After="AppSearch"><![CDATA[ARXROOT=""]]></Custom>
+		<Custom Action="CA_DefaultAcadRoot" After="AppSearch"><![CDATA[ACADROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" After="AppSearch"><![CDATA[NOT Installed]]></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Show Dialog="InstallDirForm" Before="CostFinalize"><![CDATA[Installed="" AND NOT RESUME]]></Show>
@@ -153,6 +103,7 @@
 		<Custom Action="CA_DefaultPropsDir" After="CA_TARGETDIR"><![CDATA[ARXPROPSDIR=""]]></Custom>
 		<Custom Action="CA_DefaultPropsDirAuto" After="CA_DefaultPropsDir"><![CDATA[ARXPROPSDIR_AUTO=""]]></Custom>
 		<Custom Action="CA_DefaultArxRoot" Before="CostInitialize"><![CDATA[ARXROOT=""]]></Custom>
+		<Custom Action="CA_DefaultAcadRoot" Before="CostInitialize"><![CDATA[ACADROOT=""]]></Custom>
 		<Custom Action="CA_DefaultArxYears" Before="CostInitialize"><![CDATA[NOT Installed]]></Custom>
 		<Custom Action="CA_FindVsRootFolder" Before="CostInitialize"></Custom>
 		<Custom Action="CA_PrepArxPropsData" After="InstallInitialize"></Custom>

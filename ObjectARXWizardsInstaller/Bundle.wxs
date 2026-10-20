@@ -3,6 +3,11 @@
      xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
+  <!-- The product version, the product code and the upgrade code come from version.wxi, which
+       ObjectARXWizards.wxs includes too: the bundle's own Version can then never drift from the
+       Identity it chains, and the ProductSearch below can name that same code. -->
+  <?include version.wxi?>
+
   <!-- One double-click launcher: the MSI is applied by its own launcher, ArxWizardsMsiSetup.exe, which
        raises the elevation prompt and then calls msiexec; the VSIX is installed for the current user by
        ArxWizardsVsixSetup.exe (which locates VSIXInstaller.exe).
@@ -18,7 +23,7 @@
        that fails to uninstall leaves its entry behind - the related bundles are removed during the
        upgrade, so their uninstall commands have to tolerate whatever the new MSI already took away. -->
   <Bundle Name="ObjectARX Multi-Version Wizards"
-          Version="0.2.11"
+          Version="$(var.ProductVersion)"
           Manufacturer="Autodesk"
           UpgradeCode="{07A67884-39BC-4739-A94E-AE13B85FC797}">
 
@@ -31,27 +36,32 @@
     </BootstrapperApplicationRef>
 
     <!-- Unattended switches, all optional and settable on the command line, for example
-           ObjectARXMultiVersionWizardsSetup.exe ArxQuiet=1 ArxSkipVsix=1 ArxRds=ACME ArxRoot=D:\Autodesk
+           ObjectARXMultiVersionWizardsSetup.exe ArxQuiet=1 ArxSkipVsix=1 ArxRds=ACME ArxRoot=D:\ObjectARX ArxAcadRoot=D:\Autodesk
          They are declared without a default on purpose: Burn only lets the command line set
          variables that have no value of their own, and an empty value means "behave as before".
-         They mirror the Inno line's /RDS=, /ARXROOT=, /PROPSDIR=, /YEARS=, /SKIPVSIX=1
+         They mirror the Inno line's /RDS=, /ARXROOT=, /ACADROOT=, /PROPSDIR=, /YEARS=, /SKIPVSIX=1
          and /SKIPVSCHECK=1 one for one (that line's /DIR= is Burn's own InstallFolder). -->
     <Variable Name="ArxQuiet" />        <!-- 1: hand msiexec /qn, no MSI UI -->
     <Variable Name="ArxSkipVsix" />     <!-- 1: do not install the extension at all -->
     <Variable Name="ArxSkipVsCheck" />  <!-- 1: install even while Visual Studio is running -->
     <Variable Name="ArxRds" />          <!-- registered developer symbol; empty keeps ADSK -->
-    <Variable Name="ArxRoot" />         <!-- Autodesk root folder -->
+    <Variable Name="ArxRoot" />         <!-- ObjectARX SDK root folder -->
+    <Variable Name="ArxAcadRoot" />     <!-- Autodesk CAD root folder; empty falls back to the SDK root -->
     <Variable Name="ArxPropsDir" />     <!-- property sheet folder; empty follows the install folder -->
     <Variable Name="ArxYears" />        <!-- e.g. 2020,2024,2026,2027: the year selection to start from -->
 
-    <!-- Whether the MSI product is on the machine. The MSI writes this key through one of its own
-         components, so it disappears together with the product. -->
-    <util:RegistrySearch Id="RS_ARXWIZARD_MSI"
-                         Root="HKLM"
-                         Key="SOFTWARE\Autodesk\ObjectARX Wizards"
-                         Value="InstallDir"
-                         Variable="ARXWIZARD_MSI_INSTALLED"
-                         Win64="yes" />
+    <!-- Whether this exact MSI product is on the machine. The search asks Windows Installer for the
+         product code the bundle itself chains (version.wxi) - not for a registry key the MSI happens
+         to write. That key carried no version, so on an upgrade the previous build's key was still
+         there while Burn planned the install: both packages looked present, both were skipped, and the
+         previous bundle's uninstall took the rest away - no generated property sheets, no year
+         selection, and the VSIX left at the previous build (2026-10-20). The search yields this
+         build's version while it is really installed and nothing otherwise, which is what the two
+         DetectConditions below need: a product code that is unique per build is absent until it lands. -->
+    <util:ProductSearch Id="RS_ARXWIZARD_MSI"
+                        ProductCode="$(var.ProductCode)"
+                        Result="version"
+                        Variable="ARXWIZARD_MSI_VERSION" />
 
     <Chain>
       <!-- Chained through a launcher rather than as an MsiPackage. Burn skips a package whose
@@ -62,8 +72,9 @@
            afterwards. The launcher also refuses to run while Visual Studio is open, so the VSIX
            step below cannot leave the install half done; ArxSkipVsCheck=1 lifts that check and
            ArxQuiet=1 turns the MSI UI off.
-           DetectCondition asks the registry key the MSI writes through one of its components, so
-           the engine knows the truth in both directions, and RepairCommand is what keeps the
+           DetectCondition asks whether the product code this build carries (RS_ARXWIZARD_MSI,
+           above) is installed, so the engine knows the truth in both directions without taking one
+           build for another, and RepairCommand is what keeps the
            original promise: a repeat run is a repair, and the repair runs the same launcher, so the
            maintenance page still appears. The earlier DetectCondition="false" made the engine treat
            the package as absent forever - a bundle uninstall then skipped it entirely ("state:
@@ -78,10 +89,10 @@
            with that token - every managed action fails and the install rolls back with 1603. -->
       <ExePackage Id="ArxWizardsMsi"
                   SourceFile="Bundle\ArxWizardsMsiSetup.exe"
-                  DetectCondition="ARXWIZARD_MSI_INSTALLED"
+                  DetectCondition="ARXWIZARD_MSI_VERSION"
                   Vital="yes"
-                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
-                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
+                  InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --acadroot="[ArxAcadRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
+                  RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXWizard.msi" --quiet=[ArxQuiet] --skipvscheck=[ArxSkipVsCheck] --rds="[ArxRds]" --arxroot="[ArxRoot]" --acadroot="[ArxAcadRoot]" --propsdir="[ArxPropsDir]" --years="[ArxYears]"'
                   UninstallCommand='/uninstall --quiet=1'>
         <Payload SourceFile="bin\Release\ObjectARXWizard.msi" Compressed="yes" />
       </ExePackage>
@@ -90,9 +101,9 @@
            elevated token - which is the whole reason it is a separate process (PerMachine="no").
            ArxSkipVsix=1 leaves the extension out entirely (install the files only).
            It carries the same DetectCondition as the MSI package because the two are always
-           installed together: that key exists only while the product does. The uninstall therefore
-           really runs the launcher with its uninstall switch (which waits for VSIXInstaller and
-           sweeps the folder it leaves behind). Until 2026-10-11 Permanent="yes" plus
+           installed together: that product code exists only while the product does. The uninstall
+           therefore really runs the launcher with its uninstall switch (which waits for VSIXInstaller
+           and sweeps the folder it leaves behind). Until 2026-10-11 Permanent="yes" plus
            DetectCondition="false" meant the engine considered the extension absent, skipped it on
            uninstall, and left it registered in Visual Studio. A repeat run is a repair, which
            reinstalls the extension - idempotent, and it is also what re-arms the templates after a
@@ -101,7 +112,7 @@
                   Vital="no"
                   PerMachine="no"
                   SourceFile="Bundle\ArxWizardsVsixSetup.exe"
-                  DetectCondition="ARXWIZARD_MSI_INSTALLED"
+                  DetectCondition="ARXWIZARD_MSI_VERSION"
                   InstallCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
                   RepairCommand='"[WixBundleExecutePackageCacheFolder]ObjectARXMultiVersionWizards.vsix"'
                   UninstallCommand='"[WixBundleExecutePackageCacheFolder]ArxWizardsVsixSetup.exe" --uninstall'

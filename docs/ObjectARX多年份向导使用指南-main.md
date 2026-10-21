@@ -1,8 +1,12 @@
-# ObjectARX 多年份向导 · 使用指南
+# ObjectARX 多年份向导（main 安装包版）· 使用指南
 
 **适用安装包：`ObjectARXMultiVersionWizards-main.exe`（单文件安装包）**
 
+> 另两份分发线指南：[dev 版（Inno 单文件安装包）](ObjectARX多年份向导使用指南-dev.md) · [classic 版（经典 .vsz 向导）](ObjectARX多年份向导使用指南-classic.md)。
+
 本指南面向拿到安装包的最终用户。读完本文，您可以独立完成：安装 → 新建 ObjectARX 工程 → 添加类 → 编译与在 AutoCAD 中加载调试 → 日后修改年份/修复/卸载。
+
+> 📷 **插图约定**：截图按分发线存放在 `docs\images\` 下的子文件夹（`classic\` / `main\` / `dev\`），文件名一律用英文短横线命名（如 `main-01-install-dir.png`）。已就位的截图直接以图片嵌入正文；仍以 📷 引用块标注的是待补截图，块内写明了应截取的画面与目标文件名。
 
 ---
 
@@ -63,17 +67,23 @@
 
 双击 `ObjectARXMultiVersionWizards-main.exe`，在 UAC 提示中点击“是”。安装包是中文界面，依次出现以下页面：
 
+> 只需要这一个 exe：MSI 与 VSIX 都已作为压缩负载内嵌在引导程序里，发布或拷贝时不用带上 `ObjectARXWizard.msi` 和 `ObjectARXMultiVersionWizards.vsix`。
+
 ### 第 1 页：选择安装文件夹
 
 - 安装目录，默认 `C:\Program Files\Autodesk\ObjectARX Multi-Version Wizards\`，一般无需修改；
 - **属性表目录默认跟随安装文件夹**；
 - 再次安装时会自动回填上次使用的目录。
 
+![图 1：选择安装文件夹](images/main/01-install-dir.png)
+
 ### 第 2 页：注册开发者符号（RDS）
 
 - 新建工程时使用的默认开发者前缀（最长 4 个字符），生成代码和输出文件名都会用到它；
 - **可以留空**，留空则使用内置的 `ADSK`；
 - RDS 的官方含义见 ObjectARX 文档的 *Symbols Registration*，不确定就直接点“下一步”。
+
+![图 2：注册开发者符号（RDS）](images/main/02-rds.png)
 
 ### 第 3 页：ObjectARX SDK 与目标位置
 
@@ -86,12 +96,16 @@
 
 > 属性表目录不在这里选：它恒等于安装目录。
 
+![图 3：ObjectARX SDK 与目标位置](images/main/03-sdk-paths.png)
+
 ### 第 4 页：目标 AutoCAD 版本
 
 - 勾选您需要支持的 AutoCAD 年份。**每勾选一个年份，就生成一份对应的属性表**；未勾选的不生成；
 - 勾选了本机暂时没装 SDK 的年份也没有任何副作用，以后装好 SDK 直接就能编译；
 - 首次安装默认勾选 **2020、2024、2026、2027**；
 - 四个快捷按钮：**全部**（勾上 16 个年份）、**全不选**、**反选**、**兼容**（只勾各二进制兼容代系的代表年份：2014、2016、2018、2020、2024、2026、2027，同代系共用一套属性表）。
+
+![图 4：目标 AutoCAD 版本（示例为点击“兼容”后的勾选结果）](images/main/04-target-years.png)
 
 ### 第 5 页：确认 → 安装
 
@@ -100,7 +114,11 @@
 1. 生成勾选年份的属性表；
 2. 自动为当前用户把 Visual Studio 扩展注册到本机所有受支持的 VS 实例（2022 与 2026）。每个 VS 实例大约需要 1–2 分钟，属正常现象。
 
+![图 5：确认安装](images/main/05-ready.png)
+
 看到“安装完成”后，**重新启动 Visual Studio**。
+
+![图 6：正在安装](images/main/06-progress.png)
 
 ---
 
@@ -135,6 +153,8 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 能看到即表示安装成功。若看不到，见[第 11 节](#11-常见问题)。
 
+![图 7：新建项目中搜索 ObjectARX](images/main/07-new-project.png)
+
 ---
 
 ## 6. 新建第一个 ObjectARX 工程
@@ -144,6 +164,8 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 1. **文件 → 新建 → 项目**，搜索 ObjectARX，选择 **ObjectARX/DBX/CRX Application (Multi-Version)**，点击“下一步”；
 2. 输入工程名（例如 `MyArxApp`）和保存位置，点击“创建”；
 3. 弹出选项窗口 **ObjectARX/DBX Application Wizard**（英文界面，单页）。
+
+![图 8：项目向导选项窗口](images/main/08-wizard.png)
 
 ### 6.2 选项窗口逐栏说明
 
@@ -179,6 +201,8 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 > 建议：第一次使用时保持所有默认选项（`.arx` + 默认勾选的年份），先跑通“创建 → 编译 → 加载”全流程，再尝试其他选项。
 
+![图 9：生成后的工程结构](images/main/09-solution.png)
+
 ---
 
 ## 7. 向工程中添加 ObjectARX 类
@@ -192,6 +216,10 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 3. 点击确认，部分模板还会再弹一个选项窗口（例如 MFC 类要选基类），按提示选择即可。
 
 **为什么推荐这种方式**：这个入口不经过 Visual Studio 自带的“添加新项”对话框，在任何时候都稳定可用（它绕开了 VS 自身的一个已知缺陷，见[第 11.4 节](#114-新建工程后立即添加新项时-vs-闪退或对话框消失)）。该菜单项只在 ObjectARX 工程上出现，普通工程上自动隐藏。
+
+![图 10：右键菜单入口](images/main/10-add-class.png)
+
+![图 11：类模板选择器](images/main/11-class-picker.png)
 
 ### 7.2 另一种方式：添加 → 新建项
 
@@ -221,6 +249,8 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 输出文件位于工程的 `x64\<年份>\`（或 `x64\<年份>d\`）目录，文件名自动带 RDS 前缀和年份，例如 `ADSKMyArxApp2024.arx`。
 
+![图 12：配置工具栏切换年份配置](images/main/12-config-bar.png)
+
 ### 8.2 在 AutoCAD 中加载
 
 - `.arx / .dbx / .crx`：在 AutoCAD 中输入命令 **APPLOAD**（或“管理 → 加载应用程序”），选择生成的文件；也可以把文件拖入 AutoCAD 窗口；
@@ -237,7 +267,7 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 > 未找到 ObjectARX 2026 的属性表（…Autodesk.arx-2026.props）。请重新运行安装程序勾选该年份，或改用已安装的年份配置。
 
-说明当前选的年份配置在安装时没有勾选。**重新运行安装包 → 选择“更改目标 AutoCAD 版本并重新安装” → 勾上该年份**即可（操作见[第 10 节](#10-修复增减目标年份与卸载)），无需重装 Visual Studio。
+说明当前选的年份配置在安装时没有勾选。**卸载后重新运行安装包，在“目标 AutoCAD 版本”页勾上该年份**即可（操作见[第 10 节](#10-修复增减目标年份与卸载)），无需重装 Visual Studio。
 
 ### 8.5 OMF 工程提示缺少 `AecCore.h`
 
@@ -270,13 +300,17 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 ## 10. 修复、增减目标年份与卸载
 
-**重新双击运行同一个 `ObjectARXMultiVersionWizards-main.exe`**，会进入维护页面，提供三个选项：
+**重新双击运行同一个 `ObjectARXMultiVersionWizards-main.exe`**，会进入维护页面（标题“修改安装”），提供三个按钮：
 
-| 选项 | 作用 |
+| 按钮 | 作用 |
 |---|---|
-| **修复 ObjectARX Multi-Version Wizards** | 重新生成年份属性表并重新注册扩展。Visual Studio 大版本更新后模板“消失”时，用它恢复 |
-| **更改目标 AutoCAD 版本并重新安装** | 重新进入年份勾选页：新勾的年份补生成属性表，取消的年份会被清理。换了新 SDK、想支持新年份时用它 |
-| **删除 ObjectARX Multi-Version Wizards** | 卸载产品与 VS 扩展 |
+| **修复(R)** | 重新写入文件、重新生成年份属性表并重新注册 VS 扩展。Visual Studio 大版本更新后模板“消失”时，用它恢复 |
+| **卸载(U)** | 卸载产品与 VS 扩展 |
+| **关闭(C)** | 退出维护程序，不做任何改动 |
+
+> 维护页没有“更改目标年份”的入口。**要增减年份，请先卸载再重新安装**，在安装流程的“目标 AutoCAD 版本”页重新勾选；也可以直接用命令行 `ArxYears=2020,2024,2026,2027` 指定年份重装（见[第 4 节](#4-静默安装企业批量部署)）。
+
+![图 13：安装包维护页面](images/main/13-maintenance.png)
 
 也可以在 **设置 → 应用 → 已安装的应用**（或“程序和功能”）中找到 **ObjectARX Multi-Version Wizards** 进行卸载。
 
@@ -293,7 +327,7 @@ ObjectARXMultiVersionWizards-main.exe ArxQuiet=1 ArxYears=2020,2024,2026,2027 Ar
 
 1. 确认安装时所有 Visual Studio 都已关闭，并在安装完成后重启过 VS；
 2. 确认 VS 版本为 2022（17.x）或 2026（18.x）；
-3. 重新运行安装包，选择“**修复**”，完成后再次重启 VS；
+3. 重新运行安装包（维护页选“**修复**”，或先卸载再重装），完成后再次重启 VS；
 4. 仍不显示：删除 VS 的模板缓存目录后重启 VS——
    `%LOCALAPPDATA%\Microsoft\VisualStudio\<版本实例目录>\VTC`（例如 `18.0_xxxxxxxx`），把该目录改名或删除，再启动 VS；
 5. 以日志启动 VS 定位：命令行执行 `devenv /log`，复现后查看 `%APPDATA%\Microsoft\VisualStudio\<版本>\ActivityLog.xml`。

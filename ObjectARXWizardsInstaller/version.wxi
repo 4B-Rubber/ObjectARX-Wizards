@@ -12,7 +12,7 @@
      a repeat run of the same build shows the maintenance page instead of upgrading. -->
 <?define RTMProductVersion = "18.0.0"?>
 <!-- The first one - do not edit. -->
-<?define ProductVersion = "0.2.15"?>
+<?define ProductVersion = "0.2.16"?>
 <?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 
 <!-- Historic product codes, kept for reference; the live one is the last define in this file. -->
@@ -88,6 +88,11 @@
     off "the project does not define this id yet", not off the flag - so the generated class was
     identical either way and the switch only made the page ask a question that had no answer.
     The version and the code move together, as always.-->
-<?define ProductCode= "{B74BCA5E-8476-45D5-8431-A272717A33F9}"?>
+<!--<?define ProductCode= "{B74BCA5E-8476-45D5-8431-A272717A33F9}"?>-->
+<!--ProductCode for 0.2.16, which brings the Windows SDK alias sheet: every generated
+    Autodesk.arx-<year>.props imports ObjectARX.WindowsSdk.props, so the v140 / v141 toolsets stop
+    stopping on MSB8036 when the project asks for the "10.0" alias. The version and the code move
+    together, as always.-->
+<?define ProductCode= "{2E6B4C1A-7D58-4F03-9A6E-5C3D81F4B7A2}"?>
 
 </Include>

@@ -58,6 +58,7 @@
     <EmbeddedResource Include="..\tools\arx-props\props-template.props" LogicalName="ArxWizCustomAction.ArxProps.props-template.props" />
     <EmbeddedResource Include="..\tools\arx-props\props-net-fx-template.props" LogicalName="ArxWizCustomAction.ArxProps.props-net-fx-template.props" />
     <EmbeddedResource Include="..\tools\arx-props\props-net-core-template.props" LogicalName="ArxWizCustomAction.ArxProps.props-net-core-template.props" />
+    <EmbeddedResource Include="..\tools\arx-props\props-winsdk-alias.props" LogicalName="ArxWizCustomAction.ArxProps.props-winsdk-alias.props" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(WixCATargetsPath)" Condition=" '$(WixCATargetsPath)' != '' " />

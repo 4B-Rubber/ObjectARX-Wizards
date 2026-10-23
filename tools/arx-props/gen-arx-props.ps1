@@ -38,6 +38,8 @@ if (-not $root.EndsWith('\')) { $root += '\' }
 $normalTpl  = Read-Template 'props-template.props'
 $netFxTpl   = Read-Template 'props-net-fx-template.props'
 $netCoreTpl = Read-Template 'props-net-core-template.props'
+# 所有年份共用的一张表：年份 sheet 只 Import 它，逻辑本身不随年份复制。
+$winSdkTpl  = Read-Template 'props-winsdk-alias.props'
 
 if (-not (Test-Path -LiteralPath $OutDir)) { New-Item -ItemType Directory -Path $OutDir -Force | Out-Null }
 
@@ -124,6 +126,9 @@ function Emit([string]$name, [string]$text) {
   [System.IO.File]::WriteAllText($path, ($text -replace "`n", "`r`n"), $enc)
   $written.Add($name)
 }
+
+# 共用的 SDK 别名修复表：所有年份只 Import 同一份，不随年份复制。
+Emit 'ObjectARX.WindowsSdk.props' $winSdkTpl
 
 foreach ($y in $table.years) {
   if ($Years -and ($Years -notcontains $y.year)) { continue }

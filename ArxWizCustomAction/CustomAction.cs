@@ -135,6 +135,7 @@ namespace ArxWizCustomAction
         const string ResNormal  = "ArxWizCustomAction.ArxProps.props-template.props";
         const string ResNetFx   = "ArxWizCustomAction.ArxProps.props-net-fx-template.props";
         const string ResNetCore = "ArxWizCustomAction.ArxProps.props-net-core-template.props";
+        const string ResWinSdkAlias = "ArxWizCustomAction.ArxProps.props-winsdk-alias.props";
 
         static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
 
@@ -324,6 +325,8 @@ namespace ArxWizCustomAction
                                      BuildMap(table, entry, sdkRoot, acadRoot, null)));
                 }
 
+                // One sheet shared by every year: the year sheets only import it.
+                WriteFile(session, dir, "ObjectARX.WindowsSdk.props", ReadResource(ResWinSdkAlias));
                 WriteUserProps(session, dir, sdkRoot, acadRoot, table.DefaultRoot);
                 return ActionResult.Success;
             }
@@ -398,6 +401,13 @@ namespace ArxWizCustomAction
             {
                 try { File.Delete(user); Log(session, reason + user); }
                 catch (Exception ex) { Log(session, reason + "cannot delete " + user + " (" + ex.Message + ")"); }
+            }
+            // The one sheet every year imports (the Windows SDK alias resolver) is ours as well.
+            string winSdk = Path.Combine(dir, "ObjectARX.WindowsSdk.props");
+            if (File.Exists(winSdk))
+            {
+                try { File.Delete(winSdk); Log(session, reason + winSdk); }
+                catch (Exception ex) { Log(session, reason + "cannot delete " + winSdk + " (" + ex.Message + ")"); }
             }
         }
 

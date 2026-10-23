@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!--
+	  Resolves the "10.0" Windows SDK alias for the toolsets that cannot read it.
+
+	  <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion> means "newest installed
+	  SDK", but only the VS2019+ VCTargets implement that alias.  The v140 / v141 toolsets redirect
+	  VCTargetsPath to the VS2015 / VS2017 targets, which copy the value through verbatim, so their
+	  SDK check looks for a folder literally named 10.0 and stops the build with MSB8036 ("The
+	  Windows SDK version 10.0 was not found").  The IDE only resolves the alias for the active
+	  configuration, so a VS batch build hits it as well - nothing is missing on the machine, the
+	  project simply asks for something those targets never knew.
+
+	  Every Autodesk.arx-<year>.props imports this file, and that sheet is imported AFTER
+	  Microsoft.Cpp.props - i.e. after the SDK paths were snapshotted from the broken value.  So
+	  resolving the alias here takes three steps: pick a version the toolset can still compile
+	  against, re-run the SDK's own UAP.props for it (the file Microsoft.Cpp.Common.props would have
+	  imported for a concrete version), then repair the include / library / executable path
+	  snapshots that were composed from 10.0.
+
+	  Everything below is inert for toolsets that understand the alias and for projects that
+	  already name a concrete SDK, so the file can be imported by every year unconditionally.
+	-->
+	<PropertyGroup>
+		<_ArxWinSdkRoot>$(WindowsSdkDir)</_ArxWinSdkRoot>
+		<_ArxWinSdkRoot Condition="'$(_ArxWinSdkRoot)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@InstallationFolder)</_ArxWinSdkRoot>
+	</PropertyGroup>
+
+	<!-- Which toolsets need any of this, and which of them have a version ceiling. -->
+	<PropertyGroup Condition="'$(WindowsTargetPlatformVersion)' == '10.0'">
+		<_ArxWinSdkLegacy Condition="'$(PlatformToolset)' == 'v140' Or '$(PlatformToolset)' == 'v140_xp' Or '$(PlatformToolset)' == 'v141' Or '$(PlatformToolset)' == 'v141_xp'">true</_ArxWinSdkLegacy>
+		<_ArxWinSdkCapped Condition="'$(PlatformToolset)' == 'v140' Or '$(PlatformToolset)' == 'v140_xp' Or '$(PlatformToolset)' == 'v141_xp'">true</_ArxWinSdkCapped>
+	</PropertyGroup>
+
+	<!-- "Newest installed" is asked from the same API the VS2019+ targets use, so a machine whose
+	     SDK is newer than anything this file has ever seen still resolves correctly. -->
+	<PropertyGroup Condition="'$(_ArxWinSdkLegacy)' == 'true'">
+		<_ArxWinSdkLatest>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows','10.0'))</_ArxWinSdkLatest>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkCapped)' != 'true'">$(_ArxWinSdkLatest)</_ArxWinSdkVersion>
+	</PropertyGroup>
+
+	<!-- The capped ones take the newest SDK that was ever released for them.  This list does not
+	     need to grow: Microsoft shipped the last 10.0 SDK below 19041 in 2020, and the toolsets it is
+	     capped for predate the newer UCRT headers, so the compatible set is closed.  Plain v141 is
+	     deliberately not capped (it compiles against the newest SDK, checked with 26100) and v142+
+	     resolve the alias themselves.  Probing beats guessing what a given machine has installed. -->
+	<PropertyGroup Condition="'$(_ArxWinSdkCapped)' == 'true'">
+		<_ArxWinSdkVersion Condition="Exists('$(_ArxWinSdkRoot)Include\10.0.19041.0\shared\sdkddkver.h')">10.0.19041.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.18362.0\shared\sdkddkver.h')">10.0.18362.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.17763.0\shared\sdkddkver.h')">10.0.17763.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.17134.0\shared\sdkddkver.h')">10.0.17134.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.16299.0\shared\sdkddkver.h')">10.0.16299.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.15063.0\shared\sdkddkver.h')">10.0.15063.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.14393.0\shared\sdkddkver.h')">10.0.14393.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.10586.0\shared\sdkddkver.h')">10.0.10586.0</_ArxWinSdkVersion>
+		<_ArxWinSdkVersion Condition="'$(_ArxWinSdkVersion)' == '' And Exists('$(_ArxWinSdkRoot)Include\10.0.10240.0\shared\sdkddkver.h')">10.0.10240.0</_ArxWinSdkVersion>
+		<_ArxWinSdkProbed>$(_ArxWinSdkVersion)</_ArxWinSdkProbed>
+	</PropertyGroup>
+
+	<!-- Nothing below the ceiling is installed.  Use the newest anyway - it may still work - and say
+	     why, because the alternative is the same MSB8036 the project hits without this file. -->
+	<PropertyGroup Condition="'$(_ArxWinSdkCapped)' == 'true' And '$(_ArxWinSdkProbed)' == ''">
+		<_ArxWinSdkVersion>$(_ArxWinSdkLatest)</_ArxWinSdkVersion>
+	</PropertyGroup>
+	<Target Name="_ArxWinSdkFallbackNote" BeforeTargets="PrepareForBuild"
+	        Condition="'$(_ArxWinSdkCapped)' == 'true' And '$(_ArxWinSdkProbed)' == '' And '$(_ArxWinSdkVersion)' != ''">
+		<Message Importance="high"
+		         Text="ObjectARX $(ArxSDKVersion): the $(PlatformToolset) toolset cannot compile against a Windows SDK newer than 10.0.19041.0, and none that old is installed. Trying $(_ArxWinSdkVersion); if the build then fails with C3861 on _mm_loadu_si64, install Windows SDK 10.0.19041.0." />
+	</Target>
+
+	<Import Condition="'$(_ArxWinSdkVersion)' != '' And Exists('$(_ArxWinSdkRoot)DesignTime\CommonConfiguration\Neutral\UAP\$(_ArxWinSdkVersion)\UAP.props')" Project="$(_ArxWinSdkRoot)DesignTime\CommonConfiguration\Neutral\UAP\$(_ArxWinSdkVersion)\UAP.props" />
+
+	<PropertyGroup Condition="'$(_ArxWinSdkVersion)' != ''">
+		<WindowsTargetPlatformVersion>$(_ArxWinSdkVersion)</WindowsTargetPlatformVersion>
+		<TargetPlatformVersion>$(_ArxWinSdkVersion)</TargetPlatformVersion>
+		<WindowsSDKVersion>$(_ArxWinSdkVersion)\</WindowsSDKVersion>
+		<!-- MSBuild eats a backslash in front of "$(", hence the split segments.  Both spellings of
+		     the include folder occur in the wild (the VS2015/2017 targets write "Include", older
+		     third-party sheets copy paths around in lower case), and String.Replace is case
+		     sensitive, so both are replaced. -->
+		<_ArxWinSdkIncOld>\Include\10.0\</_ArxWinSdkIncOld>
+		<_ArxWinSdkIncOldL>\include\10.0\</_ArxWinSdkIncOldL>
+		<_ArxWinSdkIncNew>\Include\</_ArxWinSdkIncNew>
+		<_ArxWinSdkIncNew>$(_ArxWinSdkIncNew)$(_ArxWinSdkVersion)\</_ArxWinSdkIncNew>
+		<_ArxWinSdkLibOld>\lib\10.0\</_ArxWinSdkLibOld>
+		<_ArxWinSdkLibOldU>\Lib\10.0\</_ArxWinSdkLibOldU>
+		<_ArxWinSdkLibNew>\lib\</_ArxWinSdkLibNew>
+		<_ArxWinSdkLibNew>$(_ArxWinSdkLibNew)$(_ArxWinSdkVersion)\</_ArxWinSdkLibNew>
+		<_ArxWinSdkLibNewU>\Lib\</_ArxWinSdkLibNewU>
+		<_ArxWinSdkLibNewU>$(_ArxWinSdkLibNewU)$(_ArxWinSdkVersion)\</_ArxWinSdkLibNewU>
+		<IncludePath>$([System.String]::Copy('$(IncludePath)').Replace('$(_ArxWinSdkIncOld)', '$(_ArxWinSdkIncNew)').Replace('$(_ArxWinSdkIncOldL)', '$(_ArxWinSdkIncNew)'));$(WindowsSDK_IncludePath)</IncludePath>
+		<LibraryPath Condition="'$(Platform)'=='x64'">$([System.String]::Copy('$(LibraryPath)').Replace('$(_ArxWinSdkLibOld)', '$(_ArxWinSdkLibNew)').Replace('$(_ArxWinSdkLibOldU)', '$(_ArxWinSdkLibNewU)'));$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+		<LibraryPath Condition="'$(Platform)'!='x64'">$([System.String]::Copy('$(LibraryPath)').Replace('$(_ArxWinSdkLibOld)', '$(_ArxWinSdkLibNew)').Replace('$(_ArxWinSdkLibOldU)', '$(_ArxWinSdkLibNewU)'));$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+		<!-- rc.exe / mt.exe come from the SDK bin folder; without this the rc step cannot find its tool. -->
+		<ExecutablePath Condition="'$(Platform)'=='x64'">$(ExecutablePath);$(WindowsSDK_ExecutablePath_x64)</ExecutablePath>
+		<ExecutablePath Condition="'$(Platform)'!='x64'">$(ExecutablePath);$(WindowsSDK_ExecutablePath_x86)</ExecutablePath>
+	</PropertyGroup>
+</Project>

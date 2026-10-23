@@ -46,6 +46,12 @@
 		<Import Condition="'$(ArxAppType)'=='dbxnet' or @@CRXNETCOND@@'$(ArxAppType)'=='arxnet'" Project="Autodesk.arx-@@YEAR@@-net.props" />
 	</ImportGroup>
 @@TF35BLOCK@@
+	<!-- The v140 / v141 toolsets cannot resolve the "10.0" Windows SDK alias (MSB8036).
+	     The resolver lives in its own sheet because every year imports it and it is the same
+	     code for all of them; ObjectARX.WindowsSdk.props is generated next to this one. -->
+	<Import Condition="Exists('$(MSBuildThisFileDirectory)ObjectARX.WindowsSdk.props')"
+	        Project="$(MSBuildThisFileDirectory)ObjectARX.WindowsSdk.props" />
+
 	<PropertyGroup>
 		<!-- ExecutablePath>$(ExecutablePath)</ExecutablePath -->
 		<IncludePath>$(ArxSdkIncs);$(ArxHlrIncs);$(ArxAmodelerIncs);$(ArxBrepIncs);$(ArxAtilIncs);$(ArxAtilCodecPropIncs);$(ArxAtilCodecFormatIncs);$(IncludePath)</IncludePath>

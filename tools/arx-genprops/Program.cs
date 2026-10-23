@@ -31,6 +31,7 @@ namespace ArxGenProps
         const string ResNormal = "ArxGenProps.props-template.props";
         const string ResNetFx = "ArxGenProps.props-net-fx-template.props";
         const string ResNetCore = "ArxGenProps.props-net-core-template.props";
+        const string ResWinSdkAlias = "ArxGenProps.props-winsdk-alias.props";
 
         static readonly Regex YearInName = new Regex(@"^Autodesk\.arx-(\d{4})", RegexOptions.IgnoreCase);
 
@@ -159,6 +160,8 @@ namespace ArxGenProps
                                  BuildMap(table, entry, sdkRoot, null)));
             }
 
+            // One sheet shared by every year: the year sheets only import it.
+            WriteFile(dir, "ObjectARX.WindowsSdk.props", ReadResource(ResWinSdkAlias));
             WriteUserProps(dir, sdkRoot, acadRoot, table.DefaultRoot);
             return 0;
         }
@@ -365,6 +368,9 @@ namespace ArxGenProps
 
             string user = Path.Combine(dir, "ObjectARX.User.props");
             if (File.Exists(user)) TryDelete(user, reason);
+
+            string winSdk = Path.Combine(dir, "ObjectARX.WindowsSdk.props");
+            if (File.Exists(winSdk)) TryDelete(winSdk, reason);
         }
 
         static void TryDelete(string path, string reason)

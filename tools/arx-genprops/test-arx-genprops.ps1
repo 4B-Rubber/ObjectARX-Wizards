@@ -63,6 +63,16 @@ Check 'generated text identical to gen-arx-props.ps1' ($diff.Count -eq 0) ($diff
 Check 'BOM difference is exactly the .ps1-only BOM' ($bomOnly -eq $baseFiles.Count) "bomOnly=$bomOnly of $($baseFiles.Count)"
 Check 'objectARX.User.props written' (Test-Path (Join-Path $gen 'ObjectARX.User.props'))
 
+# the shared sheet every year imports: written once, and identical from both generators
+$bShared = Join-Path $base 'ObjectARX.WindowsSdk.props'
+$gShared = Join-Path $gen 'ObjectARX.WindowsSdk.props'
+Check 'ObjectARX.WindowsSdk.props written by both' ((Test-Path $bShared) -and (Test-Path $gShared))
+if ((Test-Path $bShared) -and (Test-Path $gShared)) {
+  $bt = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($bShared)).TrimStart([char]0xFEFF)
+  $gt = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($gShared)).TrimStart([char]0xFEFF)
+  Check 'ObjectARX.WindowsSdk.props identical' ($gt -ceq $bt)
+}
+
 # user props must not be clobbered on a second run
 $userProps = Join-Path $gen 'ObjectARX.User.props'
 $before = Get-Content $userProps -Raw
@@ -88,6 +98,7 @@ $left = @(Get-ChildItem $keep -Filter 'Autodesk.arx-*.props' | ForEach-Object { 
 $expected = @('Autodesk.arx-2020.props', 'Autodesk.arx-2020-net.props')
 Check 'cleanup --keep 2020 leaves only the 2020 sheets' `
       (($left -join ',') -ceq ($expected -join ',')) ($left -join ',')
+Check 'cleanup --keep leaves the shared sheet alone' (Test-Path (Join-Path $keep 'ObjectARX.WindowsSdk.props'))
 
 # ---- 4. cleanup with an empty keep list removes everything ----
 & $Exe cleanup --props-dir $keep --keep '' | Out-Null; Wait-GenProps
@@ -100,6 +111,7 @@ Copy-Item (Join-Path $repo 'tools\arx-genprops\testdata\ObjectARX.Common.props')
 & $Exe remove --props-dir $rm | Out-Null; Wait-GenProps
 Check 'remove drops generated sheets' ((Get-ChildItem $rm -Filter 'Autodesk.arx-*.props').Count -eq 0)
 Check 'remove drops ObjectARX.User.props' (-not (Test-Path (Join-Path $rm 'ObjectARX.User.props')))
+Check 'remove drops ObjectARX.WindowsSdk.props' (-not (Test-Path (Join-Path $rm 'ObjectARX.WindowsSdk.props')))
 Check 'remove leaves a foreign props file alone' (Test-Path (Join-Path $rm 'ObjectARX.Common.props'))
 
 # ---- 6. bad command line ----

@@ -52,7 +52,7 @@
 ; No year range in the product name: it shows up in "Apps & features" and in the default install
 ; folder, and the wizard covers whatever years the props generator ships.
 #define AppName "ObjectARX Multi-Version Wizards"
-#define AppVersion "0.2.15"
+#define AppVersion "0.2.16"
 #define AppPublisher "Autodesk"
 #define AppURL "http://www.autodesk.com/developautocad"
 ; Own identity: the Inno line is a separate product from the MSI line, so it must not share the
@@ -401,8 +401,11 @@ end;
 
 function GetPropsDir(Param: string): string;
 begin
-  // The property sheet folder always follows the install folder; /PROPSDIR overrides it.
-  Result := PropsDefault;
+  // The property sheet folder follows the install folder unless /PROPSDIR names another one. The
+  // value is written to the registry and handed to arx-genprops without a trailing backslash - only
+  // the roots (AcadRoot/SdkRoot) are used as prefixes.
+  if InitPropsDir <> '' then Result := TrimTrailingSlash(InitPropsDir)
+  else Result := PropsDefault;
 end;
 
 function GetAcadRoot(Param: string): string;
@@ -1071,6 +1074,8 @@ begin
     end;
   end;
   if DeleteFile(Base + 'ObjectARX.User.props') then Inc(Removed);
+  // The one sheet every year imports (the Windows SDK alias resolver) is ours as well.
+  if DeleteFile(Base + 'ObjectARX.WindowsSdk.props') then Inc(Removed);
   Alog('uninstall: removed ' + IntToStr(Removed) + ' generated property sheet(s) from ' + Dir);
 end;
 

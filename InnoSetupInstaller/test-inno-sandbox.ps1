@@ -153,6 +153,7 @@ $installArgs = @(
   ('/DIR="' + $appDir + '"'),
   ('/PROPSDIR="' + $propsDir + '"'),
   ('/ARXROOT="' + $sdkDir + '"'),
+  ('/ACADROOT="' + $sdkDir + '"'),
 
   ('/VSROOT="' + $vsRoot + '"'),
   ('/YEARS=' + $years),
@@ -177,7 +178,8 @@ $p = Start-Process -FilePath $setup -ArgumentList $argsFresh -NoNewWindow -Wait 
 Check 'fresh install exits 0 (property sheet folder follows the install folder)' ($p.ExitCode -eq 0) ('exit=' + $p.ExitCode)
 Check 'generated props land in the install folder' (
   (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')) -and
-  (Test-Path (Join-Path $appDir 'ObjectARX.User.props')))
+  (Test-Path (Join-Path $appDir 'ObjectARX.User.props')) -and
+  (Test-Path (Join-Path $appDir 'ObjectARX.WindowsSdk.props')))
 Check 'own old payload tree removed from the install folder' (-not (Test-Path $classicAppTree))
 Assert-OfficialSurvivors 'fresh install'
 Check 'the setup creates no ObjectARXMV folder of its own on this line' (-not (Test-Path $vsItemsNew))
@@ -188,6 +190,7 @@ Check 'empty RDS is recorded as an empty value (the wizard then keeps ADSK)' `
 Start-Process -FilePath (Join-Path $appDir 'unins000.exe') -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -NoNewWindow -Wait | Out-Null
 Wait-Gone (Join-Path $appDir 'Autodesk.arx-2020.props')
 Check 'uninstall clears the generated props from the install folder' (-not (Test-Path (Join-Path $appDir 'Autodesk.arx-2020.props')))
+Check 'uninstall clears the shared sheet too' (-not (Test-Path (Join-Path $appDir 'ObjectARX.WindowsSdk.props')))
 # Back to a clean slate for the rounds below: the registry, and the install folder by hand. The
 # folder exists because this round pre-seeded a leftover in it, and Inno does not remove a
 # directory it did not create itself. The props folder inside stays by design (uninsneveruninstall).
@@ -224,8 +227,13 @@ Check 'no classic wizard payload directory is part of this branch' ($presentClas
 Check 'the installer leaves the SDK folder alone' (-not (Test-Path $arxSdk))
 
 # ---- no property sheet ships: the props folder holds the generated ones and nothing else ----
-$foreign = @(Get-ChildItem $propsDir -File | Where-Object { $_.Name -notlike 'Autodesk.arx-*' -and $_.Name -ne 'ObjectARX.User.props' })
+# Our own files are the per-year sheets, the user roots and the one shared sheet every year imports.
+$ours = @('ObjectARX.User.props', 'ObjectARX.WindowsSdk.props')
+$foreign = @(Get-ChildItem $propsDir -File | Where-Object { $_.Name -notlike 'Autodesk.arx-*' -and $ours -notcontains $_.Name })
 Check 'no foreign props installed' ($foreign.Count -eq 0) (($foreign | ForEach-Object { $_.Name }) -join ', ')
+Check 'the shared Windows SDK sheet follows the year sheets' (Test-Path (Join-Path $propsDir 'ObjectARX.WindowsSdk.props'))
+Check 'the year sheets import the shared Windows SDK sheet' `
+      ((Get-Content (Join-Path $propsDir 'Autodesk.arx-2020.props') -Raw) -match 'ObjectARX\.WindowsSdk\.props')
 
 # ---- generated props ----
 $generated = @(Get-ChildItem $propsDir -Filter 'Autodesk.arx-*.props' | ForEach-Object { $_.Name } | Sort-Object)
@@ -299,6 +307,7 @@ Wait-Gone $appDir
 
 Check 'generated props removed on uninstall' ((Get-ChildItem $propsDir -Filter 'Autodesk.arx-*.props' -ErrorAction SilentlyContinue).Count -eq 0)
 Check 'ObjectARX.User.props removed on uninstall' (-not (Test-Path (Join-Path $propsDir 'ObjectARX.User.props')))
+Check 'ObjectARX.WindowsSdk.props removed on uninstall' (-not (Test-Path (Join-Path $propsDir 'ObjectARX.WindowsSdk.props')))
 Check 'a foreign props file survives the uninstall' (Test-Path $foreign)
 
 Check 'install folder removed' (-not (Test-Path $appDir))

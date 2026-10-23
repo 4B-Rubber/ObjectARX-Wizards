@@ -30,6 +30,7 @@
     <EmbeddedResource Include="..\arx-props\props-template.props" LogicalName="ArxGenProps.props-template.props" />
     <EmbeddedResource Include="..\arx-props\props-net-fx-template.props" LogicalName="ArxGenProps.props-net-fx-template.props" />
     <EmbeddedResource Include="..\arx-props\props-net-core-template.props" LogicalName="ArxGenProps.props-net-core-template.props" />
+    <EmbeddedResource Include="..\arx-props\props-winsdk-alias.props" LogicalName="ArxGenProps.props-winsdk-alias.props" />
   </ItemGroup>
 
 </Project>

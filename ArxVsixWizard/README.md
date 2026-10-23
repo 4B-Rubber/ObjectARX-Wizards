@@ -1,6 +1,6 @@
 # ObjectARX 多年份 VSIX 向导（ArxVsixWizard）开发交接文档
 
-> 状态：**0.2.11。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"。0.2.10 起本分支不再携带经典 `.vsz` 向导源码与 `_Installs` 载荷（仅 `classic-wizards` 分支保留）；安装器不再盲删 VS 共享目录，对 0.2.4 及更早版本留下的旧注册只在 `.vsz` 内容确认指向本产品目录时回收，官方年份向导沿用同名文件也不受影响。见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
+> 状态：**0.2.16。** VSIX 与 Inno 单文件安装器可编译/安装，2 个项目模板 + 7 个项模板在 VS2022(17.x) 与 VS2026(18.x) 的对话框里都已真机可见；项模板保持 `ProvideDefaultName=true`（名称预填）。VS 模板对话框的预热期崩溃由 **"Add ObjectARX Class..."** 右键命令绕过（自建入口，不走 VS 对话框）：0.2.0 引入、0.2.1 修好包加载（`ProvideAutoLoad`）、0.2.2 修好"项没进工程"。0.2.10 起本分支不再携带经典 `.vsz` 向导源码与 `_Installs` 载荷（仅 `classic-wizards` 分支保留）；安装器不再盲删 VS 共享目录，对 0.2.4 及更早版本留下的旧注册只在 `.vsz` 内容确认指向本产品目录时回收，官方年份向导沿用同名文件也不受影响。见第 6 节首条与 [docs/VS-AddNewItem-Crash.md](../docs/VS-AddNewItem-Crash.md)。
 > 最后更新：2026-10-10
 
 ---
@@ -209,4 +209,4 @@ $vs = "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise"
 & "$vs\Common7\IDE\VSIXInstaller.exe" /quiet ObjectARXMultiVersionWizards.vsix
 ```
 
-产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.11，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。
+产物 VSIX：[ObjectARXMultiVersionWizards.vsix（0.2.16，约 239 KB）。版本号见 `ArxVsixWizard.csproj`，改完务必跑 `test-version-consistency.ps1`。

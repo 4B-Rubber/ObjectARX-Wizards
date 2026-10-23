@@ -46,6 +46,12 @@ foreach ($d in @($BuildRoot, $srcDir, $vsixDir, $innoDir)) {
 function Find-MSBuild {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
     if (Test-Path $vswhere) {
+        # A 17.x MSBuild first: the VSIX v3 container target comes from the VS2022 VS SDK, and an 18.x
+        # MSBuild builds the assembly but leaves no .vsix behind.
+        foreach ($range in @('[17.0,18.0)', '[16.0,17.0)')) {
+            $found = & $vswhere -latest -products * -version $range -find 'MSBuild\**\Bin\MSBuild.exe' 2>$null
+            foreach ($f in @($found)) { if ($f -and (Test-Path $f)) { return $f } }
+        }
         $found = & $vswhere -latest -products * -find 'MSBuild\**\Bin\MSBuild.exe' 2>$null
         foreach ($f in @($found)) { if ($f -and (Test-Path $f)) { return $f } }
     }

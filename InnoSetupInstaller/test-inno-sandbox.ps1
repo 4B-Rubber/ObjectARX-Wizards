@@ -45,6 +45,21 @@ $test = $test.Replace('#define RepoRoot ".."', '#define RepoRoot "' + $repo + '"
 $vsix = Join-Path $work 'ObjectARXMultiVersionWizards.vsix'
 Set-Content -Path $vsix -Value 'sandbox stand-in' -Encoding ASCII
 $test = $test.Replace('#define VsixSource RepoRoot + "\ObjectARXMultiVersionWizards.vsix"', '#define VsixSource "' + $vsix + '"')
+# The props generator is built by tools\build-and-pack.ps1 into the *build root*'s mirror (the source
+# tree stays free of build outputs), and this test compiles the .iss straight from the tree - so take
+# the tree copy when a local build left one, else the mirror (set ARX_BUILD_ROOT). Unlike the VSIX
+# stand-in this has to be a real exe: the rounds below assert the sheets it generates.
+$genExe = Join-Path $repo 'tools\arx-genprops\bin\Release\arx-genprops.exe'
+if (-not (Test-Path $genExe) -and $env:ARX_BUILD_ROOT) {
+  $genExe = Join-Path $env:ARX_BUILD_ROOT 'src\tools\arx-genprops\bin\Release\arx-genprops.exe'
+}
+if (-not (Test-Path $genExe)) {
+  throw ('arx-genprops.exe not found - build it via tools\build-and-pack.ps1 or set ARX_BUILD_ROOT: ' + $genExe)
+}
+$test = $test.Replace('#define GenExeSource RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"', '#define GenExeSource "' + $genExe + '"')
+if ($test.Contains('RepoRoot + "\tools\arx-genprops\bin\Release\arx-genprops.exe"')) {
+  throw 'the GenExeSource define changed shape - the sandbox would fall back to the tree copy'
+}
 $test = $test.Replace('PrivilegesRequired=admin', 'PrivilegesRequired=lowest')
 $test = $test.Replace('HKLM64', 'HKCU')
 $test = $test.Replace("ArchitecturesInstallIn64BitMode=x64compatible`n", '')
@@ -257,7 +272,7 @@ $expectGenerated = @(
   'Autodesk.arx-2020-net.props', 'Autodesk.arx-2020.props',
   'Autodesk.arx-2024-net.props', 'Autodesk.arx-2024.props',
   'Autodesk.arx-2026-net.props', 'Autodesk.arx-2026.props',
-  'Autodesk.arx-2027-Compat.props', 'Autodesk.arx-2027-net.props', 'Autodesk.arx-2027.props'
+  'Autodesk.arx-2027-net.props', 'Autodesk.arx-2027.props'
 ) | Sort-Object
 Check 'generated props match the ticked years' (($generated -join ',') -ceq ($expectGenerated -join ',')) ($generated -join ', ')
 Check 'ObjectARX.User.props generated' (Test-Path (Join-Path $propsDir 'ObjectARX.User.props'))

@@ -136,11 +136,6 @@ foreach ($y in $table.years) {
   $map = New-TokenMap $y $null
   Emit "Autodesk.arx-$($y.year).props" (Expand-Template $normalTpl $map)
 
-  if ($y.compatToolset) {
-    $c = New-TokenMap $y $y.compatToolset
-    Emit "Autodesk.arx-$($y.year)-Compat.props" (Expand-Template $normalTpl $c)
-  }
-
   $netTpl = if ($y.netKind -eq 'core') { $netCoreTpl } else { $netFxTpl }
   Emit "Autodesk.arx-$($y.year)-net.props" (Expand-Template $netTpl $map)
 }

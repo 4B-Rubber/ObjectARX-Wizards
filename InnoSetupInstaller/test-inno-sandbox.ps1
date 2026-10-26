@@ -241,7 +241,7 @@ $expectGenerated = @(
   'Autodesk.arx-2020-net.props', 'Autodesk.arx-2020.props',
   'Autodesk.arx-2024-net.props', 'Autodesk.arx-2024.props',
   'Autodesk.arx-2026-net.props', 'Autodesk.arx-2026.props',
-  'Autodesk.arx-2027-Compat.props', 'Autodesk.arx-2027-net.props', 'Autodesk.arx-2027.props'
+  'Autodesk.arx-2027-net.props', 'Autodesk.arx-2027.props'
 ) | Sort-Object
 Check 'generated props match the ticked years' (($generated -join ',') -ceq ($expectGenerated -join ',')) ($generated -join ', ')
 Check 'ObjectARX.User.props generated' (Test-Path (Join-Path $propsDir 'ObjectARX.User.props'))

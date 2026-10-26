@@ -152,9 +152,6 @@ namespace ArxGenProps
                 if (!selected.Contains(entry.Year)) continue;
                 WriteFile(dir, "Autodesk.arx-" + entry.Year + ".props",
                           Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, null)));
-                if (!string.IsNullOrEmpty(entry.CompatToolset))
-                    WriteFile(dir, "Autodesk.arx-" + entry.Year + "-Compat.props",
-                              Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, entry.CompatToolset)));
                 WriteFile(dir, "Autodesk.arx-" + entry.Year + "-net.props",
                           Expand(ReadResource(entry.NetKind == "core" ? ResNetCore : ResNetFx),
                                  BuildMap(table, entry, sdkRoot, null)));
@@ -177,8 +174,16 @@ namespace ArxGenProps
             var selected = SelectYears(PropsTable.Load(), Get(opt, "keep", ""), !keepGiven);
             foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
             {
-                var m = YearInName.Match(Path.GetFileName(path));
+                string name = Path.GetFileName(path);
+                var m = YearInName.Match(name);
                 if (!m.Success) continue;
+                // The -Compat variant is not generated any more. It has to go even when its year is
+                // still ticked, otherwise an upgrade would leave the old sheet next to the new one.
+                if (name.EndsWith("-Compat.props", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryDelete(path, "cleanup: removed legacy ");
+                    continue;
+                }
                 if (selected.Contains(m.Groups[1].Value)) continue;
                 TryDelete(path, "cleanup: removed ");
             }
@@ -439,7 +444,7 @@ namespace ArxGenProps
 
         sealed class YearEntry
         {
-            public string Year, ProjectFileVersion, SdkVersion, Toolset, ToolsVersion, CompatToolset;
+            public string Year, ProjectFileVersion, SdkVersion, Toolset, ToolsVersion;
             public string NetKind, NetTfVersion, NetTargetFramework, NetForAcad;
             public bool LegacyV35, HasWin32, Win32X86, HasCrx, DebugComments, No32Comment;
             public bool LibPathArxLibIncs, NetTfComment;
@@ -471,7 +476,6 @@ namespace ArxGenProps
                         SdkVersion = Str(y, "sdkVersion"),
                         Toolset = Str(y, "toolset"),
                         ToolsVersion = Str(y, "toolsVersion"),
-                        CompatToolset = Str(y, "compatToolset"),
                         NetKind = Str(y, "netKind"),
                         NetTfVersion = Str(y, "netTfVersion"),
                         NetTargetFramework = Str(y, "netTargetFramework"),

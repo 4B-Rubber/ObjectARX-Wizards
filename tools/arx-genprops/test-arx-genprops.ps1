@@ -88,11 +88,11 @@ Check 'empty --years writes no User.props' (-not (Test-Path (Join-Path $empty 'O
 # ---- 3. cleanup keeps only the ticked years ----
 $keep = Join-Path $root 'keep'
 & $Exe generate --props-dir $keep --years 2020,2024,2026,2027 | Out-Null; Wait-GenProps
-# 2020/2024/2026 -> plain + net, 2027 -> plain + net + Compat
+# Every ticked year -> plain + net, so four years make eight sheets
 $n1 = (Get-ChildItem $keep -Filter 'Autodesk.arx-*.props').Count
 & $Exe cleanup --props-dir $keep --keep 2020,2024,2026,2027 | Out-Null; Wait-GenProps
 $n2 = (Get-ChildItem $keep -Filter 'Autodesk.arx-*.props').Count
-Check "cleanup --keep 4 years keeps them ($n1 -> $n2)" ($n1 -eq 9 -and $n2 -eq 9)
+Check "cleanup --keep 4 years keeps them ($n1 -> $n2)" ($n1 -eq 8 -and $n2 -eq 8)
 & $Exe cleanup --props-dir $keep --keep 2020 | Out-Null; Wait-GenProps
 $left = @(Get-ChildItem $keep -Filter 'Autodesk.arx-*.props' | ForEach-Object { $_.Name } | Sort-Object)
 $expected = @('Autodesk.arx-2020.props', 'Autodesk.arx-2020-net.props')

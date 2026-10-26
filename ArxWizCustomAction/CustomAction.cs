@@ -109,8 +109,8 @@ namespace ArxWizCustomAction
     }
 
     /// <summary>
-    /// Generates the per-year ObjectARX property sheets at install time instead of shipping all 33 of
-    /// them as MSI payload. The year table and the three skeletons embedded in this assembly are the
+    /// Generates the per-year ObjectARX property sheets at install time instead of shipping them all
+    /// as MSI payload. The year table and the three skeletons embedded in this assembly are the
     /// very files under tools\arx-props, so the generator and this CA share one source of truth.
     ///
     /// The generated files are not tracked by the MSI File table, so removal and repair are handled
@@ -317,9 +317,6 @@ namespace ArxWizCustomAction
                     if (!selected.Contains(entry.Year)) continue;
                     WriteFile(session, dir, "Autodesk.arx-" + entry.Year + ".props",
                               Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, acadRoot, null)));
-                    if (!string.IsNullOrEmpty(entry.CompatToolset))
-                        WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-Compat.props",
-                                  Expand(ReadResource(ResNormal), BuildMap(table, entry, sdkRoot, acadRoot, entry.CompatToolset)));
                     WriteFile(session, dir, "Autodesk.arx-" + entry.Year + "-net.props",
                               Expand(ReadResource(entry.NetKind == "core" ? ResNetCore : ResNetFx),
                                      BuildMap(table, entry, sdkRoot, acadRoot, null)));
@@ -351,9 +348,13 @@ namespace ArxWizCustomAction
                 var selected = SelectedYears(data, table);
                 foreach (var path in Directory.GetFiles(dir, "Autodesk.arx-*.props"))
                 {
-                    var m = YearInName.Match(Path.GetFileName(path));
+                    string name = Path.GetFileName(path);
+                    var m = YearInName.Match(name);
                     if (!m.Success) continue;
-                    if (selected.Contains(m.Groups[1].Value)) continue;
+                    // The -Compat variant is not generated any more. It has to go even when its year
+                    // is still ticked, otherwise an upgrade leaves the old sheet next to the new one.
+                    if (!name.EndsWith("-Compat.props", StringComparison.OrdinalIgnoreCase) &&
+                        selected.Contains(m.Groups[1].Value)) continue;
                     try { File.Delete(path); Log(session, "CleanupUnselectedArxProps: removed " + path); }
                     catch (Exception ex) { Log(session, "CleanupUnselectedArxProps: cannot delete " + path + " (" + ex.Message + ")"); }
                 }
@@ -608,7 +609,7 @@ namespace ArxWizCustomAction
 
         sealed class YearEntry
         {
-            public string Year, ProjectFileVersion, SdkVersion, Toolset, ToolsVersion, CompatToolset;
+            public string Year, ProjectFileVersion, SdkVersion, Toolset, ToolsVersion;
             public string NetKind, NetTfVersion, NetTargetFramework, NetForAcad;
             public bool LegacyV35, HasWin32, Win32X86, HasCrx, DebugComments, No32Comment;
             public bool LibPathArxLibIncs, NetTfComment;
@@ -642,7 +643,6 @@ namespace ArxWizCustomAction
                         SdkVersion = Str(y, "sdkVersion"),
                         Toolset = Str(y, "toolset"),
                         ToolsVersion = Str(y, "toolsVersion"),
-                        CompatToolset = Str(y, "compatToolset"),
                         NetKind = Str(y, "netKind"),
                         NetTfVersion = Str(y, "netTfVersion"),
                         NetTargetFramework = Str(y, "netTargetFramework"),

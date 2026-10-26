@@ -83,6 +83,13 @@
 			<PreprocessorDefinitions Condition="'$(ArxAppType)'=='arx' or '$(ArxAppType)'=='arxnet'">_ACRXAPP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 			<AdditionalUsingDirectories>$(ArxSdkDir)\inc-$(Platform);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+			<!-- Same defaults the stock ObjectARX projects carry (see ObjectARX.Common.props): every
+			     year sheet is imported by every project, so an existing project picks these up as soon
+			     as the installer regenerates the sheets. A project that sets them itself still wins -
+			     the project's own item definitions come after the imported sheets. -->
+			<SmallerTypeCheck>false</SmallerTypeCheck>
+			<TreatWarningAsError>false</TreatWarningAsError>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
 		</ClCompile>
 		<ResourceCompile>
 			<PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>

@@ -5,7 +5,7 @@
 本仓库（`ObjectARX-Wizards`）同时维护两条分发线：
 
 1. **VSIX**（`ArxVsixWizard\`）——项目向导 + 7 个类向导，已真机跑通（VS2022 / VS2026）。
-2. **MSI**（`ObjectARXWizardsInstaller\`，WiX 3.10）——把 33 个 per-year props（16 个 `Autodesk.arx-<year>.props` + 16 个 `-net` + 1 个 `2027-Compat`）连同旧的 VCAddClass 注册装到 `C:\Program Files\Autodesk\ObjectARX Props\`。
+2. **MSI**（`ObjectARXWizardsInstaller\`，WiX 3.10）——把 32 个 per-year props（16 个 `Autodesk.arx-<year>.props` + 16 个 `-net`）连同旧的 VCAddClass 注册装到 `C:\Program Files\Autodesk\ObjectARX Props\`。
 
 两个痛点：
 

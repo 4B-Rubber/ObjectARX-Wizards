@@ -25,7 +25,7 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 
 On this branch the modern **VSIX** (`ArxVsixWizard`) *is* the product, in Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md). The classic `.vsz` wizard sources and the `_Installs` payload live on the `classic-wizards` branch only.
 
-> **Status (0.2.16).** The VSIX and the Inno single-file installer are built from this tree (the
+> **Status (0.2.17).** The VSIX and the Inno single-file installer are built from this tree (the
 > MSI/Burn bundle lives on `main`). The setup installs nothing into Visual Studio's
 > `vcprojects`/`vcprojectitems` folders itself - the VSIX is the whole Visual Studio integration;
 > registrations this product's own 0.2.4-and-earlier builds left under the legacy names shared with
@@ -60,7 +60,7 @@ cd ObjectARX-Wizards
 
 ### 🔨 Build Instructions
 
-Two lines are buildable here, both at version **0.2.16**; the MSI/Burn bundle lives on `main`.
+Two lines are buildable here, both at version **0.2.17**; the MSI/Burn bundle lives on `main`.
 
 | Line | Command | Output |
 |---|---|---|

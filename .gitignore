@@ -150,5 +150,6 @@ ObjectARXWizardsInstaller/ObjectARXWizard.zip
 
 # Agent workspace state
 .trae/
+.fishpai/
 # Local-only agent supplement: readable by any agent on this machine, but not uploaded
 AGENTS.local.md

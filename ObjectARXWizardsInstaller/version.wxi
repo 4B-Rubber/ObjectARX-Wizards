@@ -12,7 +12,7 @@
      a repeat run of the same build shows the maintenance page instead of upgrading. -->
 <?define RTMProductVersion = "18.0.0"?>
 <!-- The first one - do not edit. -->
-<?define ProductVersion = "0.2.16"?>
+<?define ProductVersion = "0.2.17"?>
 <?define UpgradeCode = "{A5569809-8D74-410A-83C3-F3AB0C4E2F80}"?>
 
 <!-- Historic product codes, kept for reference; the live one is the last define in this file. -->
@@ -93,6 +93,11 @@
     Autodesk.arx-<year>.props imports ObjectARX.WindowsSdk.props, so the v140 / v141 toolsets stop
     stopping on MSB8036 when the project asks for the "10.0" alias. The version and the code move
     together, as always.-->
-<?define ProductCode= "{2E6B4C1A-7D58-4F03-9A6E-5C3D81F4B7A2}"?>
+<!--<?define ProductCode= "{2E6B4C1A-7D58-4F03-9A6E-5C3D81F4B7A2}"?>-->
+<!--ProductCode for 0.2.17, which puts the three compiler defaults the stock ObjectARX projects
+    carry (no /RTCc, warnings are not errors, multi-processor compilation) into every generated
+    year sheet, and stops generating the 2027 -Compat sheet - no project ever imported it, and an
+    upgrade now deletes it. The version and the code move together, as always.-->
+<?define ProductCode= "{3D24AD7E-3498-4EFC-B7E7-9A3312DBA731}"?>
 
 </Include>

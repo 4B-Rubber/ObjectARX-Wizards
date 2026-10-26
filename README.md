@@ -24,7 +24,7 @@ This repository contains Visual Studio project wizards for **ObjectARX** develop
 
 The same wizards are also shipped as a modern **VSIX** (`ArxVsixWizard`) that installs into Visual Studio 2022 (17.x) and 2026 (18.x) - see [ArxVsixWizard/README.md](ArxVsixWizard/README.md).
 
-> **Status (0.2.10).** The VSIX and the Inno single-file installer are built from this tree; the
+> **Status (0.2.11).** The VSIX and the Inno single-file installer are built from this tree; the
 > MSI/Burn bundle lives on `main`. Known VS-side issue: in VS 2022 (17.x) and 2026 (18.x), selecting an item template
 > that pre-fills the name can take `devenv` down while a freshly created project is still being
 > parsed (UI-Automation `ElementNotAvailableException`, `0x80040201`). The VSIX ships
@@ -54,7 +54,7 @@ cd ObjectARX-Wizards
 
 ### 🔨 Build Instructions
 
-There are three buildable lines. The VSIX and Inno lines ship version **0.2.10**; the MSI/Burn bundle remains **0.1.7**.
+There are three buildable lines. The VSIX and Inno lines ship version **0.2.11**; the MSI/Burn bundle remains **0.1.7**.
 
 | Line | Command | Output |
 |---|---|---|
